@@ -64,3 +64,8 @@ win32 {
 		Release: LIBS += -L$$PWD/third_party/opcode/lib/x64 -lOPCODE
     }
 }
+
+{# Prevent rebuild and Enable debuging in release mode
+	QMAKE_CXXFLAGS_RELEASE += /Zi
+    QMAKE_LFLAGS_RELEASE += /DEBUG
+}

@@ -37,6 +37,7 @@ public:
 
 	CModel* getModel(int id) { return m_modelList[id]; };
 	QString getModelCatName(int modelID) { return m_modelList[modelID]->getCatName(); };
+	QString getModelNameString(int modelID) { return m_modelList[modelID]->getNameStr(); };
 	int getModelIdByName(const QString &s) { return m_modelNameIdMap[s] - 1; }; 
 	std::vector<int> getModelIdWithCatName(QString s, bool usingSynset = true);
 	MathLib::Vector3 getModelAABBCenter(int m_id) { return m_modelList[m_id]->getAABBCenter(); };
@@ -50,7 +51,9 @@ public:
 	// support plane
 	//void buildModelSuppPlane();
 	double getFloorHeight();
+	double getSceneMetric() { return m_metric; };
 
+	SceneGraph* getSceneGraph() { return m_sceneGraph; };
 	void updateSceneGraph(int modelID);
 	void buildSupportHierarchy();
 	void setSupportChildrenLevel(CModel *m);

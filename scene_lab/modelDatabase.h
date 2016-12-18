@@ -13,20 +13,26 @@ public:
 	void setCatName(const QString &s) { m_categoryName = s; };
 	QString getCatName() { return m_categoryName; };
 
-	void addCatName(const QString &s) { m_categoryNames.push_back(s); };
+	void addShapeNetCatName(const QString &s) { m_shapeNetCategoryNames.push_back(s); };
+	QString getProcessedCatName();
 
 	void setScale(double s) { m_scale = s; };
 	double getScale() { return m_scale; };
 
 	QString getIdStr() { return m_idStr; };
 
+	void setTransMat(const MathLib::Matrix4d &m) { m_initTrans = m; };
+	MathLib::Matrix4d getTransMat() { return m_initTrans; };
+
 private:
 	QString m_idStr;
 	QString m_categoryName;
 
-	QVector<QString> m_categoryNames;
+	std::vector<QString> m_shapeNetCategoryNames;
+	std::vector<QString> m_tags;
 
 	double m_scale;
+	MathLib::Matrix4d m_initTrans;
 };
 
 class ModelDatabase{
@@ -46,7 +52,9 @@ public:
 	void extractScaledAnnoModels();
 	void extractModelWithTexture();
 
+	// ShapeNet
 	void loadShapeNetSemTxt();
+	MetaModel* getMetaModelByNameString(const QString &s){ return dbMetaModels[s]; };
 
 	CModel* getModelById(QString idStr);
 	CModel* getModelByCat(const QString &catName);	

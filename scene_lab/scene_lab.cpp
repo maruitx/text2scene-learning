@@ -33,6 +33,11 @@ void scene_lab::create_widget()
 
 void scene_lab::loadScene()
 {
+	if (m_scene != NULL)
+	{
+		delete m_scene;
+	}
+
 	CScene *scene = new CScene();
 	scene->loadSceneFile(m_widget->loadSceneName(), 0, 0);
 

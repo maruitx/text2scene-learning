@@ -1,2 +1,3 @@
+% update the following path to your local ShapeNetSem path and copy the this file to the Starlab folder
 C:\Users\ruim\Rui\Graphics\Text2Scene_PC\SceneDB\ShapeNetSem
 select

@@ -56,5 +56,6 @@ private:
 	//std::vector<int>				m_SymMap;
 
 	double m_SuppThresh;
+	double m_sceneMetric;
 };
 

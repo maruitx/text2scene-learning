@@ -1210,17 +1210,19 @@ bool COBB::IsSupport(const COBB &obb, double ta, double td, const MathLib::Vecto
 	const std::vector<MathLib::Vector3> &AJ = obb.axis;
 	MathLib::Vector3 FNI, FNJ;
 	for (int i = 0; i<boxNumFace; i++) {
-		FNI.set(AI[boxFaceNormalOrientAlongAxis[i][0]][0] * boxFaceNormalOrientAlongAxis[i][1], AI[boxFaceNormalOrientAlongAxis[i][0]][1] * boxFaceNormalOrientAlongAxis[i][1], AI[boxFaceNormalOrientAlongAxis[i][0]][2] * boxFaceNormalOrientAlongAxis[i][1]);
+		int currAxisId = boxFaceNormalOrientAlongAxis[i][0];
+		int currAxisSign = boxFaceNormalOrientAlongAxis[i][1];
+
+		FNI.set(AI[currAxisId][0] * currAxisSign, AI[currAxisId][1] * currAxisSign, AI[currAxisId][2] * currAxisSign);
 		if (MathLib::Acos(MathLib::Abs(FNI.dot(upright))) > 1.0) {
 			continue;
 		}
 		for (int j = 0; j < boxNumFace; j++) {
-			FNJ.set(AJ[boxFaceNormalOrientAlongAxis[j][0]][0] * boxFaceNormalOrientAlongAxis[j][1], AJ[boxFaceNormalOrientAlongAxis[j][0]][1] * boxFaceNormalOrientAlongAxis[j][1], AJ[boxFaceNormalOrientAlongAxis[j][0]][2] * boxFaceNormalOrientAlongAxis[j][1]);
-			if (IsTwoSide(obb, VI[boxTriFace[i][0]], upright)) {
-				if (ContactTriTri(VI[boxTriFace[i][0]], VI[boxTriFace[i][1]], VI[boxTriFace[i][2]], FNI, VJ[boxTriFace[j][0]], VJ[boxTriFace[j][1]], VJ[boxTriFace[j][2]], FNJ, td)) {
-			 					return true;
-			 				}
-			 			}
+			int currAxisId = boxFaceNormalOrientAlongAxis[j][0];
+			int currAxisSign = boxFaceNormalOrientAlongAxis[j][1];
+
+			FNJ.set(AJ[currAxisId][0] * currAxisSign, AJ[currAxisId][1] * currAxisSign, AJ[currAxisId][2] * currAxisSign);
+
 			if (ContactTriTri(VI[boxTriFace[i][0]], VI[boxTriFace[i][1]], VI[boxTriFace[i][2]], FNI, VJ[boxTriFace[j][0]], VJ[boxTriFace[j][1]], VJ[boxTriFace[j][2]], FNJ, ta, td, true)) {
 				return true;
 			}

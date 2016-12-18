@@ -10,6 +10,8 @@ SceneGraph::SceneGraph(CScene *s):
 m_scene(s), m_SuppThresh(0.05)
 {
 	m_nodeNum = m_scene->getModelNum();
+	m_sceneMetric = m_scene->getSceneMetric();
+
 	this->Initialize(m_nodeNum);
 }
 
@@ -19,7 +21,7 @@ SceneGraph::~SceneGraph()
 
 int SceneGraph::extractSupportRel()
 {
-	double dT = m_SuppThresh;
+	double dT = m_SuppThresh / m_sceneMetric;
 	for (unsigned int i = 0; i < m_nodeNum; i++) {
 		CModel *pMI = m_scene->getModel(i);
 		for (unsigned int j = i + 1; j < m_nodeNum; j++) {
@@ -64,14 +66,16 @@ void SceneGraph::updateGraph(int modelID, int suppModelID)
 	CModel *pMJ = m_scene->getModel(modelID);
 	CModel *pMI = m_scene->getModel(suppModelID);
 
-	if (pMI->IsSupport(pMJ, false, m_SuppThresh, m_scene->getUprightVec())) {
+	double dT = m_SuppThresh / m_sceneMetric;
+
+	if (pMI->IsSupport(pMJ, false, dT, m_scene->getUprightVec())) {
 		this->InsertEdge(suppModelID, modelID, CT_SUPPORT);	// upright support
 	}
 }
 
 int SceneGraph::updateSupportRel(int modelID)
 {
-	double dT = m_SuppThresh;
+	double dT = m_SuppThresh / m_sceneMetric;
 	CModel *pMJ = m_scene->getModel(modelID); 
 
 	for (unsigned int i = 0; i < m_nodeNum; i++) {
@@ -217,7 +221,7 @@ void SceneGraph::drawGraph()
 void SceneGraph::computeOnTopList()
 {
 	// build on top list from computed support info
-	m_onTopList.clear();
+	m_onTopList.clear(); 
 	m_onTopList.resize(m_nodeNum, -1);
 
 	std::vector<std::vector<int>> SuppGiverList(this->Size());	// support giver list, models that are being supported
@@ -276,7 +280,7 @@ int SceneGraph::pruneSupportRel()
 				CModel *pM2 =  m_scene->getModel(SuppList[i][j]);
 
 				// use a relative large support threshold for conservative pruning
-				if (!pM1->IsSupport(pM2, true, 10 * m_SuppThresh, m_scene->getUprightVec()))
+				if (!pM1->IsSupport(pM2, true, 10 * m_SuppThresh / m_sceneMetric, m_scene->getUprightVec()))
 				{
 					this->DeleteEdge(i, SuppList[i][j]);
 				}

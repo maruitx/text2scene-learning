@@ -69,6 +69,8 @@ void CScene::loadSceneFile(const QString filename, int obbOnly, int loadForRende
 
 	if (databaseType == QString("StanfordSceneDatabase"))
 	{
+		m_metric = 0.0254; // convert from 1 inch to 1 meter
+
 		int currModelID = -1;
 
 		m_modelDBPath = m_sceneDBPath + "/models";  
@@ -88,7 +90,7 @@ void CScene::loadSceneFile(const QString filename, int obbOnly, int loadForRende
 				int modelIndex = StringToInt(parts[1]);
 
 				CModel *newModel = new CModel();				
-				newModel->loadModel(m_modelDBPath + "/" + QString(parts[2].c_str()) + ".obj", m_metric, loadForRendering, databaseType);
+				newModel->loadModel(m_modelDBPath + "/" + QString(parts[2].c_str()) + ".obj", 1.0, loadForRendering, databaseType);
 				//newModel->setSceneUpRightVec(m_uprightVec);
 
 				currModelID += 1;

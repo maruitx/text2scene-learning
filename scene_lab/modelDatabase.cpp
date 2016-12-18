@@ -8,12 +8,20 @@
 
 ModelDatabase::ModelDatabase()
 {
-	// load model DB path
+	// load model DB path from file
 	QString currPath = QDir::currentPath();
 	std::string dbPathFileName = currPath.toStdString() + "/ModelDBPath.txt";
 	auto lines = GetFileLines(dbPathFileName, 0);
-	m_dbPath = QString(lines[0].c_str());
-	m_dbMetaFileType = QString(lines[1].c_str());
+
+	for (int i = 0; i < lines.size();i++)
+	{
+		if (QString(lines[i][0]) != "%")
+		{
+			m_dbPath = QString(lines[i].c_str());
+			m_dbMetaFileType = QString(lines[i+1].c_str());
+			break;
+		}
+	}
 
 	m_parentCatNum = 0;
 	m_modelNum = 0;
@@ -469,7 +477,7 @@ void ModelDatabase::loadShapeNetSemTxt()
 			for (int c = 0; c < catNameList.size(); c++)
 			{
 				QString currCatName = QString(catNameList[c].c_str());
-				candiModel->addCatName(currCatName); // model could have multiple category names
+				candiModel->addShapeNetCatName(currCatName); // model could have multiple category names
 
 				if (dbCategories.count(currCatName) == 0)
 				{
@@ -503,6 +511,7 @@ MetaModel::MetaModel()
 	m_idStr = "";
 	m_categoryName = "";
 	m_scale = 1.0;
+	m_initTrans = MathLib::Matrix4d::Identity_Matrix;
 }
 
 MetaModel::MetaModel(const QString &s)
@@ -510,4 +519,10 @@ MetaModel::MetaModel(const QString &s)
 	m_idStr = s;
 	m_categoryName = "";
 	m_scale = 1.0;
+	m_initTrans = MathLib::Matrix4d::Identity_Matrix;
+}
+
+QString MetaModel::getProcessedCatName()
+{
+	 
 }

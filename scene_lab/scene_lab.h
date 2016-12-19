@@ -24,6 +24,9 @@ public slots:
 	void loadScene();
 	void loadSceneList();
 
+	void buildSemGraphForCurrentScene();
+	void buildSemGraphForSceneList();
+
 	void updateSceneRenderingOptions();
 
 	void create_modelDBViewer_widget();

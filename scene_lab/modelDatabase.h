@@ -20,6 +20,7 @@ public:
 	double getScale() { return m_scale; };
 
 	QString getIdStr() { return m_idStr; };
+	const QString& getShapeNetCatsStr();
 
 	void setTransMat(const MathLib::Matrix4d &m) { m_initTrans = m; };
 	MathLib::Matrix4d getTransMat() { return m_initTrans; };

@@ -524,5 +524,10 @@ MetaModel::MetaModel(const QString &s)
 
 QString MetaModel::getProcessedCatName()
 {
-	 
+	return QString();
+}
+
+const QString& MetaModel::getShapeNetCatsStr()
+{
+	return QString();
 }

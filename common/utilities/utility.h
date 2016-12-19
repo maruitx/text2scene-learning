@@ -320,6 +320,41 @@ static std::vector<float> StringToFloatList(const std::string &s, const std::str
 	return result;
 }
 
+static QString GetTransformationString(const MathLib::Matrix4d &transMat)
+{
+	QString outString;
+	QTextStream outStream(&outString);
+
+	// Matrix4d.M is saved row-wise	
+	// transformation string is saved column-wise
+	outStream << QString("%1").arg(transMat.M[0], 0, 'f') << " " << QString("%1").arg(transMat.M[1], 0, 'f') << " " << QString("%1").arg(transMat.M[2], 0, 'f') << " " << QString("%1").arg(transMat.M[3], 0, 'f') << " "
+		<< QString("%1").arg(transMat.M[4], 0, 'f') << " " << QString("%1").arg(transMat.M[5], 0, 'f') << " " << QString("%1").arg(transMat.M[6], 0, 'f') << " " << QString("%1").arg(transMat.M[7], 0, 'f') << " "
+		<< QString("%1").arg(transMat.M[8], 0, 'f') << " " << QString("%1").arg(transMat.M[9], 0, 'f') << " " << QString("%1").arg(transMat.M[10], 0, 'f') << " " << QString("%1").arg(transMat.M[11], 0, 'f') << " "
+		<< QString("%1").arg(transMat.M[12], 0, 'f') << " " << QString("%1").arg(transMat.M[13], 0, 'f') << " " << QString("%1").arg(transMat.M[14], 0, 'f') << " " << QString("%1").arg(transMat.M[15], 0, 'f'); 
+
+	return outString;
+}
+
+static QString GetIntString(const std::vector<int> &intVector, const QString &separator)
+{
+	if (intVector.empty())
+	{
+		return QString("");
+	}
+
+	QString outString;
+	QTextStream outStream(&outString);
+
+	for (int i = 0; i < intVector.size()-1; i++)
+	{
+		outStream << intVector[i] << separator;
+	}
+
+	outStream << intVector[intVector.size() - 1];
+
+	return outString;
+}
+
 static void DrawText_QPixmap(QPixmap *p, const QString &text, const QPoint pos = QPoint(50, 50), const QColor c = QColor(0, 255, 255, 255))
 {
 	QPainter painter(p);

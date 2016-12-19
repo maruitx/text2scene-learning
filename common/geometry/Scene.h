@@ -26,11 +26,11 @@ public:
 	//void insertModel(CModel *m);
 
 	void setSceneName(const QString &sceneName) { m_sceneFileName = sceneName; };
-	QString getSceneName() { return m_sceneFileName; };
-	QString getFilePath() { return m_sceneFilePath; };
-	QString getSceneDbPath() { return m_sceneDBPath; };
-	QString getModelDBPath() { return m_modelDBPath; };
-	QString getSceneFormat() { return m_sceneFormat; };
+	const QString& getSceneName() { return m_sceneFileName; };
+	const QString& getFilePath() { return m_sceneFilePath; };
+	const QString& getSceneDbPath() { return m_sceneDBPath; };
+	const QString& getModelDBPath() { return m_modelDBPath; };
+	const QString& getSceneFormat() { return m_sceneFormat; };
 
 	void setSceneDrawArea(Starlab::DrawArea *a) { m_drawArea = a; };
 	MathLib::Vector3 getUprightVec() { return m_uprightVec; };
@@ -38,6 +38,8 @@ public:
 	CModel* getModel(int id) { return m_modelList[id]; };
 	QString getModelCatName(int modelID) { return m_modelList[modelID]->getCatName(); };
 	QString getModelNameString(int modelID) { return m_modelList[modelID]->getNameStr(); };
+	MathLib::Matrix4d getModelInitTransMat(int modelID) { return m_modelList[modelID]->getInitTransMat(); };
+
 	int getModelIdByName(const QString &s) { return m_modelNameIdMap[s] - 1; }; 
 	std::vector<int> getModelIdWithCatName(QString s, bool usingSynset = true);
 	MathLib::Vector3 getModelAABBCenter(int m_id) { return m_modelList[m_id]->getAABBCenter(); };

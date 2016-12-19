@@ -11,6 +11,8 @@ FORMS += \
 HEADERS += \
 	text2scene_mode.h \
 	text_scene_widget.h \
+	SemanticGraph.h \
+	SceneSemGraph.h \
 	ScenePatch.h \
 	SynScene.h
 
@@ -18,6 +20,8 @@ HEADERS += \
 SOURCES += \
 	text2scene_mode.cpp \
 	text_scene_widget.cpp \
+	SemanticGraph.cpp \
+	SceneSemGraph.cpp \
 	ScenePatch.cpp \
 	SynScene.cpp
 	

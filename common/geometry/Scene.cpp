@@ -107,8 +107,10 @@ void CScene::loadSceneFile(const QString filename, int obbOnly, int loadForRende
 				//Eigen::Map<Eigen::Matrix4f> trasMat(transformVec.data());
 
 				//Eigen::Matrix4f transMat(transformVec.data()); // transformation vector in scene file is column wise as Eigen
+
 				MathLib::Matrix4d transMat(transformVec);
 				
+				m_modelList[currModelID]->setInitTransMat(transMat);
 				m_modelList[currModelID]->transformModel(transMat);
 			}
 		}

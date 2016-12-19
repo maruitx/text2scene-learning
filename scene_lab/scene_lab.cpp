@@ -3,6 +3,7 @@
 #include "modelDatabase.h"
 #include "modelDBViewer_widget.h"
 #include "../common/geometry/Scene.h"
+#include "../t2scene/SceneSemGraph.h"
 
 scene_lab::scene_lab(QObject *parent)
 	: QObject(parent)
@@ -95,6 +96,30 @@ void scene_lab::create_modelDBViewer_widget()
 }
 
 void scene_lab::destory_modelDBViewer_widget()
+{
+
+}
+
+void scene_lab::buildSemGraphForCurrentScene()
+{
+	if (m_modelDB == NULL)
+	{
+		m_modelDB = new ModelDatabase();
+		m_modelDB->loadShapeNetSemTxt();
+	}
+
+	if (m_scene == NULL)
+	{
+		Simple_Message_Box("No scene is loaded");
+		return;
+	}
+
+	SceneSemGraph *newSemGraph = new SceneSemGraph(m_scene, m_modelDB);
+	newSemGraph->generateGraph();
+	newSemGraph->saveGraph();
+}
+
+void scene_lab::buildSemGraphForSceneList()
 {
 
 }

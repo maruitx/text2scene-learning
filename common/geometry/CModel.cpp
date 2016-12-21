@@ -40,7 +40,7 @@ CModel::~CModel()
 	}
 }
 
-bool CModel::loadModel(QString filename, double metric, int loadForRendering, QString sceneDbType)
+bool CModel::loadModel(QString filename, double metric, int loadForRendering, int metaDataOnly, QString sceneDbType)
 {
 	m_metric = metric;
 
@@ -67,8 +67,12 @@ bool CModel::loadModel(QString filename, double metric, int loadForRendering, QS
 		m_nameStr = "1ac1d0986508974bf1783a44a88d6274";      // this night stand has a naming problem in 3ds max
 	}
 
-
 	m_mesh = new CMesh(filename, m_nameStr);
+	
+	if (metaDataOnly)
+	{
+		return true;
+	}
 
 	bool isLoaded;
 	isLoaded = m_mesh->readObjFile(qPrintable(filename), metric, sceneDbType);

@@ -16,7 +16,7 @@ SceneSemGraph::SceneSemGraph(CScene *s, ModelDatabase *db)
 
 SceneSemGraph::~SceneSemGraph()
 {
-
+	m_metaModelList.clear();
 }
 
 void SceneSemGraph::generateGraph()
@@ -27,22 +27,34 @@ void SceneSemGraph::generateGraph()
 	for (int i = 0; i < modelNum;  i++)
 	{
 		QString modelNameStr = m_scene->getModelNameString(i);
-		MetaModel *metaModel = m_modelDB->getMetaModelByNameString(modelNameStr);
-		metaModel->setTransMat(m_scene->getModelInitTransMat(i));
-		m_metaModelList.push_back(metaModel);
 
-		QString objectNodeName = metaModel->getProcessedCatName();
-		addNode(QString("object"), objectNodeName);
+		if (m_modelDB->isModelInDB(modelNameStr))
+		{
+			MetaModel *metaModel = m_modelDB->getMetaModelByNameString(modelNameStr);
+			metaModel->setTransMat(m_scene->getModelInitTransMat(i));
+			m_metaModelList.push_back(metaModel);
+
+			QString objectNodeName = metaModel->getProcessedCatName();
+			addNode(QString("object"), objectNodeName);
+		}
+		else
+		{
+			std::cout << "SceneSemGraph: cannot find model: " << modelNameStr.toStdString() << " in ShapeNetDB-"<<m_modelDB->getMetaFileType().toStdString()<<"\n";
+		}
+
+
 	}
 
 	// extract low-level model attributes from ShapeNetSem annotation
 	buildFromModelDBAnnotation();
 
 	//
-	extractRelationsFromRelationGraph();
+	//extractRelationsFromRelationGraph();
 
 	//
 	loadAttributeNodeFromAnnotation();
+
+	std::cout << "SceneSemGraph: graph generated.\n";
 }
 
 void SceneSemGraph::buildFromModelDBAnnotation()
@@ -108,12 +120,12 @@ void SceneSemGraph::saveGraph()
 
 		outFile.close();
 
-		Simple_Message_Box("Semantic graph generated.");
+		std::cout << "SceneSemGraph: graph saved.\n";
 	}
 
 	else
 	{
-		Simple_Message_Box("Fail to generate semantic graph ");
+		std::cout << "SceneSemGraph: fail to save graph .\n";
 	}
 } 
 

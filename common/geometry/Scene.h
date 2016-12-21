@@ -15,7 +15,7 @@ public:
 	CScene();
 	~CScene();
 
-	void loadSceneFile(const QString filename, int obbOnly, int loadForRendering);
+	void loadSceneFromFile(const QString &filename, int obbOnly=0, int loadForRendering=0, int metaDataOnly=0);
 
 	void computeAABB();
 	void updateSeneAABB(CAABB addedBox) { m_AABB.Merge(addedBox); };

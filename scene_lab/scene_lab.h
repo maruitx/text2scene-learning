@@ -5,6 +5,7 @@
 
 class scene_lab_widget;
 class CScene;
+class SceneSemGraph;
 class ModelDatabase;
 class ModelDBViewer_widget;
 
@@ -38,7 +39,9 @@ signals:
 
 private:
 	scene_lab_widget *m_widget;
-	CScene *m_scene;	
+	CScene *m_scene;
+	SceneSemGraph*m_currSceneSemGraph;
+
 
 	ModelDatabase *m_modelDB;
 	ModelDBViewer_widget *m_modelDBViewer_widget;

@@ -181,7 +181,7 @@ CModel* ModelDatabase::getModelById(QString idStr)
 	}
 	//m->loadModel(m_dbPath + "/wss.models/models/" + idStr +".obj", candiModel->getScale());
 
-	m->loadModel(m_dbPath + "/" + idStr + ".obj", 1.0, 0, "SimpleSceneFormat");  // load model and cat name in .anno file
+	m->loadModel(m_dbPath + "/" + idStr + ".obj", 1.0, 0, 0, "SimpleSceneFormat");  // load model and cat name in .anno file
 
 	//QString catName = getModelCat("wss." + idStr);
 	//m->setCatName(catName);   // set cat name in DB csv file
@@ -506,6 +506,24 @@ void ModelDatabase::loadShapeNetSemTxt()
 	}
 }
 
+MetaModel* ModelDatabase::getMetaModelByNameString(const QString &s)
+{
+	return dbMetaModels[s]; 
+}
+
+bool ModelDatabase::isModelInDB(const QString &s)
+{
+	if (dbMetaModels.find(s)!= dbMetaModels.end())
+	{
+		return true;
+	}
+
+	else
+	{
+		return false;
+	}
+}
+
 MetaModel::MetaModel()
 {
 	m_idStr = "";
@@ -524,10 +542,25 @@ MetaModel::MetaModel(const QString &s)
 
 QString MetaModel::getProcessedCatName()
 {
-	return QString();
+	QString processedCatName = m_shapeNetCategoryNames[0];
+
+	if (m_shapeNetCategoryNames[0] == "chestofdrawers")
+	{
+		if (m_shapeNetCategoryNames.size()>1)
+		{
+			processedCatName = m_shapeNetCategoryNames[1];
+		}
+	}
+
+	return processedCatName;
 }
 
 const QString& MetaModel::getShapeNetCatsStr()
 {
 	return QString();
+}
+
+MetaModel::~MetaModel()
+{
+
 }

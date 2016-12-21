@@ -46,8 +46,9 @@ CScene::~CScene()
 	m_showSuppPlane = false;
 }
 
-void CScene::loadSceneFile(const QString filename, int obbOnly, int loadForRendering)
+void CScene::loadSceneFromFile(const QString &filename, int obbOnly, int metaDataOnly, int loadForRendering)
 {
+
 	QFile inFile(filename);
 	QTextStream ifs(&inFile);
 
@@ -60,12 +61,24 @@ void CScene::loadSceneFile(const QString filename, int obbOnly, int loadForRende
 	int cutPos = sceneFileInfo.absolutePath().lastIndexOf("/");  
 	m_sceneDBPath = sceneFileInfo.absolutePath().left(cutPos);  
 
+	if (metaDataOnly)
+	{
+		std::cout << "\nLoading scene meta data: " << m_sceneFileName.toStdString() << "...\n";
+	}
+	else
+	{
+		std::cout << "\nLoading scene: " << m_sceneFileName.toStdString() << "...\n";
+	}
+	
+
 	QString databaseType;
 	QString modelFileName;
 
 	ifs >> databaseType;
 
 	m_sceneFormat = databaseType;
+
+	std::cout << "\tloading objects...";
 
 	if (databaseType == QString("StanfordSceneDatabase"))
 	{
@@ -90,7 +103,7 @@ void CScene::loadSceneFile(const QString filename, int obbOnly, int loadForRende
 				int modelIndex = StringToInt(parts[1]);
 
 				CModel *newModel = new CModel();				
-				newModel->loadModel(m_modelDBPath + "/" + QString(parts[2].c_str()) + ".obj", 1.0, loadForRendering, databaseType);
+				newModel->loadModel(m_modelDBPath + "/" + QString(parts[2].c_str()) + ".obj", 1.0, loadForRendering, metaDataOnly, databaseType);
 				//newModel->setSceneUpRightVec(m_uprightVec);
 
 				currModelID += 1;
@@ -213,15 +226,16 @@ void CScene::loadSceneFile(const QString filename, int obbOnly, int loadForRende
 	//	}
 	//}
 
-	computeAABB();
-	
-	//// do not compute supp plane when load for rendering
-	//if (!loadForRendering && m_sceneFormat != "StanfordSceneDatabase")
-	//{
-	//	buildModelSuppPlane();
-	//}	
+	if (metaDataOnly)
+	{
+		std::cout << "\Scene loaded\n";
+		return;
+	}
 
+	computeAABB();
 	buildModelDislayList();
+
+	std::cout << "done\n";
 
 	m_sceneGraph = new SceneGraph(this);
 
@@ -231,6 +245,11 @@ void CScene::loadSceneFile(const QString filename, int obbOnly, int loadForRende
 	{
 		m_sceneGraph->buildGraph();
 		m_sceneGraph->saveGraph(graphFilename);
+		std::cout << "\tstructure graph generated\n";
+	}
+	else
+	{
+		std::cout << "\tstructure graph loaded\n";
 	}
 
 	//	buildSupportHierarchy();
@@ -244,6 +263,8 @@ void CScene::loadSceneFile(const QString filename, int obbOnly, int loadForRende
 			break;
 		}
 	}
+
+	std::cout << "Scene loaded\n";
 }
 
 void CScene::buildModelDislayList(int showDiffColor /*= 1*/, int showFaceCluster /*= 0*/)
@@ -541,6 +562,10 @@ void CScene::setSupportChildrenLevel(CModel *m)
 		}
 	}
 } 
+
+
+
+
 
 void CScene::updateSceneGraph(int modelID)
 {

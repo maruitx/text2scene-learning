@@ -9,6 +9,7 @@ class MetaModel
 public:
 	MetaModel();
 	MetaModel(const QString &s);
+	~MetaModel();
 
 	void setCatName(const QString &s) { m_categoryName = s; };
 	QString getCatName() { return m_categoryName; };
@@ -55,7 +56,9 @@ public:
 
 	// ShapeNet
 	void loadShapeNetSemTxt();
-	MetaModel* getMetaModelByNameString(const QString &s){ return dbMetaModels[s]; };
+	bool isModelInDB(const QString &s);
+	MetaModel* getMetaModelByNameString(const QString &s);
+	QString getMetaFileType() { return m_dbMetaFileType; };
 
 	CModel* getModelById(QString idStr);
 	CModel* getModelByCat(const QString &catName);	

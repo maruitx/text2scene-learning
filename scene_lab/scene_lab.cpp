@@ -10,6 +10,7 @@ scene_lab::scene_lab(QObject *parent)
 {
 	m_widget = NULL;
 	m_scene = NULL;
+	m_currSceneSemGraph = NULL;
 
 	m_modelDB = NULL; 
 	m_modelDBViewer_widget = NULL;
@@ -40,11 +41,9 @@ void scene_lab::loadScene()
 	}
 
 	CScene *scene = new CScene();
-	scene->loadSceneFile(m_widget->loadSceneName(), 0, 0);
+	scene->loadSceneFromFile(m_widget->loadSceneName(), 0, 0);
 
 	m_scene = scene;
-
-	std::cout << "SceneLab: scene loaded.\n";
 
 	emit sceneLoaded();
 }
@@ -114,12 +113,55 @@ void scene_lab::buildSemGraphForCurrentScene()
 		return;
 	}
 
-	SceneSemGraph *newSemGraph = new SceneSemGraph(m_scene, m_modelDB);
-	newSemGraph->generateGraph();
-	newSemGraph->saveGraph();
+	if (m_currSceneSemGraph!=NULL)
+	{
+		delete m_currSceneSemGraph;
+	}
+
+	m_currSceneSemGraph = new SceneSemGraph(m_scene, m_modelDB);
+	m_currSceneSemGraph->generateGraph();
+	m_currSceneSemGraph->saveGraph();
 }
 
 void scene_lab::buildSemGraphForSceneList()
 {
+	// load scene list file
+	QString currPath = QDir::currentPath();
+	QString sceneListFileName = currPath + "/scene_list.txt";
+	QString sceneDBPath = "C:/Ruim/Graphics/T2S_MPC/SceneDB/StanfordSceneDB/scenes";
 
+	QFile inFile(sceneListFileName);
+	QTextStream ifs(&inFile);
+
+	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
+	{
+		std::cout << "SceneLab: cannot open scene list file.\n";
+		return;
+	}
+
+	QString currLine = ifs.readLine();
+
+	if (currLine.contains("StanfordSceneDatabase"))
+	{
+		int sceneNum = StringToIntegerList(currLine.toStdString(), "StanfordSceneDatabase ")[0];
+
+		for (int i = 0; i < sceneNum; i++)
+		{
+			QString sceneName = ifs.readLine();
+
+			if (m_scene != NULL)
+			{
+				delete m_scene;
+			}
+
+			CScene *scene = new CScene();
+			QString filename = sceneDBPath + "/" + sceneName + ".txt";
+			scene->loadSceneFromFile(filename, 0, 1, 0);
+			m_scene = scene;
+			
+			buildSemGraphForCurrentScene();
+		}
+	}
+
+	std::cout << "\nSceneLab: all scene semantic graph generated.\n";
 }

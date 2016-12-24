@@ -106,6 +106,8 @@ bool ModelDatabase::loadSceneSpecifiedModelFile(const QString &filename, QString
 
 	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text)) return false;
 
+	std::cout << "ModelDatabase: loading ShapeNetSem meta file...";
+
 	QString currLine;
 
 	while (!ifs.atEnd())
@@ -156,6 +158,8 @@ bool ModelDatabase::loadSceneSpecifiedModelFile(const QString &filename, QString
 	}
 
 	inFile.close();
+
+	std::cout << "done\n";
 	return true;
 }
 

@@ -1,13 +1,13 @@
-#include "SceneGraph.h"
+#include "RelationGraph.h"
 #include "Scene.h"
 #include "CModel.h"
 
-SceneGraph::SceneGraph()
+RelationGraph::RelationGraph()
 {
 }
 
-SceneGraph::SceneGraph(CScene *s):
-m_scene(s), m_SuppThresh(0.05)
+RelationGraph::RelationGraph(CScene *s):
+m_scene(s), m_SuppThresh(0.02)
 {
 	m_nodeNum = m_scene->getModelNum();
 	m_sceneMetric = m_scene->getSceneMetric();
@@ -15,11 +15,11 @@ m_scene(s), m_SuppThresh(0.05)
 	this->Initialize(m_nodeNum);
 }
 
-SceneGraph::~SceneGraph()
+RelationGraph::~RelationGraph()
 {
 }
 
-int SceneGraph::extractSupportRel()
+int RelationGraph::extractSupportRel()
 {
 	double dT = m_SuppThresh / m_sceneMetric;
 	for (unsigned int i = 0; i < m_nodeNum; i++) {
@@ -36,7 +36,7 @@ int SceneGraph::extractSupportRel()
 	return 0;
 }
 
-void SceneGraph::updateGraph(int modelID)
+void RelationGraph::updateGraph(int modelID)
 {
 	m_nodeNum = m_scene->getModelNum();
 
@@ -52,7 +52,7 @@ void SceneGraph::updateGraph(int modelID)
 	pruneSupportRel();
 }
 
-void SceneGraph::updateGraph(int modelID, int suppModelID)
+void RelationGraph::updateGraph(int modelID, int suppModelID)
 {
 	std::vector<int> neighborEdges;
 	this->GetAllNeigborEdgeList(modelID, neighborEdges);
@@ -73,7 +73,7 @@ void SceneGraph::updateGraph(int modelID, int suppModelID)
 	}
 }
 
-int SceneGraph::updateSupportRel(int modelID)
+int RelationGraph::updateSupportRel(int modelID)
 {
 	double dT = m_SuppThresh / m_sceneMetric;
 	CModel *pMJ = m_scene->getModel(modelID); 
@@ -92,13 +92,13 @@ int SceneGraph::updateSupportRel(int modelID)
 	return 0;
 }
 
-void SceneGraph::buildGraph()
+void RelationGraph::buildGraph()
 {
 	extractSupportRel();
 	pruneSupportRel();
 }
 
-int SceneGraph::readGraph(const QString &filename)
+int RelationGraph::readGraph(const QString &filename)
 {
 	std::ifstream ifs(filename.toStdString());
 
@@ -132,7 +132,7 @@ int SceneGraph::readGraph(const QString &filename)
 	return 0;
 }
 
-int SceneGraph::saveGraph(const QString &filename)
+int RelationGraph::saveGraph(const QString &filename)
 {
 	std::ofstream  ofs(filename.toStdString());
 
@@ -149,7 +149,7 @@ int SceneGraph::saveGraph(const QString &filename)
 	return 0;
 }
 
-void SceneGraph::drawGraph()
+void RelationGraph::drawGraph()
 {
 	if (m_nodeNum == 0)
 	{
@@ -218,7 +218,7 @@ void SceneGraph::drawGraph()
 	glPopAttrib();
 }
 
-void SceneGraph::computeOnTopList()
+void RelationGraph::computeOnTopList()
 {
 	// build on top list from computed support info
 	m_onTopList.clear(); 
@@ -226,7 +226,7 @@ void SceneGraph::computeOnTopList()
 
 	std::vector<std::vector<int>> SuppGiverList(this->Size());	// support giver list, models that are being supported
 	for (unsigned int ei = 0; ei < this->ESize(); ei++) {
-		if (this->GetEdge(ei)->t == SceneGraph::CT_SUPPORT) {
+		if (this->GetEdge(ei)->t == RelationGraph::CT_SUPPORT) {
 			CModel *pM1 = m_scene->getModel(this->GetEdge(ei)->v1);
 			CModel *pM2 = m_scene->getModel(this->GetEdge(ei)->v2);
 
@@ -249,7 +249,7 @@ void SceneGraph::computeOnTopList()
 	}
 }
 
-int SceneGraph::pruneSupportRel()
+int RelationGraph::pruneSupportRel()
 {
 	// collect direct support info.
 	std::vector<std::vector<int>> SuppList(this->Size());	// support giver list, models that are being supported

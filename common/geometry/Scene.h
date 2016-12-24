@@ -6,7 +6,7 @@
 
 #include "CModel.h"
 
-class SceneGraph;
+class RelationGraph;
 
 class CScene
 {
@@ -55,7 +55,8 @@ public:
 	double getFloorHeight();
 	double getSceneMetric() { return m_metric; };
 
-	SceneGraph* getSceneGraph() { return m_sceneGraph; };
+	void buildSceneGraph();
+	RelationGraph* getSceneGraph() { return m_sceneGraph; };
 	void updateSceneGraph(int modelID);
 	void buildSupportHierarchy();
 	void setSupportChildrenLevel(CModel *m);
@@ -95,7 +96,7 @@ private:
 	//SuppPlane *m_floor;
 	double m_floorHeight;
 
-	SceneGraph *m_sceneGraph;
+	RelationGraph *m_sceneGraph;
 
 	// File info
 	QString m_sceneFileName;

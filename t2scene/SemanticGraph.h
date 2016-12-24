@@ -7,7 +7,7 @@ public:
 	SemNode(const QString &t, const QString &n, int id) { nodeType = t; nodeName = n; nodeId = id; };
 	~SemNode() {};
 
-	// node types: object, p_attribute, p_relation, g_relation, g_attribute, 
+	// node types: e.g., object, per_obj_attribute, pairwise_relation, group_relation, group_attribute, 
 	QString nodeType;
 
 	// model category name, relationship name or attribute name, e.g. chair, support, messy
@@ -27,6 +27,7 @@ public:
 
 };
 
+// directed edge, from source to target
 class SemEdge{
 public:
 	SemEdge(int s, int t, int id) { sourceNodeId = s, targetNodeId = t; edgeId = id; };

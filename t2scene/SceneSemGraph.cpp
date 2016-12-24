@@ -1,15 +1,12 @@
 #include "SceneSemGraph.h"
 #include "../common/geometry/Scene.h"
 #include "../common/geometry/CModel.h"
-#include "../common/geometry/SceneGraph.h"
+#include "../common/geometry/RelationGraph.h"
 #include "../scene_lab/modelDatabase.h"
 
 SceneSemGraph::SceneSemGraph(CScene *s, ModelDatabase *db)
 	:m_scene(s), m_modelDB(db)
 {
-	m_nodeNum = 0;
-	m_edgeNum = 0;
-
 	m_sceneFormat = m_scene->getSceneFormat();
 	m_relGraph = m_scene->getSceneGraph();
 }
@@ -35,23 +32,22 @@ void SceneSemGraph::generateGraph()
 			m_metaModelList.push_back(metaModel);
 
 			QString objectNodeName = metaModel->getProcessedCatName();
-			addNode(QString("object"), objectNodeName);
+			addNode(QString(SSGNodeType[0]), objectNodeName);
 		}
 		else
 		{
 			std::cout << "SceneSemGraph: cannot find model: " << modelNameStr.toStdString() << " in ShapeNetDB-"<<m_modelDB->getMetaFileType().toStdString()<<"\n";
 		}
 
-
 	}
 
 	// extract low-level model attributes from ShapeNetSem annotation
 	buildFromModelDBAnnotation();
 
-	//
-	//extractRelationsFromRelationGraph();
+	// add relationships
+	extractRelationsFromRelationGraph();
 
-	//
+	// add attributes
 	loadAttributeNodeFromAnnotation();
 
 	std::cout << "SceneSemGraph: graph generated.\n";
@@ -64,9 +60,32 @@ void SceneSemGraph::buildFromModelDBAnnotation()
 
 void SceneSemGraph::extractRelationsFromRelationGraph()
 {
+	if (m_relGraph == NULL)
+	{
+		std::cout << "SceneSemGraph: relation graph is not generated.\n";
+		return;
+	}
+
 	for (int i = 0; i < m_relGraph->ESize(); i++)
 	{
 		// extract relationship node
+		
+		RelationGraph::Edge *relEdge =  m_relGraph->GetEdge(i);
+
+		switch (relEdge->t)
+		{
+			// e.g. table --> support --> laptop
+		case RelationGraph::CT_SUPPORT:
+			addNode(SSGNodeType[2], SSGRelationStrings[0]);
+			addEdge(relEdge->v1, m_nodeNum-1);
+			addEdge(m_nodeNum-1, relEdge->v2);
+			
+		case RelationGraph::CT_CONTAIN:
+
+		default:
+			break;
+		}
+
 
 		// insert edge and update node in/out edge list
 	}

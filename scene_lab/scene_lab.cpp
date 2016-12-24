@@ -165,3 +165,13 @@ void scene_lab::buildSemGraphForSceneList()
 
 	std::cout << "\nSceneLab: all scene semantic graph generated.\n";
 }
+
+void scene_lab::buildRelationGraphForCurrentScene()
+{
+	m_scene->buildSceneGraph();
+}
+
+void scene_lab::buildRelationGraphForSceneList()
+{
+
+}

@@ -2,6 +2,7 @@
 
 
 SemanticGraph::SemanticGraph()
+	: m_nodeNum(0), m_edgeNum(0)
 {
 }
 
@@ -25,8 +26,8 @@ void SemanticGraph::addEdge(int s, int t)
 	m_edges.push_back(newEdge);
 
 	// update node edge list
-	//m_nodes[s].outEdgeNodeList.push_back(newEdge.edgeId);
-	//m_nodes[t].inEdgeNodeList.push_back(newEdge.edgeId);
+	m_nodes[s].outEdgeNodeList.push_back(t);
+	m_nodes[t].inEdgeNodeList.push_back(s);
 
 	m_edgeNum++;
 }

@@ -1,5 +1,5 @@
 ﻿#include "Scene.h"
-#include "SceneGraph.h"
+#include "RelationGraph.h"
 //#include "SuppPlane.h"
 //#include "../action/Skeleton.h"
 #include "../utilities/utility.h"
@@ -237,17 +237,11 @@ void CScene::loadSceneFromFile(const QString &filename, int obbOnly, int metaDat
 
 	std::cout << "done\n";
 
-	m_sceneGraph = new SceneGraph(this);
+	m_sceneGraph = new RelationGraph(this);
 
 	QString graphFilename = m_sceneFilePath + "/" + m_sceneFileName + ".sg";
 
-	if (m_sceneGraph->readGraph(graphFilename) == -1)
-	{
-		m_sceneGraph->buildGraph();
-		m_sceneGraph->saveGraph(graphFilename);
-		std::cout << "\tstructure graph generated\n";
-	}
-	else
+	if (m_sceneGraph->readGraph(graphFilename) == 1)
 	{
 		std::cout << "\tstructure graph loaded\n";
 	}
@@ -265,6 +259,15 @@ void CScene::loadSceneFromFile(const QString &filename, int obbOnly, int metaDat
 	}
 
 	std::cout << "Scene loaded\n";
+}
+
+void CScene::buildSceneGraph()
+{
+	QString graphFilename = m_sceneFilePath + "/" + m_sceneFileName + ".sg";
+
+	m_sceneGraph->buildGraph();
+	m_sceneGraph->saveGraph(graphFilename);
+	std::cout << "\tstructure graph generated\n";
 }
 
 void CScene::buildModelDislayList(int showDiffColor /*= 1*/, int showFaceCluster /*= 0*/)
@@ -564,9 +567,6 @@ void CScene::setSupportChildrenLevel(CModel *m)
 } 
 
 
-
-
-
 void CScene::updateSceneGraph(int modelID)
 {
 	// scene graph should only be updated after model in inserted AND be transformed to new location
@@ -581,6 +581,7 @@ void CScene::updateSceneGraph(int modelID, int suppModelID, int suppPlaneID)
 //	updateSupportHierarchy(modelID, suppModelID, suppPlaneID);
 
 }
+
 
 
 //void CScene::computeTransformation(const std::vector<MathLib::Vector3> &source, const std::vector<MathLib::Vector3> &target, Eigen::Matrix4d &mat)

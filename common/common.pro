@@ -32,7 +32,7 @@ HEADERS += \
 	geometry/OBBEstimator.h \
 	geometry/BestFit.h \
 	geometry/TriTriIntersect.h \
-	geometry/SceneGraph.h \
+	geometry/RelationGraph.h \
 	geometry/UDGraph.h \
 	utilities/utility.h \
 	utilities/mathlib.h \
@@ -48,7 +48,7 @@ SOURCES += \
 	geometry/OBBEstimator.cpp \
 	geometry/BestFit.cpp \
 	geometry/TriTriIntersect.cpp \
-	geometry/SceneGraph.cpp \
+	geometry/RelationGraph.cpp \
 	geometry/UDGraph.cpp \
 	utilities/mathlib.cpp 
 	

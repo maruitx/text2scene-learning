@@ -4,7 +4,7 @@
 
 class CScene;
 
-class SceneGraph : public CUDGraph
+class RelationGraph : public CUDGraph
 {
 public:
 	typedef enum {
@@ -20,9 +20,9 @@ public:
 		CT_WEAK_SYM
 	} ConnType;
 
-	SceneGraph();
-	SceneGraph(CScene *s);
-	~SceneGraph();
+	RelationGraph();
+	RelationGraph(CScene *s);
+	~RelationGraph();
 
 	void buildGraph();
 	void updateGraph(int modelID); // update graph after add a new model

@@ -25,6 +25,9 @@ public slots:
 	void loadScene();
 	void loadSceneList();
 
+	void buildRelationGraphForCurrentScene();
+	void buildRelationGraphForSceneList();
+
 	void buildSemGraphForCurrentScene();
 	void buildSemGraphForSceneList();
 

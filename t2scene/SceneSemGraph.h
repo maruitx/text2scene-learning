@@ -8,10 +8,17 @@ class RelationGraph;
 class ModelDatabase;
 class MetaModel;
 
-const QString SSGNodeType[5] = { "object", "per_obj_attribute", "pairwise_relationship", "group_relationship", "group_attribute" };
-const QString SSGRelationStrings[15] = {"horizon_support", "vert_support", "contain", "above", "below", "leftside", "rightside", "front", "back", "near",
-"around", "aligned", "grouped", "stacked", "scattered"};
-const QString SSGAttributeStings[8] = {"messy", "clean", "organized", "disorganized", "formal", "casual", "spacious", "crowded"};
+const int NodeTypeNum = 5;
+const int SingleAttriNum = 7;
+const int PairRelNum = 10;
+const int GroupRelNum = 5;
+const int GroupAttriNum = 8;
+
+const QString SSGNodeType[] = { "object", "per_obj_attribute", "pairwise_relationship", "group_relationship", "group_attribute" };
+const QString SSGSingleAttriStrings[] = {"round", "rectangular", "office", "dining", "kitchen", "floor", "wall"};
+const QString SSGPairRelStrings[] = {"vert_support", "horizon_support", "contain", "above", "below", "leftside", "rightside", "front", "back", "near"};
+const QString SSGGroupRelStrings[] = {"around", "aligned", "grouped", "stacked", "scattered"};
+const QString SSGGroupAttrStings[] = {"messy", "clean", "organized", "disorganized", "formal", "casual", "spacious", "crowded"};
 
 class SceneSemGraph : public SemanticGraph
 {
@@ -28,6 +35,9 @@ public:
 	void extractRelationsFromRelationGraph();  // low-level/high-level relation node and edges to object node
 	void loadAttributeNodeFromAnnotation(); // high-level attribute node and edges to object node
 
+	void saveNodeStringToLabelIDMap(const QString &filename);
+	void saveGMTNodeAttributeFile(const QString &filename);
+
 private:
 	CScene *m_scene;
 	QString m_sceneFormat;
@@ -36,8 +46,9 @@ private:
 	ModelDatabase *m_modelDB;
 	
 	//std::vector<int> m_nonObjNodeIds;  // ids for relation/attribute node
-	//std::map<QString, int> m_modelStringToNodeIdMap;
 	std::vector<MetaModel*> m_metaModelList;
 	int m_modelNum;
+
+	std::map<QString, int> m_catStringToLabelIDMap;
 };
 

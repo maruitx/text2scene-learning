@@ -17,7 +17,7 @@ public:
 	CModel();
 	~CModel();
 
-	bool loadModel(QString filename, double metric = 1.0, int loadForRendering = 0, int metaDataOnly=0, QString sceneDbType = QString());
+	bool loadModel(QString filename, double metric = 1.0, int metaDataOnly = 0, int obbOnly = 0, int meshOnly = 0, QString sceneDbType = QString());
 	void saveModel(QString filename);
 	QString getModelFileName() { return m_fileName; };
 	QString getModelFilePath() { return m_filePath; };
@@ -54,6 +54,7 @@ public:
 	MathLib::Vector3 getMaxVert() { return m_AABB.GetMaxV(); };
 
 	// obb
+	void setSceneUpRightVec(const MathLib::Vector3 &m){ m_sceneUpRightVec = m; };
 	void computeOBB(int fixAxis = -1);
 	int loadOBB(const QString &sPathName = QString());
 	int saveOBB(const QString &sPathName = QString());
@@ -137,7 +138,7 @@ private:
 
 	int m_id;
 	double m_metric;
-	// m_sceneUpRightVec;
+	MathLib::Vector3 m_sceneUpRightVec;
 
 	//std::vector<int> m_annoOBBFaceIds;
 	//std::vector<int> m_annoTriIds;

@@ -15,7 +15,7 @@ public:
 	CScene();
 	~CScene();
 
-	void loadSceneFromFile(const QString &filename, int obbOnly=0, int loadForRendering=0, int metaDataOnly=0);
+	void loadSceneFromFile(const QString &filename, int metaDataOnly = 0, int obbOnly = 0, int meshOnly = 1);
 
 	void computeAABB();
 	void updateSeneAABB(CAABB addedBox) { m_AABB.Merge(addedBox); };
@@ -55,14 +55,14 @@ public:
 	double getFloorHeight();
 	double getSceneMetric() { return m_metric; };
 
-	void buildSceneGraph();
-	RelationGraph* getSceneGraph() { return m_sceneGraph; };
-	void updateSceneGraph(int modelID);
+	void buildRelationGraph();
+	RelationGraph* getSceneGraph() { return m_relationGraph; };
+	void updateRelationGraph(int modelID);
 	void buildSupportHierarchy();
 	void setSupportChildrenLevel(CModel *m);
 	//int findPlaneSuppPlaneID(int childModelID, int parentModelID);
 
-	void updateSceneGraph(int modelID, int suppModelID, int suppPlaneID);
+	void updateRelationGraph(int modelID, int suppModelID, int suppPlaneID);
 	//void updateSupportHierarchy(int modelID, int suppModelID, int suppPlaneID);
 
 	// collision
@@ -96,7 +96,8 @@ private:
 	//SuppPlane *m_floor;
 	double m_floorHeight;
 
-	RelationGraph *m_sceneGraph;
+	RelationGraph *m_relationGraph;
+	bool m_hasRelGraph;
 
 	// File info
 	QString m_sceneFileName;

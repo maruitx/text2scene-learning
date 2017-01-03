@@ -40,7 +40,7 @@ CModel::~CModel()
 	}
 }
 
-bool CModel::loadModel(QString filename, double metric, int loadForRendering, int metaDataOnly, QString sceneDbType)
+bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int obbOnly, int meshOnly, QString sceneDbType)
 {
 	m_metric = metric;
 
@@ -53,14 +53,13 @@ bool CModel::loadModel(QString filename, double metric, int loadForRendering, in
 
 	m_nameStr = m_fileName;;
 
-	if (!loadForRendering)
+
+	if (m_fileName.contains("_"))
 	{
-		if (m_fileName.contains("_"))
-		{
-			QStringList names = m_fileName.split("_");
-			m_nameStr = names[names.size() - 1];
-		}
+		QStringList names = m_fileName.split("_");
+		m_nameStr = names[names.size() - 1];
 	}
+
 
 	if (m_nameStr == "1ac1d0986508974bf1783a44a88d6275")
 	{
@@ -71,38 +70,63 @@ bool CModel::loadModel(QString filename, double metric, int loadForRendering, in
 	
 	if (metaDataOnly)
 	{
+		// return before loading obj data
 		return true;
 	}
 
-	bool isLoaded;
-	isLoaded = m_mesh->readObjFile(qPrintable(filename), metric, sceneDbType);
-
-	if (!isLoaded)
+	if (!obbOnly)
 	{
-		return false;
-	}
+		// load mesh data first
+		bool isLoaded;
+		isLoaded = m_mesh->readObjFile(qPrintable(filename), metric, sceneDbType);
 
-	computeAABB();
-	buildDisplayList(0, 0);
-
-	// do not compute OBB when load for rendering
-	if (!loadForRendering)
-	{
-		if (loadOBB() == -1)  
+		if (!isLoaded)
 		{
-			computeOBB(2); // fix Z
-			saveOBB();
+			return false;
 		}
 
-		//loadAnnoFile();
+		computeAABB();
+		buildDisplayList(0, 0);
 
-		// save the init info from file
-		m_initOBBDiagLen = m_OBB.GetDiagLength();
-		m_initOBBPos = getModelPosOBB();
-		m_initFrontDir = getFrontNormal();
+		if (meshOnly) 
+		{
+			// still try to load obb, no matter whether obb exists or not
+			loadOBB();
+		}
+		else  // load both obb and mesh, if obb not exist, compute obb
+		{
+			if (loadOBB() == -1)
+			{
+				if (m_sceneUpRightVec == MathLib::Vector3(0,0,1))
+				{
+					computeOBB(2); // fix Z
+				}
+				else if (m_sceneUpRightVec == MathLib::Vector3(0, 1, 0))
+				{
+					computeOBB(1); // fix Y
+				}
+				
+				saveOBB();
+			}
 
-		m_fullTransMat.setidentity();
-		m_lastTransMat.setidentity();
+			//loadAnnoFile();
+
+			// save the init info from file
+			m_initOBBDiagLen = m_OBB.GetDiagLength();
+			m_initOBBPos = getModelPosOBB();
+			m_initFrontDir = getFrontNormal();
+
+			m_fullTransMat.setidentity();
+			m_lastTransMat.setidentity();
+		}
+	}
+	else  // only load obb, if not exist, return
+	{
+		if (loadOBB() == -1)
+		{
+			std::cout << "\t OBB does not exist, please compute OBB first\n";
+			return false;
+		}
 	}
 
 	return true;

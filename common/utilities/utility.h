@@ -284,10 +284,19 @@ static int StringToInt(const std::string &s)
 	return result;
 }
 
-static std::vector<int> StringToIntegerList(const std::string &s, const std::string &prefix)
+static std::vector<int> StringToIntegerList(const std::string &s, const std::string &prefix, const std::string &separator = " ")
 {
-	std::string subString = PartitionString(s, prefix)[0];
-	std::vector<std::string> parts = PartitionString(subString, " ");
+	std::string subString;
+	if (prefix == "")
+	{
+		subString = s;
+	}
+	else
+	{
+		subString = PartitionString(s, prefix)[0];
+	}
+
+	std::vector<std::string> parts = PartitionString(subString, separator);
 
 	std::vector<int> result(parts.size());
 	for (unsigned int resultIndex = 0; resultIndex < result.size(); resultIndex++)
@@ -307,10 +316,18 @@ static float StringToFloat(const std::string &s)
 	return result;
 }
 
-static std::vector<float> StringToFloatList(const std::string &s, const std::string &prefix)
+static std::vector<float> StringToFloatList(const std::string &s, const std::string &prefix, const std::string &separator = " ")
 {
-	std::string subString = PartitionString(s, prefix)[0];
-	std::vector<std::string> parts = PartitionString(subString, " ");
+	std::string subString;
+	if (prefix == "")
+	{
+		subString = s;
+	}
+	else
+	{
+		subString = PartitionString(s, prefix)[0];
+	}
+	std::vector<std::string> parts = PartitionString(subString, separator);
 
 	std::vector<float> result(parts.size());
 	for (unsigned int resultIndex = 0; resultIndex < result.size(); resultIndex++)
@@ -528,6 +545,7 @@ static double randVonMise(double mean, double k)
 }
 
 
+// angle should be in radians
 static MathLib::Matrix4d GetRotMat(MathLib::Vector3 rotAxis, double angle)
 {
 	MathLib::Matrix4d rotMat;

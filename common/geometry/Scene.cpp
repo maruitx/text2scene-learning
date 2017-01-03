@@ -18,7 +18,8 @@ CScene::CScene()
 	m_metric = 1.0;
 	m_floorHeight = 0;
 
-	m_sceneGraph = NULL;
+	m_relationGraph = NULL;
+	m_hasRelGraph = false;
 	m_showSceneGaph = false;
 	m_showModelOBB = false;
 	m_showSuppPlane = false;
@@ -36,9 +37,9 @@ CScene::~CScene()
 	m_modelList.clear();
 	m_modelNameIdMap.clear();
 
-	if (m_sceneGraph!=NULL)
+	if (m_relationGraph!=NULL)
 	{
-		delete m_sceneGraph;
+		delete m_relationGraph;
 	}
 
 	m_showSceneGaph = false;
@@ -46,7 +47,7 @@ CScene::~CScene()
 	m_showSuppPlane = false;
 }
 
-void CScene::loadSceneFromFile(const QString &filename, int obbOnly, int metaDataOnly, int loadForRendering)
+void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int obbOnly, int meshOnly)
 {
 
 	QFile inFile(filename);
@@ -78,11 +79,31 @@ void CScene::loadSceneFromFile(const QString &filename, int obbOnly, int metaDat
 
 	m_sceneFormat = databaseType;
 
-	std::cout << "\tloading objects...";
+	if (!obbOnly)
+	{
+		if (meshOnly)
+		{
+			std::cout << "\tloading objects without obb...\n";
+		}
+		else
+		{
+			std::cout << "\tloading objects with obb...\n";
+		}
+	}
+	else
+	{
+		std::cout << "\tloading objects with obb only...\n";
+	}
 
-	if (databaseType == QString("StanfordSceneDatabase"))
+	if (databaseType == QString("StanfordSceneDatabase") || databaseType == QString("SceneNNConversionOutput"))
 	{
 		m_metric = 0.0254; // convert from 1 inch to 1 meter
+
+		if (databaseType == QString("SceneNNConversionOutput"))
+		{
+			m_metric = 1.0;
+			//m_uprightVec = MathLib::Vector3(0, 1, 0);
+		}
 
 		int currModelID = -1;
 
@@ -103,15 +124,15 @@ void CScene::loadSceneFromFile(const QString &filename, int obbOnly, int metaDat
 				int modelIndex = StringToInt(parts[1]);
 
 				CModel *newModel = new CModel();				
-				newModel->loadModel(m_modelDBPath + "/" + QString(parts[2].c_str()) + ".obj", 1.0, loadForRendering, metaDataOnly, databaseType);
-				//newModel->setSceneUpRightVec(m_uprightVec);
+				newModel->loadModel(m_modelDBPath + "/" + QString(parts[2].c_str()) + ".obj", 1.0, metaDataOnly, obbOnly, meshOnly, databaseType);
+				newModel->setSceneUpRightVec(m_uprightVec);
 
 				currModelID += 1;
 				newModel->setID(currModelID);
 				//newModel->setJobName(m_jobName);
 				m_modelList[currModelID] = newModel;
 
-				m_modelCatNameList.push_back(newModel->getCatName());
+				m_modelCatNameList.push_back(newModel->getCatName());				
 			}
 
 			if (currLine.contains("transform "))
@@ -122,9 +143,17 @@ void CScene::loadSceneFromFile(const QString &filename, int obbOnly, int metaDat
 				//Eigen::Matrix4f transMat(transformVec.data()); // transformation vector in scene file is column wise as Eigen
 
 				MathLib::Matrix4d transMat(transformVec);
+
+				if (databaseType == "SceneNNConversionOutput")
+				{
+					MathLib::Matrix4d rotMat = GetRotMat(MathLib::Vector3(1, 0, 0), -MathLib::ML_PI_2);
+					transMat = rotMat*transMat;
+				}
 				
 				m_modelList[currModelID]->setInitTransMat(transMat);
 				m_modelList[currModelID]->transformModel(transMat);
+
+				std::cout << "\t\t" << currModelID + 1 << "/" << m_modelNum << " models loaded\r";
 			}
 		}
 	}
@@ -226,25 +255,26 @@ void CScene::loadSceneFromFile(const QString &filename, int obbOnly, int metaDat
 	//	}
 	//}
 
+	std::cout << "\n";
+
+	m_relationGraph = new RelationGraph(this);
+
+	QString graphFilename = m_sceneFilePath + "/" + m_sceneFileName + ".sg";
+
+	if (m_relationGraph->readGraph(graphFilename) != -1)
+	{
+		m_hasRelGraph = true;
+		std::cout << "\tstructure graph loaded\n";
+	}
+
 	if (metaDataOnly)
 	{
-		std::cout << "\Scene loaded\n";
+		std::cout << "Scene loaded\n";
 		return;
 	}
 
 	computeAABB();
 	buildModelDislayList();
-
-	std::cout << "done\n";
-
-	m_sceneGraph = new RelationGraph(this);
-
-	QString graphFilename = m_sceneFilePath + "/" + m_sceneFileName + ".sg";
-
-	if (m_sceneGraph->readGraph(graphFilename) == 1)
-	{
-		std::cout << "\tstructure graph loaded\n";
-	}
 
 	//	buildSupportHierarchy();
 
@@ -261,13 +291,25 @@ void CScene::loadSceneFromFile(const QString &filename, int obbOnly, int metaDat
 	std::cout << "Scene loaded\n";
 }
 
-void CScene::buildSceneGraph()
+void CScene::buildRelationGraph()
 {
+	std::cout << "\tstart build relation graph for "<< m_sceneFileName.toStdString()<< "...";
+
 	QString graphFilename = m_sceneFilePath + "/" + m_sceneFileName + ".sg";
 
-	m_sceneGraph->buildGraph();
-	m_sceneGraph->saveGraph(graphFilename);
-	std::cout << "\tstructure graph generated\n";
+	if (m_sceneFormat == "SceneNNConversionOutput")
+	{
+		for (int i = 0; i < m_modelNum; i++)
+		{
+			m_modelList[i]->computeOBB(2);
+		}
+	}
+
+	m_relationGraph->buildGraph();
+	m_relationGraph->saveGraph(graphFilename);
+
+	m_hasRelGraph = true;
+	std::cout << " done.\n";
 }
 
 void CScene::buildModelDislayList(int showDiffColor /*= 1*/, int showFaceCluster /*= 0*/)
@@ -280,9 +322,9 @@ void CScene::buildModelDislayList(int showDiffColor /*= 1*/, int showFaceCluster
 
 void CScene::draw()
 {
-	if (m_showSceneGaph && !m_sceneGraph->IsEmpty())
+	if (m_showSceneGaph && m_hasRelGraph)
 	{
-		m_sceneGraph->drawGraph();
+		m_relationGraph->drawGraph();
 
 		foreach(CModel *m, m_modelList)
 		{
@@ -567,17 +609,17 @@ void CScene::setSupportChildrenLevel(CModel *m)
 } 
 
 
-void CScene::updateSceneGraph(int modelID)
+void CScene::updateRelationGraph(int modelID)
 {
 	// scene graph should only be updated after model in inserted AND be transformed to new location
-	m_sceneGraph->updateGraph(modelID);
+	m_relationGraph->updateGraph(modelID);
 	//buildSupportHierarchy();  //update
 }
 
-void CScene::updateSceneGraph(int modelID, int suppModelID, int suppPlaneID)
+void CScene::updateRelationGraph(int modelID, int suppModelID, int suppPlaneID)
 {
 	// only update graph linking with support model
-	m_sceneGraph->updateGraph(modelID, suppModelID);
+	m_relationGraph->updateGraph(modelID, suppModelID);
 //	updateSupportHierarchy(modelID, suppModelID, suppPlaneID);
 
 }

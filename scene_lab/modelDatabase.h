@@ -15,6 +15,7 @@ public:
 	QString getCatName() { return m_categoryName; };
 
 	void addShapeNetCatName(const QString &s) { m_shapeNetCategoryNames.push_back(s); };
+	void addWordNetLemmas(const QString &s) { m_wordNetLemmas.push_back(s); };
 	QString getProcessedCatName();
 
 	void setScale(double s) { m_scale = s; };
@@ -26,11 +27,14 @@ public:
 	void setTransMat(const MathLib::Matrix4d &m) { m_initTrans = m; };
 	MathLib::Matrix4d getTransMat() { return m_initTrans; };
 
+	int m_dbID;
+
 private:
 	QString m_idStr;
 	QString m_categoryName;
 
 	std::vector<QString> m_shapeNetCategoryNames;
+	std::vector<QString> m_wordNetLemmas;
 	std::vector<QString> m_tags;
 
 	double m_scale;
@@ -74,6 +78,7 @@ public:
 	std::map<QString, MetaModel*> dbMetaModels; // <modelIdStr, CandidateModel>
 	std::map<QString, Category*> dbCategories;  // <categoryName, categoryStruct>
 
+	std::vector<std::string> modelMetaInfoStrings;
 
 private:
 	QString m_dbPath;

@@ -22,6 +22,8 @@ scene_lab_widget::scene_lab_widget(scene_lab *s_lab, QWidget *parent/*=0*/)
 
 	connect(ui->buildRelationGraphButton, SIGNAL(clicked()), m_scene_lab, SLOT(buildRelationGraphForCurrentScene()));
 	connect(ui->buildRGForListButton, SIGNAL(clicked()), m_scene_lab, SLOT(buildRelationGraphForSceneList()));
+
+	connect(ui->collectMetaInfoButton, SIGNAL(clicked()), m_scene_lab, SLOT(collectModelInfoForSceneList()));
 	
 }
 

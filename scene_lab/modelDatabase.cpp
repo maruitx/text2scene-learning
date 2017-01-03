@@ -185,12 +185,12 @@ CModel* ModelDatabase::getModelById(QString idStr)
 	}
 	//m->loadModel(m_dbPath + "/wss.models/models/" + idStr +".obj", candiModel->getScale());
 
-	m->loadModel(m_dbPath + "/" + idStr + ".obj", 1.0, 0, 0, "SimpleSceneFormat");  // load model and cat name in .anno file
+	m->loadModel(m_dbPath + "/" + idStr + ".obj", 1.0, 0, 0, 1, "SimpleSceneFormat");  // load model and cat name in .anno file
 
 	//QString catName = getModelCat("wss." + idStr);
 	//m->setCatName(catName);   // set cat name in DB csv file
 	
-	return m;
+	return m; 
 }
 
 Category* ModelDatabase::getCategory(QString catName)
@@ -207,7 +207,7 @@ Category* ModelDatabase::getCategory(QString catName)
 
 	if (dbCategories.count(catName) == 0)
 	{
-		QString synName;
+		QString synName; 
 
 		if (catName == "officechair")
 		{
@@ -444,6 +444,7 @@ void ModelDatabase::loadShapeNetSemTxt()
 	QString shapeNetSemTxtFileName = m_dbPath + "/" + m_dbMetaFileType + ".txt";
 
 	auto lines = GetFileLines(shapeNetSemTxtFileName.toStdString(), 3);
+	modelMetaInfoStrings = std::vector<std::string>(lines.begin()+1, lines.end());
 
 	// parsing from second line
 	for (int i = 1; i < lines.size(); i++)
@@ -455,6 +456,7 @@ void ModelDatabase::loadShapeNetSemTxt()
 		modelIdStr.remove("wss.");
 
 		MetaModel *candiModel = new MetaModel(modelIdStr);
+		candiModel->m_dbID = i - 1;
 
 		if (parts[6] != "")   // some model's scale is empty
 		{
@@ -507,6 +509,27 @@ void ModelDatabase::loadShapeNetSemTxt()
 				dbCategories[catNameList[0].c_str()]->addSubCatNames(QString(catNameList[c].c_str()));
 			}
 		}
+
+		// read wnlemmas
+		if (parts.size() >= 4 && parts[3].size() > 0)
+		{
+			QString wnLemmas = QString(parts[3].c_str());
+
+			if (wnLemmas.contains("\""))
+			{
+				wnLemmas.remove("\"");
+			}
+
+			wnLemmas = wnLemmas.toLower();
+
+			// split cat names
+			auto wnLemmaList = PartitionString(wnLemmas.toStdString(), ",");
+			for (int w = 0; w < wnLemmaList.size(); w++)
+			{
+				candiModel->addWordNetLemmas(QString(wnLemmaList[w].c_str()));
+			}
+		}
+
 	}
 }
 
@@ -534,6 +557,8 @@ MetaModel::MetaModel()
 	m_categoryName = "";
 	m_scale = 1.0;
 	m_initTrans = MathLib::Matrix4d::Identity_Matrix;
+
+	m_dbID = -1;
 }
 
 MetaModel::MetaModel(const QString &s)
@@ -542,11 +567,39 @@ MetaModel::MetaModel(const QString &s)
 	m_categoryName = "";
 	m_scale = 1.0;
 	m_initTrans = MathLib::Matrix4d::Identity_Matrix;
+
+	m_dbID = -1;
 }
 
 QString MetaModel::getProcessedCatName()
 {
-	QString processedCatName = m_shapeNetCategoryNames[0];
+	QString processedCatName;
+
+	const int badCatNum = 8;
+	QString badCatNames[badCatNum] = { "_stanfordscenedbmodels", "_scenegallerymodels", "_oimwhitelist", "drinkingutensil", "_attributestrain", "_evalsetinscenes", "_attributes", "_pilotstudymodels" };
+
+	for (int i = 0; i < badCatNum; i++)
+	{
+		auto it = std::find(m_shapeNetCategoryNames.begin(), m_shapeNetCategoryNames.end(), badCatNames[i]);
+		if (it != m_shapeNetCategoryNames.end())
+			m_shapeNetCategoryNames.erase(it);
+	}
+
+	if (m_shapeNetCategoryNames.empty())
+	{
+		if (!m_wordNetLemmas.empty())
+		{
+			processedCatName = m_wordNetLemmas[0];
+		}
+		else
+		{
+			processedCatName = "noname";
+		}
+		
+		return processedCatName;
+	}
+
+	processedCatName = m_shapeNetCategoryNames[0];
 
 	if (m_shapeNetCategoryNames[0] == "chestofdrawers")
 	{

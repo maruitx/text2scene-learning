@@ -50,13 +50,6 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="QPushButton" name="buildSSGForListButton">
-        <property name="text">
-         <string>Build SSGs for List</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="0">
        <widget class="QPushButton" name="buildRelationGraphButton">
         <property name="text">
@@ -64,10 +57,24 @@
         </property>
        </widget>
       </item>
+      <item row="1" column="1">
+       <widget class="QPushButton" name="buildSSGForListButton">
+        <property name="text">
+         <string>Build SSGs for List</string>
+        </property>
+       </widget>
+      </item>
       <item row="0" column="1">
        <widget class="QPushButton" name="buildRGForListButton">
         <property name="text">
          <string>Build RGs for List</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QPushButton" name="collectMetaInfoButton">
+        <property name="text">
+         <string>Collect MetaInfo for List</string>
         </property>
        </widget>
       </item>

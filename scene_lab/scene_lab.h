@@ -28,8 +28,10 @@ public slots:
 	void buildRelationGraphForCurrentScene();
 	void buildRelationGraphForSceneList();
 
-	void buildSemGraphForCurrentScene();
+	void buildSemGraphForCurrentScene(int batchLoading = 0);
 	void buildSemGraphForSceneList();
+
+	void collectModelInfoForSceneList();
 
 	void updateSceneRenderingOptions();
 

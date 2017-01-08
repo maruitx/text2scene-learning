@@ -6,7 +6,7 @@
 class CScene;
 class RelationGraph;
 class ModelDatabase;
-class MetaModel;
+class DBMetaModel;
 
 const int NodeTypeNum = 5;
 const int SingleAttriNum = 7;
@@ -32,7 +32,11 @@ public:
 
 	void generateGraph();	
 	void buildFromModelDBAnnotation();  // low-level attribute node and edges to object node
+	
 	void extractRelationsFromRelationGraph();  // low-level/high-level relation node and edges to object node
+	void extractSpatialSideRel(); // only extract the side info for objs with support level 0
+	std::vector<QString> computeSpatialSideRelForModelPair(int refModelId, int testModelId);
+
 	void loadAttributeNodeFromAnnotation(); // high-level attribute node and edges to object node
 
 	void saveNodeStringToLabelIDMap(const QString &filename);
@@ -46,7 +50,7 @@ private:
 	ModelDatabase *m_modelDB;
 	
 	//std::vector<int> m_nonObjNodeIds;  // ids for relation/attribute node
-	std::vector<MetaModel*> m_metaModelList;
+	std::vector<DBMetaModel*> m_metaModelList;
 	int m_modelNum;
 
 	std::map<QString, int> m_catStringToLabelIDMap;

@@ -28,8 +28,8 @@ public:
 	void updateGraph(int modelID); // update graph after add a new model
 	void updateGraph(int modelID, int suppModelID);  // update graph with known support model
 
-	void computeOnTopList();
-	std::vector<int>& getOnTopList() { return m_onTopList; };
+	void computeSupportParentForModels();
+	std::vector<std::vector<int>> getSupportParentListForModels() { return m_supportParentListForModels; };
 
 	void drawGraph();
 
@@ -48,7 +48,7 @@ private:
 	CScene *m_scene;
 	int m_nodeNum;
 
-	std::vector<int>				m_onTopList;			// on top list
+	std::vector<std::vector<int>>				m_supportParentListForModels;			// on top list
 	//CDistMat<double>					m_modelDistMat;			// model center distance matrix
 	//CDistMat<double>					m_ConnStrenMat;			// connection strength matrix
 

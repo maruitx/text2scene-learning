@@ -49,7 +49,7 @@ void ModelDBViewer_widget::setModelIdWidgetForCat(const QString &catName)
 	
 	for (int i = 0; i < instanceNum; i++)
 	{
-		MetaModel* currModel = currCat->modelInstances[i];
+		DBMetaModel* currModel = currCat->modelInstances[i];
 		ui.modelIdListWidget->addItem(currModel->getIdStr());
 	}
 

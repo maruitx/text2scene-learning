@@ -49,7 +49,7 @@ void ModelDatabase::loadModelTsv(const QString &modelsTsvFile)
 		auto parts = PartitionString(line, "\t");
 
 		QString modelIdStr = QString(parts[0].c_str());
-		MetaModel *cm = new MetaModel(modelIdStr);			
+		DBMetaModel *cm = new DBMetaModel(modelIdStr);			
 		dbMetaModels[modelIdStr] = cm;
 
 		if (parts.size() >= 2 && parts[1].size() > 0)
@@ -116,7 +116,7 @@ bool ModelDatabase::loadSceneSpecifiedModelFile(const QString &filename, QString
 		QStringList lineparts = currLine.split("_");
 
 		QString modelIdStr = lineparts[lineparts.size() - 1];
-		MetaModel *cm = new MetaModel(modelIdStr);
+		DBMetaModel *cm = new DBMetaModel(modelIdStr);
 		dbMetaModels[modelIdStr] = cm;
 
 		QString catName = lineparts[0];
@@ -166,7 +166,7 @@ bool ModelDatabase::loadSceneSpecifiedModelFile(const QString &filename, QString
 CModel* ModelDatabase::getModelByCat(const QString &catName)
 {
 	Category* currCat = getCategory(catName);
-	MetaModel* candiModel = currCat->sampleInstance();
+	DBMetaModel* candiModel = currCat->sampleInstance();
 
 	QString modelIdStr = candiModel->getIdStr();
 	
@@ -296,7 +296,7 @@ void ModelDatabase::extractScaledAnnoModels()
 
 		foreach(QString s, modelNames)
 		{
-			MetaModel *m = dbMetaModels[s];
+			DBMetaModel *m = dbMetaModels[s];
 
 			if (m!=NULL)    // skip those with no category in model_categories.tsv, e.g. room
 			{
@@ -426,7 +426,7 @@ int ModelDatabase::getModelNum()
 
 QString ModelDatabase::getModelIdStr(int id)
 {
-	std::map<QString, MetaModel*>::iterator it = dbMetaModels.begin();
+	std::map<QString, DBMetaModel*>::iterator it = dbMetaModels.begin();
 
 	std::advance(it, id);
 
@@ -435,12 +435,14 @@ QString ModelDatabase::getModelIdStr(int id)
 
 QString ModelDatabase::getModelCat(const QString &idStr)
 {
-	MetaModel *cm = dbMetaModels[idStr];
+	DBMetaModel *cm = dbMetaModels[idStr];
 	return cm->getCatName();
 }
 
 void ModelDatabase::loadShapeNetSemTxt()
 {
+	std::cout << "\t Loading model annotation from shapeNet meta file...";
+
 	QString shapeNetSemTxtFileName = m_dbPath + "/" + m_dbMetaFileType + ".txt";
 
 	auto lines = GetFileLines(shapeNetSemTxtFileName.toStdString(), 3);
@@ -455,8 +457,31 @@ void ModelDatabase::loadShapeNetSemTxt()
 		
 		modelIdStr.remove("wss.");
 
-		MetaModel *candiModel = new MetaModel(modelIdStr);
-		candiModel->m_dbID = i - 1;
+		DBMetaModel *candiModel = new DBMetaModel(modelIdStr);
+		candiModel->dbID = i - 1;
+
+		// right dir
+		if (parts[4] == "")
+		{
+			candiModel->upDir = MathLib::Vector3(0, 0, 1); // default up dir
+		}
+		else
+		{
+			std::vector<int> dirElementList = StringToIntegerList(parts[4], "", "\,");
+			candiModel->upDir = MathLib::Vector3(dirElementList[0], dirElementList[1], dirElementList[2]);
+		}
+
+
+		// front dir
+		if (parts[5] == "")
+		{
+			candiModel->frontDir = MathLib::Vector3(0, -1, 0); // default front dir
+		}
+		else
+		{
+			std::vector<int> dirElementList = StringToIntegerList(parts[5], "", "\,");
+			candiModel->frontDir = MathLib::Vector3(dirElementList[0], dirElementList[1], dirElementList[2]);
+		}
 
 		if (parts[6] != "")   // some model's scale is empty
 		{
@@ -529,11 +554,12 @@ void ModelDatabase::loadShapeNetSemTxt()
 				candiModel->addWordNetLemmas(QString(wnLemmaList[w].c_str()));
 			}
 		}
-
 	}
+
+	std::cout << " done.\n";
 }
 
-MetaModel* ModelDatabase::getMetaModelByNameString(const QString &s)
+DBMetaModel* ModelDatabase::getMetaModelByNameString(const QString &s)
 {
 	return dbMetaModels[s]; 
 }
@@ -551,32 +577,53 @@ bool ModelDatabase::isModelInDB(const QString &s)
 	}
 }
 
-MetaModel::MetaModel()
+DBMetaModel::DBMetaModel()
 {
 	m_idStr = "";
 	m_categoryName = "";
 	m_scale = 1.0;
 	m_initTrans = MathLib::Matrix4d::Identity_Matrix;
 
-	m_dbID = -1;
+	dbID = -1;
+	frontDir = MathLib::Vector3(0, -1, 0);
+	upDir = MathLib::Vector3(0, 0, 1);
+	position = MathLib::Vector3(0, 0, 0);
 }
 
-MetaModel::MetaModel(const QString &s)
+DBMetaModel::DBMetaModel(const QString &s)
 {
 	m_idStr = s;
 	m_categoryName = "";
 	m_scale = 1.0;
 	m_initTrans = MathLib::Matrix4d::Identity_Matrix;
 
-	m_dbID = -1;
+	dbID = -1;
+	frontDir = MathLib::Vector3(0, -1, 0);
+	upDir = MathLib::Vector3(0, 0, 1);
+	position = MathLib::Vector3(0, 0, 0);
 }
 
-QString MetaModel::getProcessedCatName()
+// copy from m
+DBMetaModel::DBMetaModel(DBMetaModel *m)
+{
+	m_idStr = m->m_idStr;
+	m_categoryName = m->m_categoryName;
+	m_scale = m->m_scale;
+	m_initTrans = m->m_initTrans;
+
+	dbID = m->dbID;
+	frontDir = m->frontDir;
+	upDir = m->upDir;
+	position = m->position;
+}
+
+QString DBMetaModel::getProcessedCatName()
 {
 	QString processedCatName;
 
-	const int badCatNum = 8;
-	QString badCatNames[badCatNum] = { "_stanfordscenedbmodels", "_scenegallerymodels", "_oimwhitelist", "drinkingutensil", "_attributestrain", "_evalsetinscenes", "_attributes", "_pilotstudymodels" };
+	const int badCatNum = 11;
+	QString badCatNames[badCatNum] = { "_stanfordscenedbmodels", "_scenegallerymodels", "_oimwhitelist", "_attributestrain", 
+		"_attributes", "_evalsetinscenes", "_pilotstudymodels", "_geoautotagevalset", "_randomsetstudymodels", "drinkingutensil", "fooditem"};
 
 	for (int i = 0; i < badCatNum; i++)
 	{
@@ -612,12 +659,12 @@ QString MetaModel::getProcessedCatName()
 	return processedCatName;
 }
 
-const QString& MetaModel::getShapeNetCatsStr()
+const QString& DBMetaModel::getShapeNetCatsStr()
 {
 	return QString();
 }
 
-MetaModel::~MetaModel()
+DBMetaModel::~DBMetaModel()
 {
 
 }

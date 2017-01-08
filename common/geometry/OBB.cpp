@@ -3,7 +3,7 @@
 #include <fstream>
 #include <Set>
 
-#include "OBBEstimator.h"
+//#include "OBBEstimator.h"
 
 GLuint COBB::s_edl = 0;
 
@@ -1165,18 +1165,18 @@ bool COBB::IsOnTop(COBB &obb, const MathLib::Vector3 &upright, double &pd) const
 	}
 }
 
-double COBB::ConnStrength_OBB(const COBB &obb, int iFixA/*=-1*/) const
-{
-	std::vector<MathLib::Vector3> VL;	// vertex list
-	std::copy(vp.begin(), vp.end(), std::back_inserter(VL));
-	std::copy(obb.vp.begin(), obb.vp.end(), std::back_inserter(VL));
-	COBB tobb;
-	COBBEstimator OBBE(&VL, &tobb);
-	OBBE.ComputeOBB_Min(iFixA);
-	return (vol + obb.vol) / tobb.vol;
-}
+//double COBB::ConnStrength_OBB(const COBB &obb, int iFixA/*=-1*/) const
+//{
+//	std::vector<MathLib::Vector3> VL;	// vertex list
+//	std::copy(vp.begin(), vp.end(), std::back_inserter(VL));
+//	std::copy(obb.vp.begin(), obb.vp.end(), std::back_inserter(VL));
+//	COBB tobb;
+//	COBBEstimator OBBE(&VL, &tobb);
+//	OBBE.ComputeOBB_Min(iFixA);
+//	return (vol + obb.vol) / tobb.vol;
+//}
 
-bool COBB::IsContact(const COBB &obb, double ta, double td, MathLib::Vector3 &dir) const
+bool COBB::IsContact(const COBB &obb, double angleTh, double distTh, MathLib::Vector3 &dir) const
 {
 	const std::vector<MathLib::Vector3> &VI = vp;
 	const std::vector<MathLib::Vector3> &AI = axis;
@@ -1193,14 +1193,40 @@ bool COBB::IsContact(const COBB &obb, double ta, double td, MathLib::Vector3 &di
 			// 					return true;
 			// 				}
 			// 			}
-			if (ContactTriTri(VI[boxTriFace[i][0]], VI[boxTriFace[i][1]], VI[boxTriFace[i][2]], FNI, VJ[boxTriFace[j][0]], VJ[boxTriFace[j][1]], VJ[boxTriFace[j][2]], FNJ, ta, td, true)) {
+			if (ContactTriTri(VI[boxTriFace[i][0]], VI[boxTriFace[i][1]], VI[boxTriFace[i][2]], FNI, VJ[boxTriFace[j][0]], VJ[boxTriFace[j][1]], VJ[boxTriFace[j][2]], FNJ, angleTh, distTh, true)) {
 				dir = FNI;
+				return true;
+			}
+
+			if (ContactTriTri(VI[boxTriFace[j][0]], VI[boxTriFace[j][1]], VI[boxTriFace[j][2]], FNJ, VJ[boxTriFace[i][0]], VJ[boxTriFace[i][1]], VJ[boxTriFace[i][2]], FNI, angleTh, distTh, true)) {
 				return true;
 			}
 		}
 	}
 	return false;
 }
+
+
+bool COBB::IsIntersect(const COBB &obb) const
+{
+	const std::vector<MathLib::Vector3> &VI = vp;
+	const std::vector<MathLib::Vector3> &AI = axis;
+	const std::vector<MathLib::Vector3> &VJ = obb.vp;
+	const std::vector<MathLib::Vector3> &AJ = obb.axis;
+	MathLib::Vector3 FNI, FNJ;
+	for (int i = 0; i < boxNumFace; i++) {
+		FNI.set(AI[boxFaceNormalOrientAlongAxis[i][0]][0] * boxFaceNormalOrientAlongAxis[i][1], AI[boxFaceNormalOrientAlongAxis[i][0]][1] * boxFaceNormalOrientAlongAxis[i][1], AI[boxFaceNormalOrientAlongAxis[i][0]][2] * boxFaceNormalOrientAlongAxis[i][1]);
+		for (int j = 0; j < boxNumFace; j++) {
+			FNJ.set(AJ[boxFaceNormalOrientAlongAxis[j][0]][0] * boxFaceNormalOrientAlongAxis[j][1], AJ[boxFaceNormalOrientAlongAxis[j][0]][1] * boxFaceNormalOrientAlongAxis[j][1], AJ[boxFaceNormalOrientAlongAxis[j][0]][2] * boxFaceNormalOrientAlongAxis[j][1]);
+
+			if (IntersectTriTri(VI[boxTriFace[i][0]], VI[boxTriFace[i][1]], VI[boxTriFace[i][2]], VJ[boxTriFace[j][0]], VJ[boxTriFace[j][1]], VJ[boxTriFace[j][2]])) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 
 bool COBB::IsSupport(const COBB &obb, double ta, double td, const MathLib::Vector3 &upright) const
 {

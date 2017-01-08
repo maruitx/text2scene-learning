@@ -1,7 +1,7 @@
 #include "../common/utilities/utility.h"
 
 
-class MetaModel;
+class DBMetaModel;
 
 class Category
 {
@@ -9,11 +9,11 @@ public:
 	Category();
 	Category(const QString &s);
 	~Category();
-	MetaModel* sampleInstance();
+	DBMetaModel* sampleInstance();
 	void setCatName(const QString &n) { m_catName = n; };
 	QString getCatName() { return m_catName; };
 
-	void addInstance(MetaModel *m) { modelInstances.push_back(m); };
+	void addInstance(DBMetaModel *m) { modelInstances.push_back(m); };
 	int getInstanceNum() { return modelInstances.size(); };
 
 	void setCatgoryLevel(int l){ m_categoryLevel = l; };
@@ -23,7 +23,7 @@ public:
 	bool isInModelBlackList(const QString &s);
 	bool isSharedModel(const QString &s);
 
-	std::vector<MetaModel*> modelInstances;
+	std::vector<DBMetaModel*> modelInstances;
 
 private:
 	QString m_catName;

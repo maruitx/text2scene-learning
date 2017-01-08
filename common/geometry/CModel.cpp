@@ -13,9 +13,13 @@ CModel::CModel()
 	//m_suppPlaneManager = NULL;
 	m_hasOBB = false;
 
+	m_fullTransMat.setidentity();
+	m_lastTransMat.setidentity();
+	m_initFrontDir = MathLib::Vector3(0, -1, 0);
+
 	suppParentID = -1;
 	parentSuppPlaneID = -1;
-	supportLevel = -1;
+	supportLevel = -10;
 
 	m_status = 0;
 
@@ -42,7 +46,7 @@ CModel::~CModel()
 
 bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int obbOnly, int meshOnly, QString sceneDbType)
 {
-	m_metric = metric;
+	m_modelMetric = metric;
 
 	int cutPos = filename.lastIndexOf("/");
 	m_filePath = filename.left(cutPos);
@@ -70,6 +74,9 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 	
 	if (metaDataOnly)
 	{
+		// still try to load obb, because we want to save the center of the model
+		loadOBB();
+
 		// return before loading obj data
 		return true;
 	}
@@ -97,27 +104,21 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 		{
 			if (loadOBB() == -1)
 			{
-				if (m_sceneUpRightVec == MathLib::Vector3(0,0,1))
+				if (m_sceneUpVec == MathLib::Vector3(0,0,1))
 				{
 					computeOBB(2); // fix Z
 				}
-				else if (m_sceneUpRightVec == MathLib::Vector3(0, 1, 0))
+				else if (m_sceneUpVec == MathLib::Vector3(0, 1, 0))
 				{
 					computeOBB(1); // fix Y
 				}
+
+				m_hasOBB = true;
 				
 				saveOBB();
 			}
 
 			//loadAnnoFile();
-
-			// save the init info from file
-			m_initOBBDiagLen = m_OBB.GetDiagLength();
-			m_initOBBPos = getModelPosOBB();
-			m_initFrontDir = getFrontNormal();
-
-			m_fullTransMat.setidentity();
-			m_lastTransMat.setidentity();
 		}
 	}
 	else  // only load obb, if not exist, return
@@ -327,9 +328,16 @@ void CModel::draw(bool showModel, bool showOBB, bool showSuppPlane, bool showFro
 		return;
 	}
 
-	if (m_hasOBB&& showSuppChildOBB && supportLevel == 1)
+	if (m_hasOBB && showOBB)
 	{
-		m_OBB.DrawBox(0, 0, 0, showFrontDir, 1);
+		if (showSuppChildOBB && supportLevel == 0)
+		{
+			m_OBB.DrawBox(0, 0, 0, showFrontDir, 1);
+		}
+		else
+		{
+			m_OBB.DrawBox(0, 0, 0, showFrontDir, 0);
+		}
 	}
 
 	if (showFrontDir)
@@ -338,10 +346,7 @@ void CModel::draw(bool showModel, bool showOBB, bool showSuppPlane, bool showFro
 		drawFrontDir();
 	}
 
-	if (m_hasOBB && showOBB && !showSuppChildOBB)
-	{
-		m_OBB.DrawBox(0, 0, 0, showFrontDir, 0);
-	}
+
 
 	if (showModel)
 	{
@@ -425,6 +430,11 @@ void CModel::transformModel(const MathLib::Matrix4d &transMat)
 	{
 		m_OBB.Transform(transMat);
 	}
+
+	// transform front dir
+	m_initFrontDir = transMat.transformVec(m_initFrontDir);
+	m_initFrontDir.normalize();
+	m_initFrontDir = m_initFrontDir / m_sceneMetric;
 
 	buildDisplayList();
 
@@ -579,6 +589,10 @@ int CModel::loadOBB(const QString &sPathName /*= QString()*/)
 	}
 
 	m_hasOBB = true;
+
+	// save the init info from file
+	m_initOBBDiagLen = m_OBB.GetDiagLength();
+	m_initOBBPos = getModelPosOBB();
 	return 0;
 }
 
@@ -618,7 +632,7 @@ bool CModel::IsSupport(CModel *pOther, bool roughOBB, double dDistT, const MathL
 		return true;
 	}
 
-	if (m_OBB.IsSupport(pOther->m_OBB, dAngleT, dDistT * 2, Upright)) {
+	if (m_OBB.IsSupport(pOther->m_OBB, dAngleT, dDistT, Upright)) {
 		return true;
 	}
 
@@ -635,7 +649,7 @@ bool CModel::IsSupport(CModel *pOther, bool roughOBB, double dDistT, const MathL
 	{
 		std::vector<int> &FI = faces[fi];
 		const MathLib::Vector3 &FNI = faceNormals[fi];
-		if (MathLib::Acos(MathLib::Abs(FNI.dot(Upright))) > 1.0) {
+		if (MathLib::Acos(MathLib::Abs(FNI.dot(Upright))) > dAngleT) {
 			continue;
 		}
 
@@ -643,6 +657,10 @@ bool CModel::IsSupport(CModel *pOther, bool roughOBB, double dDistT, const MathL
 		{
 			std::vector<int> &FJ = facesOther[fj];
 			const MathLib::Vector3 &FNJ = faceNormalsOther[fj];
+
+			if (MathLib::Acos(MathLib::Abs(FNJ.dot(Upright))) > dAngleT) {
+				continue;
+			}
 
 			if (ContactTriTri(verts[FI[0]], verts[FI[1]], verts[FI[2]], FNI,
 				vertsOther[FJ[0]], vertsOther[FJ[1]], vertsOther[FJ[2]], FNJ, 
@@ -683,32 +701,6 @@ void CModel::selectOBBFace(const MathLib::Vector3 &origin, const MathLib::Vector
 	m_OBB.PickByRay(origin, dir, depth);
 }
 
-MathLib::Vector3 CModel::getFrontNormal()
-{
-	std::vector<int> selOBBFaceIds = m_OBB.getSelQuadFaceIds();
-	std::vector<int> candiOBBFaceIds;
-
-	for (int i = 0; i < selOBBFaceIds.size(); i++)
-	{
-		if (abs(m_OBB.getFaceNormal(selOBBFaceIds[i]).dot(MathLib::Vector3(0,0,1))) > 0.99)
-		{
-			continue;
-		}
-
-		candiOBBFaceIds.push_back(selOBBFaceIds[i]);
-	}
-
-	if (candiOBBFaceIds.size() == 1 || candiOBBFaceIds.size() == 2)
-	{
-		int randId = GenRandomInt(0, candiOBBFaceIds.size());
-
-
-		return m_OBB.getFaceNormal(candiOBBFaceIds[randId]);
-	}
-	else
-		return m_OBB.getFaceNormal(3);  // (0,-1,0)
-}
-
 MathLib::Vector3 CModel::getOBBFrontFaceCenter()
 {
 	std::vector<int> selOBBFaceIds = m_OBB.getSelQuadFaceIds();
@@ -723,93 +715,33 @@ MathLib::Vector3 CModel::getOBBFrontFaceCenter()
 
 void CModel::drawFrontDir()
 {
-	//std::vector<int> selOBBFaceIds = m_OBB.getSelQuadFaceIds();
-	//MathLib::Vector3 startPt, endPt, faceNormal;
+	MathLib::Vector3 startPt, endPt;
 
-	//if (!selOBBFaceIds.empty())
-	//{
-	//	faceNormal =  m_OBB.getFaceNormal(selOBBFaceIds[0]);
-	//	startPt = m_OBB.GetFaceCent(selOBBFaceIds[0]);
-	//}
-	//else
-	//{
-	//	faceNormal = m_OBB.getFaceNormal(3);
-	//	startPt = m_OBB.GetFaceCent(3);
-	//}
+	startPt = m_OBB.cent;
+	endPt = startPt + m_initFrontDir/m_sceneMetric;
 
-	//endPt = startPt + faceNormal*0.2;
-	//
-	//// draw front normal by annotated OBB face
-	//QColor c(0, 128, 128);
+	QColor c(0, 255, 0);
 
-	//glDisable(GL_LIGHTING);
+	glDisable(GL_LIGHTING);
 
-	//glColor4d(c.redF(), c.greenF(), c.blueF(), c.alphaF());
-	//glLineWidth(5.0);
+	glColor4d(c.redF(), c.greenF(), c.blueF(), c.alphaF());
+	glLineWidth(5.0);
 
-	//glBegin(GL_LINES);
-	//glVertex3d(startPt[0], startPt[1], startPt[2]);
-	//glVertex3d(endPt[0], endPt[1], endPt[2]);
-	//glEnd();
+	glBegin(GL_LINES);
+	glVertex3d(startPt[0], startPt[1], startPt[2]);
+	glVertex3d(endPt[0], endPt[1], endPt[2]);
+	glEnd();
 
-	//glEnable(GL_LIGHTING);
-
-	//// DEBUG: draw front normal by annotated tris
-	//std::vector<int> triIds = this->getAnnoTriIds();
-	//for (int i = 0; i < triIds.size(); i++)
-	//{
-	//	if (triIds[i] != -1)
-	//	{
-	//		MathLib::Vector3 startPt, endPt;
-	//		startPt = getFaceCenter(triIds[i]);
-	//		endPt = startPt + getFaceNormal(triIds[i])*0.2;
-
-	//		QColor c(0, 220, 0);
-
-	//		glDisable(GL_LIGHTING);
-
-	//		glColor4d(c.redF(), c.greenF(), c.blueF(), c.alphaF());
-	//		glLineWidth(5.0);
-
-	//		glBegin(GL_LINES);
-	//		glVertex3d(startPt[0], startPt[1], startPt[2]);
-	//		glVertex3d(endPt[0], endPt[1], endPt[2]);
-	//		glEnd();
-
-	//		glEnable(GL_LIGHTING);
-	//	}
-	//}
-
-	////
-	//if (!m_sampledOOLocs.empty())
-	//{
-	//	glDisable(GL_LIGHTING);
-
-	//	glPointSize(5);
-	//	glBegin(GL_POINTS);
+	glPointSize(10);
+	c = QColor(255, 0, 0);
+	glColor4d(c.redF(), c.greenF(), c.blueF(), c.alphaF());
+	glBegin(GL_POINTS);
+	glVertex3d(endPt[0], endPt[1], endPt[2]);
+	glEnd();
 
 
-	//	QColor color = GetColorFromSet(m_id);
 
-	//	for (int i = 0; i < m_sampledOOLocs.size(); i++)
-	//	{
-	//		glColor3f(color.redF(), color.greenF(), color.blueF());
-	//		glVertex3f(m_sampledOOLocs[i][0], m_sampledOOLocs[i][1], m_sampledOOLocs[i][2]);
-	//	}
-
-	//	glEnd();
-
-	//	glLineWidth(2.0);
-	//	MathLib::Vector3 obbCenter = getOBBCenter();
-	//	int sampleNum = m_sampledOOLocs.size();
-
-	//	glBegin(GL_LINES);
-	//	glVertex3d(m_sampledOOLocs[sampleNum - 1][0], m_sampledOOLocs[sampleNum - 1][1], m_sampledOOLocs[sampleNum - 1][2]);
-	//	glVertex3d(obbCenter[0], obbCenter[1], obbCenter[2]);
-	//	glEnd();
-
-	//	glEnable(GL_LIGHTING);
-	//}
+	glEnable(GL_LIGHTING);
 }
 
 double CModel::getOBBDiagLength()
@@ -979,7 +911,7 @@ MathLib::Vector3 CModel::getModelAlongDirOBBFaceCenter()
 {
 	MathLib::Vector3 center;
 
-	MathLib::Vector3 frontDir = getFrontNormal();
+	MathLib::Vector3 frontDir = getFrontDir();
 	for (int i = 0; i < 3; i++)
 	{
 		if (std::abs(m_OBB.axis[i].dot(frontDir)) < 0.1 && m_OBB.axis[i].cross(frontDir).dot(MathLib::Vector3(0, 0, 1)) < 0.9)
@@ -1022,7 +954,7 @@ double CModel::getOBBHeight()
 
 MathLib::Vector3 CModel::getAlongDirOBBAxis()
 {
-	MathLib::Vector3 frontDir = getFrontNormal();
+	MathLib::Vector3 frontDir = getFrontDir();
 	MathLib::Vector3 alongAxis;
 
 	for (int i = 0; i < 3; i++)
@@ -1054,6 +986,55 @@ bool CModel::isSupportChild(int id)
 	{
 		return false;
 	}
+}
+
+void CModel::updateFrontDir(const MathLib::Vector3 &loadedDir)
+{
+	MathLib::Vector3 transedDir = m_fullTransMat.transformVec(loadedDir);
+	transedDir.normalize();
+	m_initFrontDir = transedDir;
+}
+
+void CModel::updateUpDir(const MathLib::Vector3 &loadedDir)
+{
+	MathLib::Vector3 transedDir = m_fullTransMat.transformVec(loadedDir);
+	transedDir.normalize();
+	m_upDir = transedDir;
+}
+
+MathLib::Vector3 CModel::getHorizonFrontDir()
+{
+	MathLib::Vector3 refHorizonFront;
+
+	if (m_initFrontDir.dot(m_sceneUpVec) < 0.1)
+	{
+		refHorizonFront = m_initFrontDir;
+	}
+	else if (m_initFrontDir.dot(m_sceneUpVec) > 0.9)
+	{
+		refHorizonFront = -m_upDir; // suppose for bed
+	}
+
+	refHorizonFront.normalize();
+
+	return refHorizonFront;
+}
+
+MathLib::Vector3 CModel::getVertUpDir()
+{
+	MathLib::Vector3 refVertUpDir;
+
+	if (m_upDir.dot(m_sceneUpVec) > 0.9)
+	{
+		refVertUpDir = m_upDir;
+	}
+	else if (m_upDir.dot(m_sceneUpVec) < 0.1)
+	{
+		refVertUpDir = m_initFrontDir; // suppose for bed
+	}
+
+	refVertUpDir.normalize();
+	return refVertUpDir;
 }
 
 //int CModel::getSuppPlaneNum()

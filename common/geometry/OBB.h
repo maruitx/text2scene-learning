@@ -10,13 +10,9 @@ email                : kevin.kai.xu@gmail.com
 #pragma once
 #include "../utilities/utility.h"
 #include "../utilities/mathlib.h"
-#include "../utilities/Eigen3x3.h"
-#include "qglviewer/qglviewer.h"
-#include "Eigen/Dense"
 
 #include <algorithm>
 #include <vector>
-#include <functional>
 
 //static int 
 
@@ -109,12 +105,14 @@ public:
 	bool IsSupport(const COBB &obb, double ta, double td, const MathLib::Vector3 &upright) const;
 	bool IsRoughSupport(const COBB &obb);
 
+	bool IsIntersect(const COBB &obb) const;
+
 	double ConnStrength_CD(const COBB &obb) const;
 	double ConnStrength_HD(const COBB &obb) const;
 	bool IsOnTop(COBB &obb, const MathLib::Vector3 &upright, double &pd) const;
 	bool IsAbove(const COBB &obb, const MathLib::Vector3 &upright) const;
 	bool IsTwoSide(const COBB &obb, const MathLib::Vector3 &p, const MathLib::Vector3 &n) const;
-	double ConnStrength_OBB(const COBB &obb, int iFixA=-1) const;
+	//double ConnStrength_OBB(const COBB &obb, int iFixA=-1) const;
 	double ConnStrength_Proj(const COBB &obb, const MathLib::Vector3 &upright) const;
 	double BottomHeightDiff(const COBB &obb, const MathLib::Vector3 &upright) const;
 	double GetBottomHeight(const MathLib::Vector3 &upright) const;

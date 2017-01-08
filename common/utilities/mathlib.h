@@ -505,6 +505,7 @@ public:
 
 	// Actions with Vector3
 	Vector3 transform(const Vector3& v) const;
+	Vector3 transformVec(const Vector3& v) const;
 };
 
 // ------------------------------------------------------------
@@ -1892,6 +1893,14 @@ inline Vector3 Matrix4d::transform(const Vector3& v) const
 				   v.x * M[1] + v.y * M[5] + v.z * M[9] + M[13],
 				   v.x * M[2] + v.y * M[6] + v.z * M[10] + M[14]);
 }
+
+inline Vector3 Matrix4d::transformVec(const Vector3& v) const
+{
+	return Vector3(v.x * M[0] + v.y * M[4] + v.z * M[8],
+		v.x * M[1] + v.y * M[5] + v.z * M[9],
+		v.x * M[2] + v.y * M[6] + v.z * M[10]);
+}
+
 
 
 // ------------------------------------------------------------

@@ -40,6 +40,13 @@ public:
 	QString getModelNameString(int modelID) { return m_modelList[modelID]->getNameStr(); };
 	MathLib::Matrix4d getModelInitTransMat(int modelID) { return m_modelList[modelID]->getInitTransMat(); };
 
+	bool modelHasOBB(int modelID) { return m_modelList[modelID]->hasOBB(); };
+	MathLib::Vector3 getOBBInitPos(int modelID) { return m_modelList[modelID]->getOBBInitPos(); };
+
+	void updateModelCat(int i, const QString &s) { m_modelList[i]->setCatName(s); m_modelCatNameList[i] = s; };
+	void updateModelFrontDir(int i, const MathLib::Vector3 &d) { m_modelList[i]->updateFrontDir(d); };
+	void updateModelUpDir(int i, const MathLib::Vector3 &d) { m_modelList[i]->updateUpDir(d); };
+
 	int getModelIdByName(const QString &s) { return m_modelNameIdMap[s] - 1; }; 
 	std::vector<int> getModelIdWithCatName(QString s, bool usingSynset = true);
 	MathLib::Vector3 getModelAABBCenter(int m_id) { return m_modelList[m_id]->getAABBCenter(); };
@@ -48,7 +55,8 @@ public:
 	QVector<QString> getModelNameList();
 	int getModelNum() { return m_modelList.size(); };
 
-	int getRoomID() { return m_roomID; };
+	int getRoomID();
+	MathLib::Vector3 getRoomFront();
 
 	// support plane
 	//void buildModelSuppPlane();
@@ -61,6 +69,7 @@ public:
 	void buildSupportHierarchy();
 	void setSupportChildrenLevel(CModel *m);
 	//int findPlaneSuppPlaneID(int childModelID, int parentModelID);
+	bool hasSupportHierarchyBuilt() { return m_hasSupportHierarchy; };
 
 	void updateRelationGraph(int modelID, int suppModelID, int suppPlaneID);
 	//void updateSupportHierarchy(int modelID, int suppModelID, int suppPlaneID);
@@ -98,6 +107,8 @@ private:
 
 	RelationGraph *m_relationGraph;
 	bool m_hasRelGraph;
+
+	bool m_hasSupportHierarchy;
 
 	// File info
 	QString m_sceneFileName;

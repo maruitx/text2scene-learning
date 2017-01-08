@@ -4,12 +4,13 @@
 class CModel;
 class Category;
 
-class MetaModel
+class DBMetaModel
 {
 public:
-	MetaModel();
-	MetaModel(const QString &s);
-	~MetaModel();
+	DBMetaModel();
+	DBMetaModel(const QString &s);
+	~DBMetaModel();
+	DBMetaModel(DBMetaModel *m);
 
 	void setCatName(const QString &s) { m_categoryName = s; };
 	QString getCatName() { return m_categoryName; };
@@ -27,7 +28,10 @@ public:
 	void setTransMat(const MathLib::Matrix4d &m) { m_initTrans = m; };
 	MathLib::Matrix4d getTransMat() { return m_initTrans; };
 
-	int m_dbID;
+	int dbID;
+	MathLib::Vector3 frontDir;
+	MathLib::Vector3 upDir;
+	MathLib::Vector3 position;
 
 private:
 	QString m_idStr;
@@ -61,7 +65,7 @@ public:
 	// ShapeNet
 	void loadShapeNetSemTxt();
 	bool isModelInDB(const QString &s);
-	MetaModel* getMetaModelByNameString(const QString &s);
+	DBMetaModel* getMetaModelByNameString(const QString &s);
 	QString getMetaFileType() { return m_dbMetaFileType; };
 
 	CModel* getModelById(QString idStr);
@@ -75,7 +79,7 @@ public:
 
 	int getParentCatNum() { return m_parentCatNum; };
 
-	std::map<QString, MetaModel*> dbMetaModels; // <modelIdStr, CandidateModel>
+	std::map<QString, DBMetaModel*> dbMetaModels; // <modelIdStr, CandidateModel>
 	std::map<QString, Category*> dbCategories;  // <categoryName, categoryStruct>
 
 	std::vector<std::string> modelMetaInfoStrings;

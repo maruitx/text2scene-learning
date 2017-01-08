@@ -18,13 +18,17 @@ CScene::CScene()
 	m_metric = 1.0;
 	m_floorHeight = 0;
 
+	m_roomID = -1;
+
 	m_relationGraph = NULL;
 	m_hasRelGraph = false;
+	m_hasSupportHierarchy = false;
+
 	m_showSceneGaph = false;
 	m_showModelOBB = false;
 	m_showSuppPlane = false;
 	m_showModelFrontDir = false;
-	m_showSuppChildOBB = false;
+	m_showSuppChildOBB = true;
 }
 
 CScene::~CScene()
@@ -102,7 +106,6 @@ void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int ob
 		if (databaseType == QString("SceneNNConversionOutput"))
 		{
 			m_metric = 1.0;
-			//m_uprightVec = MathLib::Vector3(0, 1, 0);
 		}
 
 		int currModelID = -1;
@@ -123,16 +126,23 @@ void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int ob
 				std::vector<std::string> parts = PartitionString(currLine.toStdString(), " ");
 				int modelIndex = StringToInt(parts[1]);
 
-				CModel *newModel = new CModel();				
-				newModel->loadModel(m_modelDBPath + "/" + QString(parts[2].c_str()) + ".obj", 1.0, metaDataOnly, obbOnly, meshOnly, databaseType);
+				CModel *newModel = new CModel();
+				QString modelNameString = parts[2].c_str();
+				newModel->loadModel(m_modelDBPath + "/" + modelNameString + ".obj", 1.0, metaDataOnly, obbOnly, meshOnly, databaseType);
 				newModel->setSceneUpRightVec(m_uprightVec);
 
 				currModelID += 1;
 				newModel->setID(currModelID);
-				//newModel->setJobName(m_jobName);
+				newModel->setSceneMetric(m_metric);
+
 				m_modelList[currModelID] = newModel;
 
-				m_modelCatNameList.push_back(newModel->getCatName());				
+				m_modelCatNameList.push_back(newModel->getCatName());
+
+				if (modelNameString.contains("room"))
+				{
+					m_roomID = currModelID;
+				}
 			}
 
 			if (currLine.contains("transform "))
@@ -144,11 +154,11 @@ void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int ob
 
 				MathLib::Matrix4d transMat(transformVec);
 
-				if (databaseType == "SceneNNConversionOutput")
-				{
-					MathLib::Matrix4d rotMat = GetRotMat(MathLib::Vector3(1, 0, 0), -MathLib::ML_PI_2);
-					transMat = rotMat*transMat;
-				}
+				//if (databaseType == "SceneNNConversionOutput")
+				//{
+				//	MathLib::Matrix4d rotMat = GetRotMat(MathLib::Vector3(1, 0, 0), -MathLib::ML_PI_2);
+				//	transMat = rotMat*transMat;
+				//}
 				
 				m_modelList[currModelID]->setInitTransMat(transMat);
 				m_modelList[currModelID]->transformModel(transMat);
@@ -157,103 +167,6 @@ void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int ob
 			}
 		}
 	}
-
-	//// load Fisher jason format
-	//else if (databaseType.contains("name"))
-	//{
-	//	QString currLine = ifs.readLine(); // get rid of rest
-	//	currLine = ifs.readLine();
-	//	int currModelID = -1;
-	//	
-	//	// collect model IDs
-	//	int modelIDPos, transformPos;
-	//	std::vector<QString> modelNameList;
-	//	std::vector<std::vector<float>> transforVecList;
-
-	//	while (currLine.contains("modelID"))
-	//	{
-	//		if (!currLine.contains("\"\"modelID\"\""))   // scene A format
-	//		{
-	//			modelIDPos = currLine.indexOf("modelID");
-	//			currLine = currLine.right(currLine.size() - modelIDPos - 10); // get rid strings to end of "modelID":"
-	//			int modelNameEndPos = currLine.indexOf("\"");
-
-	//			QString modelName = currLine.left(modelNameEndPos);
-	//			modelNameList.push_back(modelName);
-
-	//			transformPos = currLine.indexOf("transform");
-	//			currLine = currLine.right(currLine.size() - transformPos - 12); // get rid strings to end of "transform":[
-	//			int transformEndPos = currLine.indexOf("]");
-	//			QString transformString = currLine.left(transformEndPos);
-	//			QStringList transValStrs = transformString.split(",");
-
-	//			std::vector<float> transformVec(transValStrs.size());
-	//			for (int i = 0; i < transformVec.size(); i++)
-	//			{
-	//				transformVec[i] = transValStrs[i].toFloat();
-	//			}
-
-	//			transforVecList.push_back(transformVec);
-
-	//			MathLib::Matrix4d transMat(transformVec);
-	//			QString dbPath = "D:\\Rui\\SceneSyn\\actsynth\\actsynthDatabase\\wss.models\\models";
-
-	//			CModel *newModel = new CModel();
-	//			bool isLoaded = newModel->loadModel(dbPath + "/" + modelName + ".obj", 1.0, 1, "StanfordSceneDatabase");
-
-	//			if (isLoaded)
-	//			{
-	//				currModelID += 1;
-	//				newModel->transformModel(transMat);
-
-	//				newModel->setID(currModelID);
-	//				m_modelList.push_back(newModel);
-	//			}
-	//			else
-	//				qDebug() << "Cannot load model: " << modelName;
-	//		}
-	//		else    // scene B format
-	//		{
-	//			modelIDPos = currLine.indexOf("modelID");
-	//			currLine = currLine.right(currLine.size() - modelIDPos - 12); // get rid strings to end of "modelID":"
-	//			int modelNameEndPos = currLine.indexOf("\"");
-
-	//			QString modelName = currLine.left(modelNameEndPos);
-	//			modelNameList.push_back(modelName);
-
-	//			transformPos = currLine.indexOf("transform");
-	//			currLine = currLine.right(currLine.size() - transformPos - 13); // get rid strings to end of "transform":[
-	//			int transformEndPos = currLine.indexOf("]");
-	//			QString transformString = currLine.left(transformEndPos);
-	//			QStringList transValStrs = transformString.split(",");
-
-	//			std::vector<float> transformVec(transValStrs.size());
-	//			for (int i = 0; i < transformVec.size(); i++)
-	//			{
-	//				transformVec[i] = transValStrs[i].toFloat();
-	//			}
-
-	//			transforVecList.push_back(transformVec);
-
-	//			MathLib::Matrix4d transMat(transformVec);
-	//			QString dbPath = "D:\\Rui\\SceneSyn\\actsynth\\actsynthDatabase\\wss.models\\models";
-
-	//			CModel *newModel = new CModel();
-	//			bool isLoaded = newModel->loadModel(dbPath + "/" + modelName + ".obj", 1.0, 1, "StanfordSceneDatabase");
-
-	//			if (isLoaded)
-	//			{
-	//				currModelID += 1;
-	//				newModel->transformModel(transMat);
-
-	//				newModel->setID(currModelID);
-	//				m_modelList.push_back(newModel);
-	//			}
-	//			else
-	//				qDebug() << "Cannot load model: " << modelName;
-	//		}
-	//	}
-	//}
 
 	std::cout << "\n";
 
@@ -264,6 +177,7 @@ void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int ob
 	if (m_relationGraph->readGraph(graphFilename) != -1)
 	{
 		m_hasRelGraph = true;
+		buildSupportHierarchy();
 		std::cout << "\tstructure graph loaded\n";
 	}
 
@@ -275,18 +189,6 @@ void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int ob
 
 	computeAABB();
 	buildModelDislayList();
-
-	//	buildSupportHierarchy();
-
-	// set room ID
-	for (int i = 0; i < m_modelList.size(); i++)
-	{
-		if (m_modelCatNameList[i].contains("room"))
-		{
-			m_roomID = i;
-			break;
-		}
-	}
 
 	std::cout << "Scene loaded\n";
 }
@@ -308,6 +210,7 @@ void CScene::buildRelationGraph()
 	m_relationGraph->buildGraph();
 	m_relationGraph->saveGraph(graphFilename);
 
+	buildSupportHierarchy();
 	m_hasRelGraph = true;
 	std::cout << " done.\n";
 }
@@ -328,7 +231,7 @@ void CScene::draw()
 
 		foreach(CModel *m, m_modelList)
 		{
-			m->draw(0, 1);  // only show obb
+			m->draw(0, 1, m_showSuppPlane, m_showModelFrontDir, m_showSuppChildOBB);  // only show obb
 		}
 	}
 	else
@@ -462,7 +365,7 @@ std::vector<int> CScene::getModelIdWithCatName(QString s, bool usingSynset)
 //	m_modelNum++;
 //
 //	updateSeneAABB(m->getAABB());
-//	m_sceneGraph->InsertNode(0);
+//	m_relationGraph->InsertNode(0);
 //}
 //
 //void CScene::insertModel(CModel *m)
@@ -479,93 +382,88 @@ std::vector<int> CScene::getModelIdWithCatName(QString s, bool usingSynset)
 //	m_modelNum++;
 //
 //	updateSeneAABB(m->getAABB());
-//	m_sceneGraph->InsertNode(0);
+//	m_relationGraph->InsertNode(0);
 //}
 
-////TO DO: fix support relationship after insert model
-//void CScene::buildSupportHierarchy()
-//{
-//	if (m_sceneGraph->IsEmpty()) return;
-//
-//	m_sceneGraph->computeOnTopList();
-//	std::vector<int> onTopList = m_sceneGraph->getOnTopList();
-//
-//	// init all support by floor
-//	foreach(CModel *m, m_modelList)
-//	{
-//		m->suppParentID = -1; 
-//		m->supportLevel = -1;
-//		m->suppChindrenList.clear();
-//	}
-//
-//	// collect parent-child relationship
-//	for (int i = 0; i < onTopList.size(); i++)
-//	{
-//		int parentID = onTopList[i];
-//		if (parentID != -1)
-//		{
-//			m_modelList[i]->suppParentID = parentID;
-//			m_modelList[parentID]->suppChindrenList.push_back(i);
-//		}
-//	}
-//
-//	// init support level
-//	double minHeight = 1e6;
-//	std::vector<double> modelBottomHeightList(m_modelNum);
-//
-//	// compute the min height to find the floor height
-//	for (int i = 0; i < m_modelNum; i++)
-//	{
-//		double currHeight = m_modelList[i]->getOBBBottomHeight();
-//		modelBottomHeightList[i] = currHeight;
-//
-//		if (currHeight < minHeight)
-//		{
-//			minHeight = currHeight;
-//		}
-//	}
-//
-//	// recursively set children's level
-//	for (int i = 0; i < m_modelNum; i++)
-//	{
-//		if (modelBottomHeightList[i] - minHeight < 0.1)
-//		{
-//			// find models that are support by the floor
-//			m_modelList[i]->supportLevel = 0;
-//			CModel *currModel = m_modelList[i];
-//			setSupportChildrenLevel(currModel);
-//		}
-//	}
-//
-//	// if support level is still not set, it may be hang on the wall
-//	// set support level of these models to be 1 and recursively set children's level
-//	for (int i = 0; i < m_modelNum; i++)
-//	{
-//		if (m_modelList[i]->supportLevel == -1)
-//		{
-//			m_modelList[i]->supportLevel = 1;
-//
-//			setSupportChildrenLevel(m_modelList[i]);
-//		}
-//	}
-//
-//	//m_hasSupportHierarchy = true;
-//
-//	// update grid on support plane
-//	for (int i = 0; i < m_modelNum; i++)
-//	{
-//		int childNum = m_modelList[i]->suppChindrenList.size();
-//		if (childNum > 0)
-//		{
-//			for (int j = 0; j < childNum; j++)
-//			{
-//				int childID = m_modelList[i]->suppChindrenList[j];
-//			
-//				m_modelList[childID]->parentSuppPlaneID = findPlaneSuppPlaneID(childID, i);
-//			}			
-//		}
-//	}
-//}
+//TO DO: fix support relationship after insert model
+void CScene::buildSupportHierarchy()
+{
+	if (m_relationGraph->IsEmpty()) return;
+
+	m_relationGraph->computeSupportParentForModels();
+	std::vector<std::vector<int>> parentList = m_relationGraph->getSupportParentListForModels();
+
+	// init all support to be -1
+	foreach(CModel *m, m_modelList)
+	{
+		m->suppParentID = -1; 
+		m->supportLevel = -10;
+		m->suppChindrenList.clear();
+	}
+
+	// collect parent-child relationship
+	for (int i = 0; i < m_relationGraph->Size(); i++)
+	{
+		std::vector<int> parentIDs = parentList[i];
+
+		if (!parentIDs.empty())
+		{
+			int parentId = parentIDs[0];  // use the first parent in the list
+			m_modelList[i]->suppParentID = parentId;
+			m_modelList[parentId]->suppChindrenList.push_back(i);
+		}
+	}
+
+	// init support level
+	double minHeight = 1e6;
+	std::vector<double> modelBottomHeightList(m_modelNum);
+
+	int roomId = getRoomID();
+	for (int i = 0; i < m_modelNum; i++)
+	{
+		if (i == roomId)
+		{
+			m_modelList[i]->supportLevel = -1;
+		}
+
+		if (m_modelList[i]->suppParentID == roomId)
+		{
+			// find models that are support by the floor
+			m_modelList[i]->supportLevel = 0;
+			CModel *currModel = m_modelList[i];
+			setSupportChildrenLevel(currModel);
+		}
+	}
+
+	// if support level is still not set, it may be hang on the wall
+	// set support level of these models to be 1 and recursively set children's level
+	for (int i = 0; i < m_modelNum; i++)
+	{
+		if (m_modelList[i]->supportLevel == -10) // still unset
+		{
+			m_modelList[i]->supportLevel = 0;
+
+			setSupportChildrenLevel(m_modelList[i]);
+		}
+	}
+
+	m_hasSupportHierarchy = true;
+
+	//// update grid on support plane
+	//for (int i = 0; i < m_modelNum; i++)
+	//{
+	//	int childNum = m_modelList[i]->suppChindrenList.size();
+	//	if (childNum > 0)
+	//	{
+	//		for (int j = 0; j < childNum; j++)
+	//		{
+	//			int childID = m_modelList[i]->suppChindrenList[j];
+	//		
+	//			m_modelList[childID]->parentSuppPlaneID = findPlaneSuppPlaneID(childID, i);
+	//		}			
+	//	}
+	//}
+}
 //
 //int CScene::findPlaneSuppPlaneID(int childModelID, int parentModelID)
 //{
@@ -624,6 +522,40 @@ void CScene::updateRelationGraph(int modelID, int suppModelID, int suppPlaneID)
 
 }
 
+int CScene::getRoomID()
+{
+	// if already know room id
+	if (m_roomID != -1)
+	{
+		return m_roomID;
+	}
+
+	// set room ID
+	for (int i = 0; i < m_modelList.size(); i++)
+	{
+		if (m_modelCatNameList[i].contains("room"))
+		{
+			m_roomID = i;
+			break;
+		}
+	}
+
+	return m_roomID;
+}
+
+MathLib::Vector3 CScene::getRoomFront()
+{
+	if (m_roomID != -1)
+	{
+		return m_modelList[m_roomID]->getFrontDir();;
+	}
+
+	else
+	{
+		int id = getRoomID();
+		return m_modelList[id]->getFrontDir();
+	}
+}
 
 
 //void CScene::computeTransformation(const std::vector<MathLib::Vector3> &source, const std::vector<MathLib::Vector3> &target, Eigen::Matrix4d &mat)

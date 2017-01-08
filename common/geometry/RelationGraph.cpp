@@ -7,7 +7,7 @@ RelationGraph::RelationGraph()
 }
 
 RelationGraph::RelationGraph(CScene *s):
-m_scene(s), m_SuppThresh(0.02)
+m_scene(s), m_SuppThresh(0.05)
 {
 	m_nodeNum = m_scene->getModelNum();
 	m_sceneMetric = m_scene->getSceneMetric();
@@ -95,7 +95,7 @@ int RelationGraph::updateSupportRel(int modelID)
 void RelationGraph::buildGraph()
 {
 	extractSupportRel();
-	pruneSupportRel();
+	//pruneSupportRel();
 }
 
 int RelationGraph::readGraph(const QString &filename)
@@ -218,33 +218,25 @@ void RelationGraph::drawGraph()
 	glPopAttrib();
 }
 
-void RelationGraph::computeOnTopList()
+void RelationGraph::computeSupportParentForModels()
 {
-	// build on top list from computed support info
-	m_onTopList.clear(); 
-	m_onTopList.resize(m_nodeNum, -1);
+	// build support parent list from computed support info
+	// some model might be supported by multiple parents
+	m_supportParentListForModels.clear(); 
+	m_supportParentListForModels.resize(this->Size());
 
-	std::vector<std::vector<int>> SuppGiverList(this->Size());	// support giver list, models that are being supported
 	for (unsigned int ei = 0; ei < this->ESize(); ei++) {
 		if (this->GetEdge(ei)->t == RelationGraph::CT_SUPPORT) {
 			CModel *pM1 = m_scene->getModel(this->GetEdge(ei)->v1);
 			CModel *pM2 = m_scene->getModel(this->GetEdge(ei)->v2);
 
-			//if pM1 is higher than pM2, then pM2 is in support list of pM1
+			//if pM1 is higher than pM2, then pM2 is in support parent list of pM1
 			if (pM1->getOBB().BottomHeightDiff(pM2->getOBB(), m_scene->getUprightVec()) > 0.0) {
-				SuppGiverList[this->GetEdge(ei)->v1].push_back(this->GetEdge(ei)->v2);
+				m_supportParentListForModels[this->GetEdge(ei)->v1].push_back(this->GetEdge(ei)->v2);
 			}
 			else {
-				SuppGiverList[this->GetEdge(ei)->v2].push_back(this->GetEdge(ei)->v1);
+				m_supportParentListForModels[this->GetEdge(ei)->v2].push_back(this->GetEdge(ei)->v1);
 			}
-		}
-	}
-
-	for (unsigned int i = 0; i < SuppGiverList.size(); i++)
-	{
-		for (int j = 0; j < SuppGiverList[i].size(); j++)
-		{
-			m_onTopList[i] = SuppGiverList[i][j];
 		}
 	}
 }
@@ -294,4 +286,5 @@ int RelationGraph::pruneSupportRel()
 
 	return 0;
 }
+
 

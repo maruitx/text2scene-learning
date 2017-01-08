@@ -42,6 +42,11 @@ public:
 
 	CMesh* getMesh() { return m_mesh; };
 
+	void setSceneMetric(double m){ m_sceneMetric = m; };
+
+	void updateFrontDir(const MathLib::Vector3 &loadedDir);
+	void updateUpDir(const MathLib::Vector3 &loadedDir);
+
 	// aabb
 	void computeAABB();
 	CAABB getAABB() { return m_AABB; };
@@ -54,7 +59,8 @@ public:
 	MathLib::Vector3 getMaxVert() { return m_AABB.GetMaxV(); };
 
 	// obb
-	void setSceneUpRightVec(const MathLib::Vector3 &m){ m_sceneUpRightVec = m; };
+	bool hasOBB() { return m_hasOBB; };
+	void setSceneUpRightVec(const MathLib::Vector3 &m){ m_sceneUpVec = m; };
 	void computeOBB(int fixAxis = -1);
 	int loadOBB(const QString &sPathName = QString());
 	int saveOBB(const QString &sPathName = QString());
@@ -73,10 +79,15 @@ public:
 	MathLib::Vector3 getAlongDirOBBAxis();
 
 	void selectOBBFace(const MathLib::Vector3 &origin, const MathLib::Vector3 &dir);
-	MathLib::Vector3 getFrontNormal();
 	MathLib::Vector3 getOBBFrontFaceCenter();
 
+	MathLib::Vector3 getFrontDir() { return m_initFrontDir; };
+	MathLib::Vector3 getUpDir(){ return m_upDir; };
+	MathLib::Vector3 getHorizonFrontDir();
+	MathLib::Vector3 getVertUpDir();
+
 	double getOBBDiagLength();  // for compute the scaling of model
+	MathLib::Vector3 getOBBInitPos() { return m_initOBBPos; };
 
 	// action
 	void setStatus(int i);
@@ -120,7 +131,7 @@ public:
 	int suppParentID;
 	int parentSuppPlaneID;   // on which support plane of the parent
 	std::vector<int> suppChindrenList;
-	int supportLevel;
+	int supportLevel;  //  0 is support by floor
 
 	std::vector<std::vector<int>> suppGridPos; // grid pos that is filled by current model
 
@@ -137,8 +148,9 @@ private:
 	QString m_catName;
 
 	int m_id;
-	double m_metric;
-	MathLib::Vector3 m_sceneUpRightVec;
+	double m_modelMetric;
+	double m_sceneMetric;
+	MathLib::Vector3 m_sceneUpVec;
 
 	//std::vector<int> m_annoOBBFaceIds;
 	//std::vector<int> m_annoTriIds;
@@ -146,6 +158,7 @@ private:
 	double m_initOBBDiagLen;
 	MathLib::Vector3 m_initOBBPos;
 	MathLib::Vector3 m_initFrontDir;
+	MathLib::Vector3 m_upDir;
 	MathLib::Matrix4d m_lastTransMat;
 	MathLib::Matrix4d m_fullTransMat;
 

@@ -42,13 +42,13 @@ Category::~Category()
 }
 
 
-MetaModel* Category::sampleInstance()
+DBMetaModel* Category::sampleInstance()
 {
 	while (true)
 	{
 		int randId = GenRandomInt(0, modelInstances.size());
 
-		MetaModel* result = modelInstances[randId];
+		DBMetaModel* result = modelInstances[randId];
 		//if (catName == "Table" && result.idStr!= "wss.eed2fa156d662c79b26e384cea2f274e")
 		//	continue;
 

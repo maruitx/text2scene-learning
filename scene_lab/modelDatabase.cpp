@@ -441,7 +441,9 @@ QString ModelDatabase::getModelCat(const QString &idStr)
 
 void ModelDatabase::loadShapeNetSemTxt()
 {
-	std::cout << "\t Loading model annotation from shapeNet meta file...";
+	std::cout << "\t Loading model annotation ...\n";
+	std::cout << "\t \t shapeNet meta file: " << m_dbMetaFileType.toStdString() <<"\n";
+	std::cout << "\t \t local model folder: " << m_dbPath.toStdString()<<"\n";
 
 	QString shapeNetSemTxtFileName = m_dbPath + "/" + m_dbMetaFileType + ".txt";
 
@@ -556,7 +558,7 @@ void ModelDatabase::loadShapeNetSemTxt()
 		}
 	}
 
-	std::cout << " done.\n";
+	std::cout << "Model annotation loading done.\n";
 }
 
 DBMetaModel* ModelDatabase::getMetaModelByNameString(const QString &s)
@@ -619,7 +621,12 @@ DBMetaModel::DBMetaModel(DBMetaModel *m)
 
 QString DBMetaModel::getProcessedCatName()
 {
-	QString processedCatName;
+	QString processedCatName = "";
+
+	if (m_shapeNetCategoryNames.empty() && m_wordNetLemmas.empty())
+	{
+		return processedCatName;
+	}
 
 	const int badCatNum = 11;
 	QString badCatNames[badCatNum] = { "_stanfordscenedbmodels", "_scenegallerymodels", "_oimwhitelist", "_attributestrain", 

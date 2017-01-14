@@ -19,6 +19,10 @@ public:
 	void updateModel(CModel *m);
 	void setViewBounds();
 
+	bool m_drawOBB;
+	bool m_drawSupp;
+	bool m_drawFaceClusters;
+
 private:
 	CModel* m_model;
 

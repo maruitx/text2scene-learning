@@ -23,6 +23,11 @@ public slots:
 void updateModelIdList();
 void update3DModel();
 
+void updateRenderingOptions();
+
+void buildSuppPlaneForCurrModel();
+void builSuppPlaceForModelList();
+
 private:
 	Ui::ModelDBViewer_widget ui;
 	ModelDatabase *m_modelDB;

@@ -33,6 +33,12 @@ ModelDBViewer_widget::ModelDBViewer_widget(ModelDatabase *modleDB, QWidget *pare
 
 	connect(ui.catSelectListWidget, SIGNAL(itemSelectionChanged()), this, SLOT(updateModelIdList()));
 	connect(ui.modelIdListWidget, SIGNAL(itemSelectionChanged()), this, SLOT(update3DModel()));
+
+	connect(ui.buildSuppForModelButton, SIGNAL(clicked()), this, SLOT(buildSuppPlaneForCurrModel()));
+	connect(ui.buildSuppForModelListButton, SIGNAL(clicked()), this, SLOT(builSuppPlaceForModelList()));
+
+	connect(ui.showSuppCheckBox, SIGNAL(stateChanged(int)), this, SLOT(updateRenderingOptions()));
+	connect(ui.showFaceClustersCheckBox, SIGNAL(stateChanged(int)), this, SLOT(updateRenderingOptions()));
 }
 
 ModelDBViewer_widget::~ModelDBViewer_widget()
@@ -72,19 +78,61 @@ void ModelDBViewer_widget::update3DModel()
 	if (m_displayedModel != NULL)
 	{
 		delete m_displayedModel;
+		m_displayedModel = NULL;
 	}
 
 	m_displayedModel = new CModel();
-	double modelScale = m_modelDB->dbMetaModels[modelIdStr]->getScale();
+	DBMetaModel* dbModel = m_modelDB->dbMetaModels[modelIdStr];
 
-	// debug some model scale is 0
-	if (modelScale < 1e-8 )
-	{
-		modelScale = 1;
-	}
+	//QString modelFileName = m_modelDB->getDBPath() + "/models-OBJ/models/" + modelIdStr + ".obj";
+	QString modelFileName = m_modelDB->getDBPath() + "/" + modelIdStr + ".obj";
+	m_displayedModel->loadModel(modelFileName, 1.0, 0, 0, 1);
+	m_displayedModel->setSceneMetric(0.0254);
 
-	QString modelFileName = m_modelDB->getDBPath() + "/models-OBJ/models/" + modelIdStr + ".obj";
-	m_displayedModel->loadModel(modelFileName, 1.0);
+	// update model meta info
+	m_displayedModel->setCatName(dbModel->getProcessedCatName());
+	m_displayedModel->updateFrontDir(dbModel->frontDir);
+	m_displayedModel->updateUpDir(dbModel->upDir);
 
 	m_viewer->updateModel(m_displayedModel);
+}
+
+
+void ModelDBViewer_widget::buildSuppPlaneForCurrModel()
+{
+	if (m_displayedModel != NULL)
+	{
+		//m_displayedModel->buildSuppPlane();
+		m_displayedModel->builSuppPlaneUsingBBTop();
+	}
+}
+
+void ModelDBViewer_widget::builSuppPlaceForModelList()
+{
+
+}
+
+void ModelDBViewer_widget::updateRenderingOptions()
+{
+	this->ui.showSuppCheckBox->isChecked();
+
+	if (this->ui.showSuppCheckBox->isChecked())
+	{
+		m_viewer->m_drawSupp = true;
+	}
+	else
+	{
+		m_viewer->m_drawSupp = false;
+	}
+
+	if (this->ui.showFaceClustersCheckBox->isChecked())
+	{
+		m_displayedModel->buildDisplayList(0, 1);
+	}
+	else
+	{
+		m_displayedModel->buildDisplayList(0, 0);
+	}
+
+	m_viewer->updateGL();
 }

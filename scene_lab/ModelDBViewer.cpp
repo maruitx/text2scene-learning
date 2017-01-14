@@ -5,6 +5,10 @@
 ModelDBViewer::ModelDBViewer()
 {
 	m_model = NULL;
+	
+	m_drawOBB = false;
+	m_drawFaceClusters = false;
+	m_drawSupp = false;
 }
 
 
@@ -16,7 +20,7 @@ void ModelDBViewer::draw()
 {
 	if (m_model != NULL)
 	{
-		m_model->draw();
+		m_model->draw(1, m_drawOBB, m_drawSupp);
 	}
 }
 

@@ -52,8 +52,25 @@ void SceneSemGraph::generateGraph()
 		else
 		{
 			std::cout << "SceneSemGraph: cannot find model: " << modelNameStr.toStdString() << " in ShapeNetDB-"<<m_modelDB->getMetaFileType().toStdString()<<"\n";
-		}
 
+			// add model to DB
+			DBMetaModel *newMetaModel = new DBMetaModel();
+			CModel *m = m_scene->getModel(i);
+			newMetaModel->frontDir = m->getFrontDir() * m_scene->getSceneMetric();
+			newMetaModel->upDir = m->getUpDir()* m_scene->getSceneMetric();
+			newMetaModel->position = m->getOBBInitPos();
+			newMetaModel->setCatName("unknown");
+			newMetaModel->setIdStr(modelNameStr);
+			newMetaModel->setTransMat(m_scene->getModelInitTransMat(i));
+
+			newMetaModel->dbID = m_modelDB->dbMetaModels.size();
+			//m_modelDB->dbMetaModels[modelNameStr] = newMetaModel;
+
+			m_metaModelList.push_back(newMetaModel);			
+
+			QString objectNodeName = "unknown";
+			addNode(QString(SSGNodeType[0]), objectNodeName);
+		}
 	}
 
 	// extract low-level model attributes from ShapeNetSem annotation
@@ -168,37 +185,24 @@ void SceneSemGraph::extractSpatialSideRelForModelPair(int refModelId, int testMo
 		addNode(SSGNodeType[2], currRel);
 
 		// SSG edge direction will be (testModel, relation), (relation, refModel)
-		//addEdge(refModelId, m_nodeNum - 1);
-		//addEdge(m_nodeNum - 1, testModelId);
 		addEdge(testModelId, m_nodeNum - 1);
 		addEdge(m_nodeNum - 1, refModelId);
+	}
 
-		// add symmetric edge
-		// the "near" is already symmetic
-		if (sideRels[r] == "leftside")
-		{
-			currRel = "rightside";
-		}
+	// inverse the ref and test, and compute the inverse relationship
+	sideRels.clear();
+	int newRefModelId = testModelId;
+	int newTestNodeId = refModelId;
+	sideRels = computeSpatialSideRelForModelPair(newRefModelId, newTestNodeId);
 
-		if (sideRels[r] == "rightside")
-		{
-			currRel = "leftside";
-		}
-
-		if (sideRels[r] == "front")
-		{
-			currRel = "back";
-		}
-
-		if (sideRels[r] == "back")
-		{
-			currRel = "front";
-		}
-
-		// add symmetric edge
+	for (int r = 0; r < sideRels.size(); r++)
+	{
+		QString currRel = sideRels[r];
 		addNode(SSGNodeType[2], currRel);
-		addEdge(refModelId, m_nodeNum - 1);
-		addEdge(m_nodeNum - 1, testModelId);
+
+		// SSG edge direction will be (testModel, relation), (relation, refModel)
+		addEdge(newTestNodeId, m_nodeNum - 1);
+		addEdge(m_nodeNum - 1, newRefModelId);
 	}
 }
 
@@ -240,17 +244,30 @@ std::vector<QString> SceneSemGraph::computeSpatialSideRelForModelPair(int refMod
 	// front or back side is not view dependent
 	double frontDirDot = fromRefToTestVec.dot(refFront);
 
+
 	double sideSectionVal = MathLib::Cos(30);
 	if (frontDirDot > sideSectionVal)
 	{
-		relationStrings.push_back(SSGPairRelStrings[7]); // front
+		QString refName = m_metaModelList[refModelId]->getProcessedCatName();
+		if (refName == "tv" || refName == "monitor")  //  object requires to face to
+		{
+			MathLib::Vector3 testFront = testModel->getFrontDir();
+			if (testFront.dot(refFront) < 0)  // test and ref should be opposite
+			{
+				relationStrings.push_back(SSGPairRelStrings[7]); // front
+			}
+		}
+		else
+		{
+			relationStrings.push_back(SSGPairRelStrings[7]); // front
+		}
 	}
 	else if (frontDirDot < -sideSectionVal && frontDirDot > -1)
 	{
 		relationStrings.push_back(SSGPairRelStrings[8]); // back
 	}
 
-	// left or right is view dependent
+	// left or right may be view dependent
 	MathLib::Vector3 refRight = refFront.cross(refUp);
 	double rightDirDot = fromRefToTestVec.dot(refRight);
 

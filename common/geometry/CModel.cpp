@@ -2,6 +2,8 @@
 #include "CMesh.h"
 #include "OBBEstimator.h"
 #include "TriTriIntersect.h"
+#include "SuppPlaneManager.h"
+#include "SuppPlane.h"
 #include "../utilities/utility.h"
 #include "qgl.h"
 #include <QFile>
@@ -10,12 +12,17 @@ CModel::CModel()
 {
 	m_catName = QString("unknown");
 	m_mesh = NULL;
-	//m_suppPlaneManager = NULL;
+
+	m_suppPlaneManager = new SuppPlaneManager(this);
 	m_hasOBB = false;
 
 	m_fullTransMat.setidentity();
 	m_lastTransMat.setidentity();
 	m_initFrontDir = MathLib::Vector3(0, -1, 0);
+	m_upDir = MathLib::Vector3(0, 0, 1);
+
+	m_sceneMetric = 1.0;
+	m_modelMetric = 1.0;
 
 	suppParentID = -1;
 	parentSuppPlaneID = -1;
@@ -23,8 +30,9 @@ CModel::CModel()
 
 	m_status = 0;
 
+	m_hasSuppPlane = false;
 	m_showDiffColor = true;
-	//m_showFaceClusters = false;
+	m_showFaceClusters = false;
 
 	m_readyForInterTest = false;
 
@@ -33,6 +41,8 @@ CModel::CModel()
 	m_outputStatus = 0;
 
 	m_isBusy = false;
+
+
 }
 
 CModel::~CModel()
@@ -71,12 +81,19 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 	}
 
 	m_mesh = new CMesh(filename, m_nameStr);
+
+	// still try to load obb, because we want to save the center of the model
+	loadOBB();
+
+	//  try to load support plane
+	if (m_suppPlaneManager->loadSuppPlane())
+	{
+		m_hasSuppPlane = true;
+	}
+ 
 	
 	if (metaDataOnly)
 	{
-		// still try to load obb, because we want to save the center of the model
-		loadOBB();
-
 		// return before loading obj data
 		return true;
 	}
@@ -353,10 +370,10 @@ void CModel::draw(bool showModel, bool showOBB, bool showSuppPlane, bool showFro
 		glCallList(m_displayListID);
 	}
 
-	//if (showSuppPlane)
-	//{
-	//	m_suppPlaneManager->draw();
-	//}
+	if (showSuppPlane && m_hasSuppPlane)
+	{
+		m_suppPlaneManager->draw();
+	}
 
 	//m_AABB.DrawBox(0, 1, 0, 0, 0);
 }
@@ -369,14 +386,14 @@ void CModel::buildDisplayList(int showDiffColor /*= 1*/, int showFaceCluster /*=
 	}
 
 	m_showDiffColor = showDiffColor;
-	//m_showFaceClusters = showFaceCluster;
+	m_showFaceClusters = showFaceCluster;
 
 	m_displayListID = glGenLists(1);
 
 	QColor c;
 
 	// draw model with same color
-	if (showFaceCluster)
+	if (showFaceCluster && !m_faceIndicators.empty())
 	{
 		glNewList(m_displayListID, GL_COMPILE);
 		m_mesh->draw(m_faceIndicators);
@@ -420,10 +437,10 @@ void CModel::transformModel(const MathLib::Matrix4d &transMat)
 
 	computeAABB(); // update
 	
-	//if (m_suppPlaneManager != NULL && m_suppPlaneManager->hasSuppPlane())
-	//{
-	//	m_suppPlaneManager->transformSuppPlanes(transMat);
-	//}
+	if (m_suppPlaneManager != NULL && m_suppPlaneManager->hasSuppPlane())
+	{
+		m_suppPlaneManager->transformSuppPlanes(transMat);
+	}
 
 	// transform obb
 	if (m_hasOBB)
@@ -508,21 +525,57 @@ void CModel::prepareForIntersect()
 	m_readyForInterTest = true;
 }
 
-//void CModel::buildSuppPlane()
-//{
-//	m_suppPlaneManager = new SuppPlaneManager(this);
-//
-//	if (!m_suppPlaneManager->loadSuppPlane())
-//	{
-//		m_faceIndicators = m_suppPlaneManager->clusteringMeshFaces();
-//		m_suppPlaneManager->pruneSuppPlanes();  // DEBUG: just keep the largest supplane
-//
-//		m_suppPlaneManager->saveSuppPlane();
-//	}
-//
-//	m_showFaceClusters = true;
-//
-//}
+void CModel::buildSuppPlane()
+{
+	std::cout << "SuppPlaneManager: start computing support plane ...\n";
+	m_faceIndicators = m_suppPlaneManager->clusteringMeshFacesSuppPlane();
+		//m_suppPlaneManager->pruneSuppPlanes();  // DEBUG: just keep the largest supplane
+
+	m_suppPlaneManager->saveSuppPlane();
+
+	m_showFaceClusters = true;
+	m_hasSuppPlane = true;
+
+}
+
+void CModel::builSuppPlaneUsingBBTop()
+{
+	std::cout << "SuppPlaneManager: start extracting support plane from AABB top ...\n";
+
+	// support plane should have consistent vertex order, w.r.t to the model front
+	std::vector<MathLib::Vector3> corners(4);
+	SuppPlane *p;
+
+	//if (m_hasOBB)
+	//{
+	//	corners[0] = m_OBB.vp[0];
+	//	corners[1] = m_OBB.vp[4];
+	//	corners[2] = m_OBB.vp[5];
+	//	corners[3] = m_OBB.vp[1];
+
+	//	SuppPlane *p = new SuppPlane(corners, );
+	//}
+	//else
+	{
+		corners[0] = m_AABB.vp[0];
+		corners[1] = m_AABB.vp[4];
+		corners[2] = m_AABB.vp[5];
+		corners[3] = m_AABB.vp[1];
+
+		p = new SuppPlane(corners);
+		p->setColor(GetColorFromSet(0));
+		p->setModel(this);
+		p->setModelID(m_id);
+		p->setSuppPlaneID(0);
+	}
+
+	m_suppPlaneManager->addSupportPlane(p);
+	m_suppPlaneManager->saveSuppPlane();
+
+	m_showFaceClusters = true;
+	m_hasSuppPlane = true;
+}
+
 //
 //double CModel::getLargestSuppPlaneHeight()
 //{
@@ -1042,13 +1095,7 @@ MathLib::Vector3 CModel::getVertUpDir()
 //	return m_suppPlaneManager->getSuppPlaneNum();
 //}
 //
-//void CModel::initSuppPlaneManager()
-//{
-//	if (m_suppPlaneManager == NULL)
-//	{
-//		m_suppPlaneManager = new SuppPlaneManager(this);
-//	}	
-//}
+
 
 
 

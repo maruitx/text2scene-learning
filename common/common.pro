@@ -34,6 +34,9 @@ HEADERS += \
 	geometry/TriTriIntersect.h \
 	geometry/RelationGraph.h \
 	geometry/UDGraph.h \
+	geometry/SuppPlane.h \
+	geometry/SuppPlaneManager.h \
+	third_party/clustering/Kmeans.h \
 	utilities/utility.h \
 	utilities/mathlib.h \
 	utilities/Eigen3x3.h 
@@ -50,6 +53,9 @@ SOURCES += \
 	geometry/TriTriIntersect.cpp \
 	geometry/RelationGraph.cpp \
 	geometry/UDGraph.cpp \
+	geometry/SuppPlane.cpp	\
+	geometry/SuppPlaneManager.cpp \
+	third_party/clustering/Kmeans.cpp \
 	utilities/mathlib.cpp 
 	
 # Opcode lib

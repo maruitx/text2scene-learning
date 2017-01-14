@@ -22,6 +22,7 @@ public:
 	void setScale(double s) { m_scale = s; };
 	double getScale() { return m_scale; };
 
+	void setIdStr(const QString &idStr) { m_idStr = idStr; };
 	QString getIdStr() { return m_idStr; };
 	const QString& getShapeNetCatsStr();
 

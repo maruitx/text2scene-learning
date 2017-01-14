@@ -7,7 +7,7 @@
 #include "../utilities/mathlib.h"
 
 class CMesh;
-//class SuppPlaneManager;
+class SuppPlaneManager;
 //class SuppPlane;
 
 
@@ -43,6 +43,7 @@ public:
 	CMesh* getMesh() { return m_mesh; };
 
 	void setSceneMetric(double m){ m_sceneMetric = m; };
+	double getSceneMetric() { return m_sceneMetric; };
 
 	void updateFrontDir(const MathLib::Vector3 &loadedDir);
 	void updateUpDir(const MathLib::Vector3 &loadedDir);
@@ -101,8 +102,8 @@ public:
 	bool isOBBIntersectMesh(const COBB &testOBB);
 
 	//// support plane
-	//void initSuppPlaneManager();
-	//void buildSuppPlane();
+	void buildSuppPlane();
+	void builSuppPlaneUsingBBTop();
 	//bool hasSuppPlane();
 	//SuppPlane* getLargestSuppPlane();
 	//double getLargestSuppPlaneHeight();
@@ -173,14 +174,15 @@ private:
 	GLuint m_displayListID;
 	int m_status;  // whether model is fixed or movable
 
-	//SuppPlaneManager *m_suppPlaneManager;
+	SuppPlaneManager *m_suppPlaneManager;
 	std::vector<int> m_faceIndicators;
+	bool m_hasSuppPlane;
 
 	bool m_readyForInterTest;
 
 	// rendering options
 	bool m_showDiffColor;
-	//bool m_showFaceClusters;
+	bool m_showFaceClusters;
 
 	QString m_jobName;
 	int m_outputStatus;

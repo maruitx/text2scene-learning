@@ -282,9 +282,8 @@ void scene_lab::buildRelationGraphForSceneList()
 
 			CScene *scene = new CScene();
 			QString filename = sceneDBPath + "/" + sceneName + ".txt";
-			scene->loadSceneFromFile(filename, 0, 0, 0);
+			scene->loadSceneFromFile(filename, 1, 0, 0);
 			m_scene = scene;
-			loadModelMetaInfo();
 
 			m_scene->buildRelationGraph();
 		}

@@ -67,6 +67,8 @@ public:
 	RelationGraph* getSceneGraph() { return m_relationGraph; };
 	void updateRelationGraph(int modelID);
 	void buildSupportHierarchy();
+	void buildSupportLevels();
+
 	void setSupportChildrenLevel(CModel *m);
 	//int findPlaneSuppPlaneID(int childModelID, int parentModelID);
 	bool hasSupportHierarchyBuilt() { return m_hasSupportHierarchy; };

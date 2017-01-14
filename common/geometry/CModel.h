@@ -132,6 +132,7 @@ public:
 	int parentSuppPlaneID;   // on which support plane of the parent
 	std::vector<int> suppChindrenList;
 	int supportLevel;  //  0 is support by floor
+	MathLib::Vector3 parentContactNormal;
 
 	std::vector<std::vector<int>> suppGridPos; // grid pos that is filled by current model
 

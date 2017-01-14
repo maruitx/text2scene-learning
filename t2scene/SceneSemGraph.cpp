@@ -91,10 +91,13 @@ void SceneSemGraph::extractRelationsFromRelationGraph()
 		switch (relEdge->t)
 		{
 			// e.g. table --> support --> laptop
-		case RelationGraph::CT_SUPPORT:
+		case RelationGraph::CT_VERT_SUPPORT:
 			addNode(SSGNodeType[2], SSGPairRelStrings[0]);
-			addEdge(relEdge->v1, m_nodeNum-1);
-			addEdge(m_nodeNum-1, relEdge->v2);
+			// in RG, an edge is (desk, monitor), in SSG will be (monitor, support), (support, desk)
+			//addEdge(relEdge->v1, m_nodeNum-1);   
+			//addEdge(m_nodeNum-1, relEdge->v2);
+			addEdge(relEdge->v2, m_nodeNum - 1);
+			addEdge(m_nodeNum - 1, relEdge->v1);
 			
 		case RelationGraph::CT_CONTAIN:
 
@@ -118,79 +121,170 @@ void SceneSemGraph::extractSpatialSideRel()
 	// collect obj ids with support level 0
 	int roomId = m_scene->getRoomID();
 
-	std::vector<int> modelIds;
+	std::vector<int> groundModelIds;
+	std::vector<int> wallModelIds;
+
 	for (int i = 0; i < m_scene->getModelNum(); i++)
 	{
 		CModel *m = m_scene->getModel(i);
-		//if (m->suppParentID == roomId)
-		//{
-		//	modelIds.push_back(i);
-		//}
 
-		if (m->supportLevel == 0)
+		if (m->supportLevel == 0 && m->parentContactNormal == MathLib::Vector3(0, 0, 1))
 		{
-			modelIds.push_back(i);
+			groundModelIds.push_back(i);
+		}
+
+		if (m->supportLevel == 0 && m->parentContactNormal.dot(MathLib::Vector3(0, 0, 1)) == 0)
+		{
+			wallModelIds.push_back(i);
 		}
 	}
 
-	if (modelIds.empty())
+	if (groundModelIds.empty())
 	{
 		qDebug() << "No models supported by the room to extract side relation\n";
 		return;
 	}
 
-	for (int i = 0; i < modelIds.size()-1; i++)
+	// between ground objects
+	for (int i = 0; i < groundModelIds.size()-1; i++)
 	{
-		int refModelId = modelIds[i];
+		int refModelId = groundModelIds[i];
 
-		for (int j = i + 1; j < modelIds.size(); j++)
+		for (int j = i + 1; j < groundModelIds.size(); j++)
 		{
-			int testModelId = modelIds[j];
-
-			std::vector<QString> sideRels = computeSpatialSideRelForModelPair(refModelId, testModelId);
-
-			for (int r = 0; r < sideRels.size(); r++)
-			{
-				QString currRel = sideRels[r];
-				addNode(SSGNodeType[2], currRel);
-				addEdge(refModelId, m_nodeNum - 1);
-				addEdge(m_nodeNum - 1, testModelId);
-
-				// add symmetric edge
-				// the "near" is already symmetic
-				if (sideRels[r] == "near")
-				{
-					continue;
-				}
-
-
-				if (sideRels[r] == "leftside")
-				{
-					currRel = "rightside";
-				}
-
-				if (sideRels[r] == "rightside")
-				{
-					currRel = "leftside";
-				}
-
-				if (sideRels[r] == "front")
-				{
-					currRel = "back";
-				}
-
-				if (sideRels[r] == "back")
-				{
-					currRel = "front";
-				}
-
-				addNode(SSGNodeType[2], currRel);
-				addEdge(testModelId, m_nodeNum - 1);
-				addEdge(m_nodeNum - 1, refModelId);
-			}			
+			int testModelId = groundModelIds[j];
+			extractSpatialSideRelForModelPair(refModelId, testModelId);		
 		}
 	}
 }
+
+void SceneSemGraph::extractSpatialSideRelForModelPair(int refModelId, int testModelId)
+{
+	std::vector<QString> sideRels = computeSpatialSideRelForModelPair(refModelId, testModelId);
+
+	for (int r = 0; r < sideRels.size(); r++)
+	{
+		QString currRel = sideRels[r];
+		addNode(SSGNodeType[2], currRel);
+
+		// SSG edge direction will be (testModel, relation), (relation, refModel)
+		//addEdge(refModelId, m_nodeNum - 1);
+		//addEdge(m_nodeNum - 1, testModelId);
+		addEdge(testModelId, m_nodeNum - 1);
+		addEdge(m_nodeNum - 1, refModelId);
+
+		// add symmetric edge
+		// the "near" is already symmetic
+		if (sideRels[r] == "leftside")
+		{
+			currRel = "rightside";
+		}
+
+		if (sideRels[r] == "rightside")
+		{
+			currRel = "leftside";
+		}
+
+		if (sideRels[r] == "front")
+		{
+			currRel = "back";
+		}
+
+		if (sideRels[r] == "back")
+		{
+			currRel = "front";
+		}
+
+		// add symmetric edge
+		addNode(SSGNodeType[2], currRel);
+		addEdge(refModelId, m_nodeNum - 1);
+		addEdge(m_nodeNum - 1, testModelId);
+	}
+}
+
+
+std::vector<QString> SceneSemGraph::computeSpatialSideRelForModelPair(int refModelId, int testModelId)
+{
+	std::vector<QString> relationStrings;
+
+	double distTh = 1.0;
+
+	double sceneMetric = m_scene->getSceneMetric();
+	MathLib::Vector3 sceneUpDir = m_scene->getUprightVec();
+
+
+	CModel *refModel = m_scene->getModel(refModelId);
+	CModel *testModel = m_scene->getModel(testModelId);
+
+	COBB refOBB = refModel->getOBB();
+	COBB testOBB = testModel->getOBB();
+
+	double hausdorffDist = refOBB.HausdorffDist(testOBB);
+	double connStrength = refOBB.ConnStrength_HD(testOBB);
+
+	MathLib::Vector3 contactDir;
+	if (refOBB.IsIntersect(testOBB) || connStrength < 2.0)
+	{
+		relationStrings.push_back(SSGPairRelStrings[9]);  // near
+	}
+
+	MathLib::Vector3 refFront = refModel->getHorizonFrontDir();
+	MathLib::Vector3 refUp = refModel->getVertUpDir();
+
+	MathLib::Vector3 refPos = refModel->getOBBInitPos();
+	MathLib::Vector3 testPos = testModel->getOBBInitPos();
+
+	MathLib::Vector3 fromRefToTestVec = testPos - refPos;
+	fromRefToTestVec.normalize();
+
+	// front or back side is not view dependent
+	double frontDirDot = fromRefToTestVec.dot(refFront);
+
+	double sideSectionVal = MathLib::Cos(30);
+	if (frontDirDot > sideSectionVal)
+	{
+		relationStrings.push_back(SSGPairRelStrings[7]); // front
+	}
+	else if (frontDirDot < -sideSectionVal && frontDirDot > -1)
+	{
+		relationStrings.push_back(SSGPairRelStrings[8]); // back
+	}
+
+	// left or right is view dependent
+	MathLib::Vector3 refRight = refFront.cross(refUp);
+	double rightDirDot = fromRefToTestVec.dot(refRight);
+
+	MathLib::Vector3 roomFront = m_scene->getRoomFront();
+
+	// if ref front is same to th room front (e.g. view inside 0, -1, 0)
+	bool useViewCentric = false;
+	if (refFront.dot(roomFront) > sideSectionVal  && useViewCentric)
+	{
+		// use view-centric
+		if (rightDirDot >= sideSectionVal) // right of obj
+		{
+			relationStrings.push_back(SSGPairRelStrings[5]); // left in view
+		}
+		else if (rightDirDot <= -sideSectionVal) // left of obj
+		{
+			relationStrings.push_back(SSGPairRelStrings[6]); // right in view
+		}
+	}
+	else
+	{
+		if (rightDirDot >= sideSectionVal) // right of obj
+		{
+			relationStrings.push_back(SSGPairRelStrings[6]); // right
+		}
+		else if (rightDirDot <= -sideSectionVal)  // left of obj
+		{
+			relationStrings.push_back(SSGPairRelStrings[5]); // left
+		}
+	}
+
+	return relationStrings;
+}
+
 
 void SceneSemGraph::loadAttributeNodeFromAnnotation()
 {
@@ -447,84 +541,4 @@ void SceneSemGraph::saveGMTNodeAttributeFile(const QString &filename)
 	}
 }
 
-std::vector<QString> SceneSemGraph::computeSpatialSideRelForModelPair(int refModelId, int testModelId)
-{
-	std::vector<QString> relationStrings;
-
-	double distTh = 1.0;
-	
-	double sceneMetric = m_scene->getSceneMetric();
-	MathLib::Vector3 sceneUpDir = m_scene->getUprightVec();
-	
-
-	CModel *refModel = m_scene->getModel(refModelId);
-	CModel *testModel = m_scene->getModel(testModelId);
-
-	COBB refOBB = refModel->getOBB();
-	COBB testOBB = testModel->getOBB();
-
-	double hausdorffDist = refOBB.HausdorffDist(testOBB);
-	double connStrength = refOBB.ConnStrength_HD(testOBB);
-	
-	MathLib::Vector3 contactDir;
-	if (refOBB.IsIntersect(testOBB) || connStrength < 2.0)
-	{
-		relationStrings.push_back(SSGPairRelStrings[9]);  // near
-	}
-
-	MathLib::Vector3 refFront =refModel->getHorizonFrontDir();
-	MathLib::Vector3 refUp = refModel->getVertUpDir();
-
-	MathLib::Vector3 refPos = refModel->getOBBInitPos();
-	MathLib::Vector3 testPos = testModel->getOBBInitPos();
-
-	MathLib::Vector3 fromRefToTestVec = testPos - refPos;
-	fromRefToTestVec.normalize();
-
-	// front or back side is not view dependent
-	double frontDirDot = fromRefToTestVec.dot(refFront);
-
-	double sideSectionVal = MathLib::Cos(30);
-	if (frontDirDot > sideSectionVal)
-	{
-		relationStrings.push_back(SSGPairRelStrings[7]); // front
-	}
-	else if (frontDirDot < -sideSectionVal && frontDirDot > -1)
-	{
-		relationStrings.push_back(SSGPairRelStrings[8]); // back
-	}
-
-	// left or right is view dependent
-	MathLib::Vector3 refRight = refFront.cross(refUp);
-	double rightDirDot = fromRefToTestVec.dot(refRight);
-
-	MathLib::Vector3 roomFront = m_scene->getRoomFront();
-
-	// if ref front is same to th room front (e.g. view inside 0, -1, 0)
-	if (refFront.dot(roomFront) > sideSectionVal)
-	{
-		// use view-centric
-		if (rightDirDot >= sideSectionVal) // right of obj
-		{
-			relationStrings.push_back(SSGPairRelStrings[5]); // left in view
-		}
-		else if (rightDirDot <= -sideSectionVal ) // left of obj
-		{
-			relationStrings.push_back(SSGPairRelStrings[6]); // right in view
-		}
-	}
-	else
-	{
-		if (rightDirDot >= sideSectionVal) // right of obj
-		{
-			relationStrings.push_back(SSGPairRelStrings[6]); // right
-		}
-		else if (rightDirDot <= -sideSectionVal)  // left of obj
-		{
-			relationStrings.push_back(SSGPairRelStrings[5]); // left
-		}
-	}
-
-	return relationStrings;
-}
 

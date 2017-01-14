@@ -145,6 +145,32 @@ void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int ob
 				}
 			}
 
+			if (databaseType == QString("StanfordSceneDatabase"))
+			{
+				if (currLine.contains("parentIndex "))
+				{
+					std::vector<std::string> parts = PartitionString(currLine.toStdString(), "parentIndex ");
+					int parentId = StringToInt(parts[0]);
+					m_modelList[currModelID]->suppParentID = parentId;
+				}
+
+				if (currLine.contains("children "))
+				{
+					std::vector<int> intList = StringToIntegerList(currLine.toStdString(), "children ");
+					for (int i = 0; i < intList.size(); i++)
+					{
+						int childId = intList[i];
+						m_modelList[currModelID]->suppChindrenList.push_back(childId);
+					}
+				}
+
+				if (currLine.contains("parentContactNormal "))
+				{
+					std::vector<int> intList =  StringToIntegerList(currLine.toStdString(), "parentContactNormal ");
+					m_modelList[currModelID]->parentContactNormal = MathLib::Vector3(intList[0], intList[1], intList[2]);
+				}
+			}
+
 			if (currLine.contains("transform "))
 			{
 				std::vector<float> transformVec = StringToFloatList(currLine.toStdString(), "transform ");
@@ -177,7 +203,9 @@ void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int ob
 	if (m_relationGraph->readGraph(graphFilename) != -1)
 	{
 		m_hasRelGraph = true;
+
 		buildSupportHierarchy();
+		
 		std::cout << "\tstructure graph loaded\n";
 	}
 
@@ -197,15 +225,26 @@ void CScene::buildRelationGraph()
 {
 	std::cout << "\tstart build relation graph for "<< m_sceneFileName.toStdString()<< "...";
 
-	QString graphFilename = m_sceneFilePath + "/" + m_sceneFileName + ".sg";
-
-	if (m_sceneFormat == "SceneNNConversionOutput")
+	// build OBB if not exist
+	for (int i = 0; i < m_modelList.size(); i++)
 	{
-		for (int i = 0; i < m_modelNum; i++)
+		CModel *m = m_modelList[i];
+		if( m->loadOBB() == -1)
 		{
-			m_modelList[i]->computeOBB(2);
+			if (m_uprightVec == MathLib::Vector3(0, 0, 1))
+			{
+				m->computeOBB(2); // fix Z
+			}
+			else if (m_uprightVec == MathLib::Vector3(0, 1, 0))
+			{
+				m->computeOBB(1); // fix Y
+			}
+
+			m->saveOBB();
 		}
 	}
+
+	QString graphFilename = m_sceneFilePath + "/" + m_sceneFileName + ".sg";
 
 	m_relationGraph->buildGraph();
 	m_relationGraph->saveGraph(graphFilename);
@@ -388,32 +427,58 @@ std::vector<int> CScene::getModelIdWithCatName(QString s, bool usingSynset)
 //TO DO: fix support relationship after insert model
 void CScene::buildSupportHierarchy()
 {
-	if (m_relationGraph->IsEmpty()) return;
-
-	m_relationGraph->computeSupportParentForModels();
-	std::vector<std::vector<int>> parentList = m_relationGraph->getSupportParentListForModels();
-
-	// init all support to be -1
-	foreach(CModel *m, m_modelList)
+	if (m_sceneFormat != "StanfordSceneDatabase")
 	{
-		m->suppParentID = -1; 
-		m->supportLevel = -10;
-		m->suppChindrenList.clear();
-	}
+		if (m_relationGraph->IsEmpty()) return;
 
-	// collect parent-child relationship
-	for (int i = 0; i < m_relationGraph->Size(); i++)
-	{
-		std::vector<int> parentIDs = parentList[i];
+		m_relationGraph->computeSupportParentForModels();
+		std::vector<std::vector<int>> parentList = m_relationGraph->getSupportParentListForModels();
 
-		if (!parentIDs.empty())
+		// init all support to be -1
+		foreach(CModel *m, m_modelList)
 		{
-			int parentId = parentIDs[0];  // use the first parent in the list
-			m_modelList[i]->suppParentID = parentId;
-			m_modelList[parentId]->suppChindrenList.push_back(i);
+			m->suppParentID = -1;
+			m->supportLevel = -10;
+			m->suppChindrenList.clear();
+		}
+
+		// collect parent-child relationship
+		for (int i = 0; i < m_relationGraph->Size(); i++)
+		{
+			std::vector<int> parentIDs = parentList[i];
+
+			if (!parentIDs.empty())
+			{
+				int parentId = parentIDs[0];  // use the first parent in the list
+				m_modelList[i]->suppParentID = parentId;
+				m_modelList[parentId]->suppChindrenList.push_back(i);
+			}
 		}
 	}
 
+	buildSupportLevels();
+
+	m_hasSupportHierarchy = true;
+
+	//// update grid on support plane
+	//for (int i = 0; i < m_modelNum; i++)
+	//{
+	//	int childNum = m_modelList[i]->suppChindrenList.size();
+	//	if (childNum > 0)
+	//	{
+	//		for (int j = 0; j < childNum; j++)
+	//		{
+	//			int childID = m_modelList[i]->suppChindrenList[j];
+	//		
+	//			m_modelList[childID]->parentSuppPlaneID = findPlaneSuppPlaneID(childID, i);
+	//		}			
+	//	}
+	//}
+}
+
+
+void CScene::buildSupportLevels()
+{
 	// init support level
 	double minHeight = 1e6;
 	std::vector<double> modelBottomHeightList(m_modelNum);
@@ -446,24 +511,8 @@ void CScene::buildSupportHierarchy()
 			setSupportChildrenLevel(m_modelList[i]);
 		}
 	}
-
-	m_hasSupportHierarchy = true;
-
-	//// update grid on support plane
-	//for (int i = 0; i < m_modelNum; i++)
-	//{
-	//	int childNum = m_modelList[i]->suppChindrenList.size();
-	//	if (childNum > 0)
-	//	{
-	//		for (int j = 0; j < childNum; j++)
-	//		{
-	//			int childID = m_modelList[i]->suppChindrenList[j];
-	//		
-	//			m_modelList[childID]->parentSuppPlaneID = findPlaneSuppPlaneID(childID, i);
-	//		}			
-	//	}
-	//}
 }
+
 //
 //int CScene::findPlaneSuppPlaneID(int childModelID, int parentModelID)
 //{

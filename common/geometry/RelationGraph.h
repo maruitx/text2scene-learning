@@ -8,7 +8,8 @@ class RelationGraph : public CUDGraph
 {
 public:
 	typedef enum {
-		CT_SUPPORT = 0,
+		CT_VERT_SUPPORT = 0,
+		CT_HORIZON_SUPPORT,
 		CT_CONTACT,
 		CT_CONTAIN,
 		CT_PROXIMITY,
@@ -40,6 +41,7 @@ public:
 
 
 private:
+	int buildSuppEdgesFromFile(); // for StanfordSceneDatabase
 	int extractSupportRel(); //
 	int pruneSupportRel();
 	int updateSupportRel(int modelID); // update support relationship after insert a new model into the scene

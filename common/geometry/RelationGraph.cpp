@@ -28,7 +28,29 @@ int RelationGraph::extractSupportRel()
 			CModel *pMJ = m_scene->getModel(j);
 			bool roughOBB = false;
 			if (pMI->IsSupport(pMJ, roughOBB, dT, m_scene->getUprightVec())) {
-				this->InsertEdge(i, j, CT_SUPPORT);	// upright support
+				this->InsertEdge(i, j, CT_VERT_SUPPORT);	// upright support
+			}
+		}
+	}
+
+	return 0;
+}
+
+int RelationGraph::buildSuppEdgesFromFile()
+{
+	for (unsigned int i = 0; i < m_nodeNum; i++) {
+		CModel *pMI = m_scene->getModel(i);
+		std::vector<int> suppChildrenList = pMI->suppChindrenList;
+		for (unsigned int j = 0; j < suppChildrenList.size(); j++) {
+			int childId = suppChildrenList[j];
+			CModel *pMJ = m_scene->getModel(childId);
+			if (pMJ->parentContactNormal == MathLib::Vector3(0,0,1))
+			{
+				this->InsertEdge(i, childId, CT_VERT_SUPPORT);	// upright support, i is the support parent of j
+			}
+			else
+			{
+				this->InsertEdge(i, childId, CT_HORIZON_SUPPORT); // 
 			}
 		}
 	}
@@ -69,7 +91,7 @@ void RelationGraph::updateGraph(int modelID, int suppModelID)
 	double dT = m_SuppThresh / m_sceneMetric;
 
 	if (pMI->IsSupport(pMJ, false, dT, m_scene->getUprightVec())) {
-		this->InsertEdge(suppModelID, modelID, CT_SUPPORT);	// upright support
+		this->InsertEdge(suppModelID, modelID, CT_VERT_SUPPORT);	// upright support
 	}
 }
 
@@ -84,7 +106,7 @@ int RelationGraph::updateSupportRel(int modelID)
 			CModel *pMI = m_scene->getModel(i);
 
 			if (pMI->IsSupport(pMJ, false, dT, m_scene->getUprightVec())) {
-				this->InsertEdge(i, modelID, CT_SUPPORT);	// upright support
+				this->InsertEdge(i, modelID, CT_VERT_SUPPORT);	// upright support
 			}
 		}
 	}
@@ -94,8 +116,14 @@ int RelationGraph::updateSupportRel(int modelID)
 
 void RelationGraph::buildGraph()
 {
-	extractSupportRel();
-	//pruneSupportRel();
+	if (m_scene->getSceneFormat() == "StanfordSceneDatabase")
+	{
+		buildSuppEdgesFromFile();
+	}
+	else{
+		extractSupportRel();
+		//pruneSupportRel();
+	}
 }
 
 int RelationGraph::readGraph(const QString &filename)
@@ -175,7 +203,7 @@ void RelationGraph::drawGraph()
 	for (unsigned int i = 0; i < this->ESize(); i++) {
 		const CUDGraph::Edge *e = this->GetEdge(i);
 		switch (e->t) {
-		case CT_SUPPORT:
+		case CT_VERT_SUPPORT:
 			glLineWidth(5.0);
 			glColor3f(1.0f, 0.3f, 0.3f); //red
 			break;
@@ -226,7 +254,7 @@ void RelationGraph::computeSupportParentForModels()
 	m_supportParentListForModels.resize(this->Size());
 
 	for (unsigned int ei = 0; ei < this->ESize(); ei++) {
-		if (this->GetEdge(ei)->t == RelationGraph::CT_SUPPORT) {
+		if (this->GetEdge(ei)->t == RelationGraph::CT_VERT_SUPPORT) {
 			CModel *pM1 = m_scene->getModel(this->GetEdge(ei)->v1);
 			CModel *pM2 = m_scene->getModel(this->GetEdge(ei)->v2);
 
@@ -246,7 +274,7 @@ int RelationGraph::pruneSupportRel()
 	// collect direct support info.
 	std::vector<std::vector<int>> SuppList(this->Size());	// support giver list, models that are being supported
 	for (unsigned int ei = 0; ei < this->ESize(); ei++) {
-		if (this->GetEdge(ei)->t == CT_SUPPORT) {
+		if (this->GetEdge(ei)->t == CT_VERT_SUPPORT) {
 			CModel *pM1 = m_scene->getModel(this->GetEdge(ei)->v1);
 			CModel *pM2 = m_scene->getModel(this->GetEdge(ei)->v2);
 
@@ -286,5 +314,7 @@ int RelationGraph::pruneSupportRel()
 
 	return 0;
 }
+
+
 
 

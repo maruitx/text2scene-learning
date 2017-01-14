@@ -34,7 +34,9 @@ public:
 	void buildFromModelDBAnnotation();  // low-level attribute node and edges to object node
 	
 	void extractRelationsFromRelationGraph();  // low-level/high-level relation node and edges to object node
+	
 	void extractSpatialSideRel(); // only extract the side info for objs with support level 0
+	void extractSpatialSideRelForModelPair(int refModelId, int testModelId);
 	std::vector<QString> computeSpatialSideRelForModelPair(int refModelId, int testModelId);
 
 	void loadAttributeNodeFromAnnotation(); // high-level attribute node and edges to object node

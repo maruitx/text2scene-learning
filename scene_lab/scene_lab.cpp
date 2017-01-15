@@ -45,7 +45,7 @@ void scene_lab::loadScene()
 	scene->loadSceneFromFile(m_widget->loadSceneName(), 0, 0, 1);
 	m_scene = scene;
 
-	loadModelMetaInfo();
+	loadModelMetaInfoForScene();
 
 	emit sceneLoaded();
 }
@@ -56,7 +56,7 @@ void scene_lab::loadSceneList()
 	//scene->loadSceneFile(m_widget->loadSceneName(), 0, 0);
 }
 
-void scene_lab::loadModelMetaInfo()
+void scene_lab::loadModelMetaInfoForScene()
 {
 	if (m_modelDB == NULL)
 	{
@@ -98,19 +98,20 @@ void scene_lab::updateSceneRenderingOptions()
 	bool showModelOBB = m_widget->ui->showOBBCheckBox->isChecked();
 	bool showSuppGraph = m_widget->ui->showGraphCheckBox->isChecked();
 	bool showFrontDir = m_widget->ui->showFrontDirCheckBox->isChecked();
-
+	bool showSuppPlane = m_widget->ui->showSuppPlaneCheckBox->isChecked();
+	
 	if (m_scene != NULL)
 	{
 		m_scene->setShowModelOBB(showModelOBB);
 		m_scene->setShowSceneGraph(showSuppGraph);
+		m_scene->setShowSuppPlane(showSuppPlane);
 		m_scene->setShowModelFrontDir(showFrontDir);
 
 	}
-	else
+
+	if (m_modelDBViewer_widget !=NULL)
 	{
-		m_widget->ui->showOBBCheckBox->setChecked(false);
-		m_widget->ui->showGraphCheckBox->setChecked(false);
-		m_widget->ui->showFrontDirCheckBox->setChecked(false);
+		m_modelDBViewer_widget->updateRenderingOptions(showModelOBB, showFrontDir, showSuppPlane);
 	}
 
 	emit sceneRenderingUpdated();
@@ -204,7 +205,7 @@ void scene_lab::buildSemGraphForSceneList()
 			QString filename = sceneDBPath + "/" + sceneName + ".txt";
 			scene->loadSceneFromFile(filename, 1, 0, 0);
 			m_scene = scene;
-			loadModelMetaInfo();
+			loadModelMetaInfoForScene();
 
 			buildSemGraphForCurrentScene(1);
 

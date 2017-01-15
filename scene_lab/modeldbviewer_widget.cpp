@@ -87,9 +87,9 @@ void ModelDBViewer_widget::update3DModel()
 	//QString modelFileName = m_modelDB->getDBPath() + "/models-OBJ/models/" + modelIdStr + ".obj";
 	QString modelFileName = m_modelDB->getDBPath() + "/" + modelIdStr + ".obj";
 	m_displayedModel->loadModel(modelFileName, 1.0, 0, 0, 1);
-	m_displayedModel->setSceneMetric(0.0254);
 
 	// update model meta info
+	m_displayedModel->setSceneMetric(0.0254);
 	m_displayedModel->setCatName(dbModel->getProcessedCatName());
 	m_displayedModel->updateFrontDir(dbModel->frontDir);
 	m_displayedModel->updateUpDir(dbModel->upDir);
@@ -109,21 +109,33 @@ void ModelDBViewer_widget::buildSuppPlaneForCurrModel()
 
 void ModelDBViewer_widget::builSuppPlaceForModelList()
 {
+	int i = 0; 
+	for (auto itr = m_modelDB->dbMetaModels.begin(); itr != m_modelDB->dbMetaModels.end(); itr++)
+	{
+		std::cout << "Start processing model " << i++ << "/" << m_modelDB->dbMetaModels.size()<<"\n";
+		DBMetaModel *dbModel = itr->second;
+		QString modelFileName = m_modelDB->getDBPath() + "/" + dbModel->getIdStr() + ".obj";
 
+		CModel *m = new CModel();
+		m->loadModel(modelFileName, 1.0, 0, 0, 1);
+
+		// update model meta info
+		m->setSceneMetric(0.0254);
+		m->setCatName(dbModel->getProcessedCatName());
+		m->updateFrontDir(dbModel->frontDir);
+		m->updateUpDir(dbModel->upDir);
+
+		m->builSuppPlaneUsingBBTop();
+
+		delete m;
+	}
+
+	std::cout << "All model support planes saved!\n";
 }
 
 void ModelDBViewer_widget::updateRenderingOptions()
 {
-	this->ui.showSuppCheckBox->isChecked();
-
-	if (this->ui.showSuppCheckBox->isChecked())
-	{
-		m_viewer->m_drawSupp = true;
-	}
-	else
-	{
-		m_viewer->m_drawSupp = false;
-	}
+	m_viewer->m_drawSupp = this->ui.showSuppCheckBox->isChecked();
 
 	if (this->ui.showFaceClustersCheckBox->isChecked())
 	{
@@ -133,6 +145,15 @@ void ModelDBViewer_widget::updateRenderingOptions()
 	{
 		m_displayedModel->buildDisplayList(0, 0);
 	}
+
+	m_viewer->updateGL();
+}
+
+void ModelDBViewer_widget::updateRenderingOptions(bool showOBB, bool showFrontDir, bool showSuppPlane)
+{
+	m_viewer->m_drawOBB = showOBB;
+	m_viewer->m_drawFrontDir = showFrontDir;
+	m_viewer->m_drawSupp = showSuppPlane;
 
 	m_viewer->updateGL();
 }

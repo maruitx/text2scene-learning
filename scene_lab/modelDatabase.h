@@ -34,6 +34,10 @@ public:
 	MathLib::Vector3 upDir;
 	MathLib::Vector3 position;
 
+	std::vector<MathLib::Vector3> suppPlaneCorners;
+	std::vector<double> onSuppPlaneUV;
+	double positionToSuPPlaneDist; // distance after the transformation (in the real world unit, inch for StanfordSceneDataBase)
+
 private:
 	QString m_idStr;
 	QString m_categoryName;

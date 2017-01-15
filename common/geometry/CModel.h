@@ -8,7 +8,7 @@
 
 class CMesh;
 class SuppPlaneManager;
-//class SuppPlane;
+class SuppPlane;
 
 
 class CModel
@@ -47,6 +47,7 @@ public:
 
 	void updateFrontDir(const MathLib::Vector3 &loadedDir);
 	void updateUpDir(const MathLib::Vector3 &loadedDir);
+	MathLib::Vector3 getRightDir();
 
 	// aabb
 	void computeAABB();
@@ -104,10 +105,10 @@ public:
 	//// support plane
 	void buildSuppPlane();
 	void builSuppPlaneUsingBBTop();
-	//bool hasSuppPlane();
+	bool hasSuppPlane() { return m_hasSuppPlane; };
 	//SuppPlane* getLargestSuppPlane();
 	//double getLargestSuppPlaneHeight();
-	//SuppPlane* getSuppPlane(int i);
+	SuppPlane* getSuppPlane(int i);
 	//int getSuppPlaneNum();
 
 	// transformation
@@ -159,8 +160,11 @@ private:
 
 	double m_initOBBDiagLen;
 	MathLib::Vector3 m_initOBBPos;
+	MathLib::Vector3 m_currOBBPos;
 	MathLib::Vector3 m_initFrontDir;
 	MathLib::Vector3 m_upDir;
+
+
 	MathLib::Matrix4d m_lastTransMat;
 	MathLib::Matrix4d m_fullTransMat;
 

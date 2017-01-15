@@ -590,6 +590,11 @@ DBMetaModel::DBMetaModel()
 	frontDir = MathLib::Vector3(0, -1, 0);
 	upDir = MathLib::Vector3(0, 0, 1);
 	position = MathLib::Vector3(0, 0, 0);
+	
+	onSuppPlaneUV[0] = 0.5;
+	onSuppPlaneUV[1] = 0.5;
+
+	positionToSuPPlaneDist = 0; // position to support plane dist after the transformation to realworld unit
 }
 
 DBMetaModel::DBMetaModel(const QString &s)

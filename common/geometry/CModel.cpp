@@ -52,6 +52,12 @@ CModel::~CModel()
 		delete m_mesh;
 		m_mesh = NULL;
 	}
+
+	if (m_suppPlaneManager!=NULL)
+	{
+		delete m_suppPlaneManager;
+		m_suppPlaneManager = NULL;
+	}
 }
 
 bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int obbOnly, int meshOnly, QString sceneDbType)
@@ -101,6 +107,8 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 	if (!obbOnly)
 	{
 		// load mesh data first
+		std::cout << "\t \t loading mesh for " << m_nameStr.toStdString() << "\n";
+
 		bool isLoaded;
 		isLoaded = m_mesh->readObjFile(qPrintable(filename), metric, sceneDbType);
 
@@ -112,14 +120,9 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 		computeAABB();
 		buildDisplayList(0, 0);
 
-		if (meshOnly) 
+		if(!meshOnly)  // load both obb and mesh, if obb not exist, compute obb
 		{
-			// still try to load obb, no matter whether obb exists or not
-			loadOBB();
-		}
-		else  // load both obb and mesh, if obb not exist, compute obb
-		{
-			if (loadOBB() == -1)
+			if (!m_hasOBB && loadOBB() == -1)
 			{
 				if (m_sceneUpVec == MathLib::Vector3(0,0,1))
 				{
@@ -140,7 +143,7 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 	}
 	else  // only load obb, if not exist, return
 	{
-		if (loadOBB() == -1)
+		if (!m_hasOBB && loadOBB() == -1)
 		{
 			std::cout << "\t OBB does not exist, please compute OBB first\n";
 			return false;
@@ -372,7 +375,7 @@ void CModel::draw(bool showModel, bool showOBB, bool showSuppPlane, bool showFro
 
 	if (showSuppPlane && m_hasSuppPlane)
 	{
-		m_suppPlaneManager->draw();
+		m_suppPlaneManager->draw(m_sceneMetric);
 	}
 
 	//m_AABB.DrawBox(0, 1, 0, 0, 0);
@@ -540,10 +543,8 @@ void CModel::buildSuppPlane()
 
 void CModel::builSuppPlaneUsingBBTop()
 {
-	std::cout << "SuppPlaneManager: start extracting support plane from AABB top ...\n";
-
 	// support plane should have consistent vertex order, w.r.t to the model front
-	std::vector<MathLib::Vector3> corners(4);
+	std::vector<MathLib::Vector3> corners(4); // need to delete after use to release memory
 	SuppPlane *p;
 
 	//if (m_hasOBB)
@@ -557,17 +558,62 @@ void CModel::builSuppPlaneUsingBBTop()
 	//}
 	//else
 	{
+		std::cout << "SuppPlaneManager: start extracting support plane from AABB top for "<< m_nameStr.toStdString() <<"\n";
+
 		corners[0] = m_AABB.vp[0];
 		corners[1] = m_AABB.vp[4];
 		corners[2] = m_AABB.vp[5];
 		corners[3] = m_AABB.vp[1];
-
-		p = new SuppPlane(corners);
-		p->setColor(GetColorFromSet(0));
-		p->setModel(this);
-		p->setModelID(m_id);
-		p->setSuppPlaneID(0);
 	}
+
+	// adjust corner order based on the model front orientation
+	std::vector<MathLib::Vector3> orderedCorners(4);
+	MathLib::Vector3 modelFront = m_initFrontDir;
+
+	modelFront.normalize();
+
+	MathLib::Vector3 modelRight = getRightDir();
+
+	MathLib::Vector3 modelCenter = m_AABB.cent;
+	MathLib::Vector3 cornerToCenterVec;
+
+	m_suppPlaneManager->clearSupportPlanes();
+
+
+	for (int i = 0; i < 4; i++)
+	{
+		cornerToCenterVec = corners[i] - modelCenter;
+		cornerToCenterVec.normalize();
+
+		double dotBetweenFront = cornerToCenterVec.dot(modelFront);
+		double dotBetweenRight = cornerToCenterVec.dot(modelRight);
+
+		if (dotBetweenFront > 0 && dotBetweenRight > 0)
+		{
+			orderedCorners[0] = corners[i];
+		}
+
+		if (dotBetweenFront > 0 && dotBetweenRight < 0)
+		{
+			orderedCorners[1] = corners[i];
+		}
+
+		if (dotBetweenFront < 0 && dotBetweenRight < 0)
+		{
+			orderedCorners[2] = corners[i];
+		}
+
+		if (dotBetweenFront < 0 && dotBetweenRight > 0)
+		{
+			orderedCorners[3] = corners[i];
+		}
+	}
+
+	p = new SuppPlane(orderedCorners, 1);
+	p->setColor(GetColorFromSet(0));
+	p->setModel(this);
+	p->setModelID(m_id);
+	p->setSuppPlaneID(0);
 
 	m_suppPlaneManager->addSupportPlane(p);
 	m_suppPlaneManager->saveSuppPlane();
@@ -773,11 +819,19 @@ void CModel::drawFrontDir()
 	startPt = m_OBB.cent;
 	endPt = startPt + m_initFrontDir/m_sceneMetric;
 
-	QColor c(0, 255, 0);
+	MathLib::Vector3 rightDir = getRightDir();
+	MathLib::Vector3 endRight = startPt + rightDir / m_sceneMetric;
+
+	MathLib::Vector3 endUp = startPt + m_upDir / m_sceneMetric;
+
+	QColor red(0, 255, 0);
+	QColor green(255,0,0);
+	QColor blue(0,0,255);
 
 	glDisable(GL_LIGHTING);
 
-	glColor4d(c.redF(), c.greenF(), c.blueF(), c.alphaF());
+	// draw front dir as green
+	glColor4d(red.redF(), red.greenF(), red.blueF(), red.alphaF());
 	glLineWidth(5.0);
 
 	glBegin(GL_LINES);
@@ -785,13 +839,45 @@ void CModel::drawFrontDir()
 	glVertex3d(endPt[0], endPt[1], endPt[2]);
 	glEnd();
 
+	// draw front point
 	glPointSize(10);
-	c = QColor(255, 0, 0);
-	glColor4d(c.redF(), c.greenF(), c.blueF(), c.alphaF());
+	glColor4d(green.redF(), green.greenF(), green.blueF(), green.alphaF());
 	glBegin(GL_POINTS);
 	glVertex3d(endPt[0], endPt[1], endPt[2]);
 	glEnd();
 
+
+	// draw right dir as red
+	glColor4d(green.redF(), green.greenF(), green.blueF(), green.alphaF());
+	glLineWidth(5.0);
+
+	glBegin(GL_LINES);
+	glVertex3d(startPt[0], startPt[1], startPt[2]);
+	glVertex3d(endRight[0], endRight[1], endRight[2]);
+	glEnd();
+
+	// draw right point
+	glPointSize(10);
+	glColor4d(red.redF(), red.greenF(), red.blueF(), red.alphaF());
+	glBegin(GL_POINTS);
+	glVertex3d(endRight[0], endRight[1], endRight[2]);
+	glEnd();
+
+	// draw up dir as blue
+	glColor4d(blue.redF(), blue.greenF(), blue.blueF(), blue.alphaF());
+	glLineWidth(5.0);
+
+	glBegin(GL_LINES);
+	glVertex3d(startPt[0], startPt[1], startPt[2]);
+	glVertex3d(endUp[0], endUp[1], endUp[2]);
+	glEnd();
+
+	// draw right point
+	glPointSize(10);
+	glColor4d(red.redF(), red.greenF(), red.blueF(), red.alphaF());
+	glBegin(GL_POINTS);
+	glVertex3d(endUp[0], endUp[1], endUp[2]);
+	glEnd();
 
 
 	glEnable(GL_LIGHTING);
@@ -1089,6 +1175,19 @@ MathLib::Vector3 CModel::getVertUpDir()
 	refVertUpDir.normalize();
 	return refVertUpDir;
 }
+
+MathLib::Vector3 CModel::getRightDir()
+{
+	MathLib::Vector3 rightDir = m_initFrontDir.cross(m_upDir);
+
+	return rightDir;
+}
+
+SuppPlane* CModel::getSuppPlane(int i)
+{
+	return m_suppPlaneManager->getSuppPlane(i);
+}
+
 
 //int CModel::getSuppPlaneNum()
 //{

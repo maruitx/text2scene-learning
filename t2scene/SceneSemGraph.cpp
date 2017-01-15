@@ -37,12 +37,17 @@ void SceneSemGraph::generateGraph()
 			DBMetaModel *metaModel = m_modelDB->getMetaModelByNameString(modelNameStr);
 
 			DBMetaModel *newMetaModelInstance = new DBMetaModel(metaModel);
+
+			// add extra info to meta model
 			newMetaModelInstance->setTransMat(m_scene->getModelInitTransMat(i));
 
 			if (m_scene->modelHasOBB(i))
 			{
 				newMetaModelInstance->position = m_scene->getOBBInitPos(i);
 			}
+			newMetaModelInstance->onSuppPlaneUV = m_scene->getUVonSuppPlaneForModel(i);
+			newMetaModelInstance->positionToSuPPlaneDist = m_scene->getHightToSuppPlaneForModel(i);
+			newMetaModelInstance->suppPlaneCorners = m_scene->getSuppPlaneCorners(i);
 
 			m_metaModelList.push_back(newMetaModelInstance);
 
@@ -56,12 +61,18 @@ void SceneSemGraph::generateGraph()
 			// add model to DB
 			DBMetaModel *newMetaModel = new DBMetaModel();
 			CModel *m = m_scene->getModel(i);
+
 			newMetaModel->frontDir = m->getFrontDir() * m_scene->getSceneMetric();
 			newMetaModel->upDir = m->getUpDir()* m_scene->getSceneMetric();
 			newMetaModel->position = m->getOBBInitPos();
+
 			newMetaModel->setCatName("unknown");
 			newMetaModel->setIdStr(modelNameStr);
 			newMetaModel->setTransMat(m_scene->getModelInitTransMat(i));
+
+			newMetaModel->onSuppPlaneUV = m_scene->getUVonSuppPlaneForModel(i);
+			newMetaModel->positionToSuPPlaneDist = m_scene->getHightToSuppPlaneForModel(i);
+			newMetaModel->suppPlaneCorners = m_scene->getSuppPlaneCorners(i);
 
 			newMetaModel->dbID = m_modelDB->dbMetaModels.size();
 			//m_modelDB->dbMetaModels[modelNameStr] = newMetaModel;
@@ -333,6 +344,15 @@ void SceneSemGraph::saveGraph()
 			ofs << "position " << m_metaModelList[i]->position[0] << " " << m_metaModelList[i]->position[1] << " " << m_metaModelList[i]->position[2] << "\n";
 			ofs << "frontDir " << m_metaModelList[i]->frontDir[0] << " " << m_metaModelList[i]->frontDir[1] << " " << m_metaModelList[i]->frontDir[2] << "\n";
 			ofs << "upDir " << m_metaModelList[i]->upDir[0] << " " << m_metaModelList[i]->upDir[1] << " " << m_metaModelList[i]->upDir[2] << "\n";
+
+			if (!m_metaModelList[i]->getIdStr().contains("room"))
+			{
+				ofs << "parentPlane " << m_metaModelList[i]->suppPlaneCorners[0][0] << " " << m_metaModelList[i]->suppPlaneCorners[0][1] << " " << m_metaModelList[i]->suppPlaneCorners[0][2] << " "
+					<< m_metaModelList[i]->suppPlaneCorners[1][0] << " " << m_metaModelList[i]->suppPlaneCorners[1][1] << " " << m_metaModelList[i]->suppPlaneCorners[1][2] << " "
+					<< m_metaModelList[i]->suppPlaneCorners[2][0] << " " << m_metaModelList[i]->suppPlaneCorners[2][1] << " " << m_metaModelList[i]->suppPlaneCorners[2][2] << " "
+					<< m_metaModelList[i]->suppPlaneCorners[3][0] << " " << m_metaModelList[i]->suppPlaneCorners[3][1] << " " << m_metaModelList[i]->suppPlaneCorners[3][2] << "\n";
+				ofs << "parentPlaneUVH " << m_metaModelList[i]->onSuppPlaneUV[0] << " " << m_metaModelList[i]->onSuppPlaneUV[1] << " " << m_metaModelList[i]->positionToSuPPlaneDist << "\n";
+			}
 		}
 
 		// save nodes in format: nodeId,nodeType,nodeName,inEdgeNodeList,outEdgeNodeList

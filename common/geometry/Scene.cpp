@@ -1,6 +1,6 @@
 ﻿#include "Scene.h"
 #include "RelationGraph.h"
-//#include "SuppPlane.h"
+#include "SuppPlane.h"
 //#include "../action/Skeleton.h"
 #include "../utilities/utility.h"
 //#include "../utilities/rng.h"
@@ -127,13 +127,14 @@ void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int ob
 				int modelIndex = StringToInt(parts[1]);
 
 				CModel *newModel = new CModel();
-				QString modelNameString = parts[2].c_str();
-				newModel->loadModel(m_modelDBPath + "/" + modelNameString + ".obj", 1.0, metaDataOnly, obbOnly, meshOnly, databaseType);
-				newModel->setSceneUpRightVec(m_uprightVec);
-
-				currModelID += 1;
 				newModel->setID(currModelID);
 				newModel->setSceneMetric(m_metric);
+				newModel->setSceneUpRightVec(m_uprightVec);
+
+				QString modelNameString = parts[2].c_str();
+				newModel->loadModel(m_modelDBPath + "/" + modelNameString + ".obj", 1.0, metaDataOnly, obbOnly, meshOnly, databaseType);
+
+				currModelID += 1;
 
 				m_modelList[currModelID] = newModel;
 
@@ -603,6 +604,90 @@ MathLib::Vector3 CScene::getRoomFront()
 	{
 		int id = getRoomID();
 		return m_modelList[id]->getFrontDir();
+	}
+}
+
+std::vector<double> CScene::getUVonSuppPlaneForModel(int modelId)
+{
+	CModel *currModel = m_modelList[modelId];
+	int parentId = currModel->suppParentID;
+
+	if (parentId == -1)
+	{
+		return std::vector<double>(2, 0.5);
+	}
+
+	CModel *parentModel = m_modelList[parentId];
+
+	std::vector<double> uv;
+
+	if (parentModel->hasSuppPlane())
+	{
+		SuppPlane *suppPlane = parentModel->getSuppPlane(0);	
+		MathLib::Vector3 pos = currModel->getModelPosOBB();  // in real world pos
+		
+		uv = suppPlane->GetUVForPoint(pos);
+
+		return uv;
+	}
+	else
+	{
+		return std::vector<double>(2, 0.5);
+	}
+}
+
+double CScene::getHightToSuppPlaneForModel(int modelId)
+{
+	CModel *currModel = m_modelList[modelId];
+	int parentId = currModel->suppParentID;
+
+	if (parentId == -1)
+	{
+		return -1;
+	}
+
+	CModel *parentModel = m_modelList[parentId];
+	double d;
+	
+	if (parentModel->hasSuppPlane())
+	{
+		SuppPlane *suppPlane = parentModel->getSuppPlane(0);
+		MathLib::Vector3 pos = currModel->getModelPosOBB();
+
+		d = suppPlane->GetPointToPlaneDist(pos); // in real world unit
+
+		return d;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+std::vector<MathLib::Vector3> CScene::getSuppPlaneCorners(int modelId)
+{
+	CModel *currModel = m_modelList[modelId];
+	int parentId = currModel->suppParentID;
+
+	if (parentId == -1)
+	{
+		return std::vector<MathLib::Vector3>(4, MathLib::Vector3(0, 0, 0));
+	}
+
+	CModel *parentModel = m_modelList[parentId];
+	double d;
+
+
+	if (parentModel->hasSuppPlane())
+	{
+		SuppPlane *suppPlane = parentModel->getSuppPlane(0);
+
+		std::vector<MathLib::Vector3> corners = suppPlane->GetCorners();
+		return corners;
+	}
+	else
+	{
+		return std::vector<MathLib::Vector3>(4, MathLib::Vector3(0, 0, 0));
 	}
 }
 

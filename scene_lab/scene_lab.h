@@ -25,7 +25,7 @@ public slots:
 	void loadScene();
 	void loadSceneList();
 
-	void loadModelMetaInfo();
+	void loadModelMetaInfoForScene();
 
 	void buildRelationGraphForCurrentScene();
 	void buildRelationGraphForSceneList();

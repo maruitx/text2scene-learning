@@ -63,6 +63,10 @@ public:
 	double getFloorHeight();
 	double getSceneMetric() { return m_metric; };
 
+	std::vector<double> getUVonSuppPlaneForModel(int modelId);
+	double getHightToSuppPlaneForModel(int modelId);
+	std::vector<MathLib::Vector3> getSuppPlaneCorners(int modelId);
+
 	void buildRelationGraph();
 	RelationGraph* getSceneGraph() { return m_relationGraph; };
 	void updateRelationGraph(int modelID);
@@ -85,7 +89,7 @@ public:
 	void draw();
 	void buildModelDislayList(int showDiffColor = 1, int showFaceCluster = 0);
 	void setShowModelOBB(bool s) { m_showModelOBB = s; };
-	//void setShowSuppPlane(bool s) { m_showSuppPlane = s; };
+	void setShowSuppPlane(bool s) { m_showSuppPlane = s; };
 	void setShowSceneGraph(bool s) { m_showSceneGaph = s; };
 	void setShowModelFrontDir(bool s) { m_showModelFrontDir = s; };
 	//void setShowSuppChildOBB(bool s) { m_showSuppChildOBB = s; }

@@ -1,12 +1,14 @@
 #include "SuppPlane.h"
 #include "CModel.h"
 
-const double GridSize = 0.05;   // 5cm
+const double GridSize = 0.05;   // 5cm, NEED TO CONSIDER SCENE METRIC!!
 
 
 SuppPlane::SuppPlane(void)
 {
-
+	m_corners.resize(4);
+	m_axis.resize(2);
+	m_sceneMetric = 1.0;
 }
 
 SuppPlane::~SuppPlane(void)
@@ -14,29 +16,20 @@ SuppPlane::~SuppPlane(void)
 
 }
 
-SuppPlane::SuppPlane(MathLib::Vector3 newCorners[4])
-{
-	m_corners[0] = newCorners[0];
-	m_corners[1] = newCorners[1];
-	m_corners[2] = newCorners[2];
-	m_corners[3] = newCorners[3];
-
-	computeParas();
-	m_planeType = AABBPlane;
-}
 
 // build plane based on ax+by+cz+d=0;
 // should be infinite area plane, here set with to be 0.5; will update later
 SuppPlane::SuppPlane(const MathLib::Vector3 &planePt, const MathLib::Vector3 &planeNormal, double planeD)
 {
+	m_corners.resize(4);
+	m_axis.resize(2);
+
 	m_normal = planeNormal;
 	m_center = planePt;
 	m_planeD = planeD;
 
-	m_axis.resize(3);
 	m_axis[0] = MathLib::Vector3(1, 0, 0);
 	m_axis[1] = MathLib::Vector3(0, 1, 0);
-	m_axis[2] = MathLib::Vector3(0, 0, 1);
 
 	m_width = 0.5;
 
@@ -45,20 +38,43 @@ SuppPlane::SuppPlane(const MathLib::Vector3 &planePt, const MathLib::Vector3 &pl
 	m_corners[2] = m_center + m_axis[0] * m_width + m_axis[1] * m_width;
 	m_corners[3] = m_center - m_axis[0] * m_width + m_axis[1] * m_width;
 
+	m_sceneMetric = 1.0;
+
 	m_planeType = AABBPlane;
 }
 
-SuppPlane::SuppPlane(std::vector<MathLib::Vector3> &PointSet)
+SuppPlane::SuppPlane(const std::vector<MathLib::Vector3> &PointSet, bool isOrderedCorner)
 {
-	BuildAABBPlane(PointSet);
+	m_corners.resize(4);
+	m_axis.resize(2);
+	m_sceneMetric = 1.0;
+
+	if (!isOrderedCorner)
+	{
+		BuildAABBPlane(PointSet);
+	}
+	else
+	{
+		m_corners[0] = PointSet[0];
+		m_corners[1] = PointSet[1];
+		m_corners[2] = PointSet[2];
+		m_corners[3] = PointSet[3];
+
+		computeParas();
+		m_planeType = AABBPlane;
+	}
 }
 
-SuppPlane::SuppPlane(std::vector<MathLib::Vector3> &PointSet, const std::vector<MathLib::Vector3> obbAxis)
+SuppPlane::SuppPlane(const std::vector<MathLib::Vector3> &PointSet, const std::vector<MathLib::Vector3> obbAxis)
 {
+	m_corners.resize(4);
+	m_axis.resize(2);
+	m_sceneMetric = 1.0;
+
 	BuildOBBPlane(PointSet, obbAxis);
 }
 
-void SuppPlane::BuildAABBPlane(std::vector<MathLib::Vector3> &PointSet)
+void SuppPlane::BuildAABBPlane(const std::vector<MathLib::Vector3> &PointSet)
 {
 	m_SuppPointSet = PointSet;
 
@@ -103,9 +119,8 @@ void SuppPlane::BuildAABBPlane(std::vector<MathLib::Vector3> &PointSet)
 	m_planeType = AABBPlane;
 }
 
-void SuppPlane::BuildOBBPlane(std::vector<MathLib::Vector3> &PointSet, const std::vector<MathLib::Vector3> obbAxis)
+void SuppPlane::BuildOBBPlane(const std::vector<MathLib::Vector3> &PointSet, const std::vector<MathLib::Vector3> obbAxis)
 {
-	m_axis.resize(3);
 	m_axis[0] = obbAxis[0];
 	m_axis[1] = obbAxis[1];
 
@@ -185,9 +200,11 @@ void SuppPlane::Draw(QColor c)
 	glEnable(GL_LIGHTING);
 }
 
-void SuppPlane::draw()
+void SuppPlane::draw(double sceneMetric)
 {
-	double zD = 0.01;
+	double zD = 0.01/sceneMetric;
+	
+	// draw plane
 	glDisable(GL_LIGHTING);
 	glColor4d(m_color.redF(), m_color.greenF(), m_color.blueF(), m_color.alphaF());
 	glBegin(GL_QUADS);
@@ -196,6 +213,39 @@ void SuppPlane::draw()
 	glVertex3f(m_corners[2][0], m_corners[2][1], m_corners[2][2] + zD);
 	glVertex3f(m_corners[3][0], m_corners[3][1], m_corners[3][2] + zD);
 	glEnd();
+
+	// draw U
+	glColor4d(255,0,0,255);
+	glLineWidth(5.0);
+
+	glBegin(GL_LINES);
+	glVertex3d(m_corners[0][0], m_corners[0][1], m_corners[0][2]);
+	glVertex3d(m_corners[1][0], m_corners[1][1], m_corners[1][2]);
+	glEnd();
+
+	// draw right point
+	glPointSize(10);
+	glColor4d(255, 0, 0, 255);
+	glBegin(GL_POINTS);
+	glVertex3d(m_corners[1][0], m_corners[1][1], m_corners[1][2]);
+	glEnd();
+
+	// draw V
+	glColor4d(0, 255, 0, 255);
+	glLineWidth(5.0);
+
+	glBegin(GL_LINES);
+	glVertex3d(m_corners[0][0], m_corners[0][1], m_corners[0][2]);
+	glVertex3d(m_corners[3][0], m_corners[3][1], m_corners[3][2]);
+	glEnd();
+
+	// draw right point
+	glPointSize(10);
+	glColor4d(0, 255, 0, 255);
+	glBegin(GL_POINTS);
+	glVertex3d(m_corners[3][0], m_corners[3][1], m_corners[3][2]);
+	glEnd();
+
 	glEnable(GL_LIGHTING);
 }
 
@@ -218,7 +268,15 @@ void SuppPlane::computeParas()
 	m_length = (m_corners[1] - m_corners[0]).magnitude();
 	m_width = (m_corners[2] - m_corners[1]).magnitude();
 
-	initGrid();
+	m_axis[0] = (m_corners[1] - m_corners[0]);
+	m_axis[1] = (m_corners[3] - m_corners[0]);
+
+	m_axis[0].normalize();
+	m_axis[1].normalize();
+
+	m_normal = m_axis[0].cross(m_axis[1]);
+
+	//initGrid();
 }
 
 std::vector<double> SuppPlane::convertToAABBPlane()
@@ -327,8 +385,8 @@ void SuppPlane::initGrid()
 
 	int xGridNum, yGridNum;
 
-	xGridNum = (int)(m_length / GridSize);
-	yGridNum = (int)(m_width / GridSize);
+	xGridNum = (int)(m_length / (GridSize/m_sceneMetric));
+	yGridNum = (int)(m_width / (GridSize/m_sceneMetric));
 
 	m_planeGrid.resize(yGridNum, std::vector<int>(xGridNum, 0));
 }
@@ -348,4 +406,44 @@ void SuppPlane::recoverGrid(std::vector<std::vector<int>> gridPos)
 			m_planeGrid[i][j] = 0;
 		}
 	}
+}
+
+MathLib::Vector3 SuppPlane::GetPlaneOrigin()
+{
+	return m_corners[0];
+}
+
+std::vector<double> SuppPlane::GetUVForPoint(const MathLib::Vector3 &pt)
+{
+	MathLib::Vector3 projectPt;
+
+	MathLib::Vector3 planeOrigin = m_corners[0];
+	MathLib::Vector3 toOrigninVec = pt - planeOrigin;
+
+	// compute projected x and y to get uv
+	projectPt.x = toOrigninVec.dot(m_axis[0]);
+	projectPt.y = toOrigninVec.dot(m_axis[1]);
+
+	double u = (projectPt.x - planeOrigin.x) / m_length;
+	double v = (projectPt.y - planeOrigin.y) / m_width;
+
+	if (u <= 0 || u >= 1 || v <= 0 || v >= 1)
+	{
+		qDebug() << "UV coordinate wrong: " << u << " " << v << "\n";
+	}
+
+	std::vector<double> uv;
+	uv.push_back(u);
+	uv.push_back(v);
+
+	return uv;
+}
+
+double SuppPlane::GetPointToPlaneDist(const MathLib::Vector3 &pt)
+{
+	MathLib::Vector3 ptToCenterVec = pt - m_center;
+
+	double d = ptToCenterVec.dot(m_normal);
+
+	return d;
 }

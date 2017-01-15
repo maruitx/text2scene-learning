@@ -103,13 +103,6 @@
       <string>View</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="1">
-       <widget class="QCheckBox" name="showGraphCheckBox">
-        <property name="text">
-         <string>Show Graph</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="0">
        <widget class="QCheckBox" name="showOBBCheckBox">
         <property name="text">
@@ -124,10 +117,24 @@
         </property>
        </widget>
       </item>
+      <item row="0" column="1">
+       <widget class="QCheckBox" name="showGraphCheckBox">
+        <property name="text">
+         <string>Show Graph</string>
+        </property>
+       </widget>
+      </item>
       <item row="1" column="0">
        <widget class="QCheckBox" name="showFrontDirCheckBox">
         <property name="text">
          <string>Show Front Dir</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QCheckBox" name="showSuppPlaneCheckBox">
+        <property name="text">
+         <string>Show Supp Plane</string>
         </property>
        </widget>
       </item>

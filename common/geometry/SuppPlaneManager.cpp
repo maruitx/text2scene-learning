@@ -29,7 +29,7 @@ SuppPlaneManager::SuppPlaneManager(CModel *m)
 
 SuppPlaneManager::~SuppPlaneManager()
 {
-
+	clearSupportPlanes();
 }
 
 //void SuppPlaneManager::build(int method)
@@ -159,14 +159,14 @@ SuppPlaneManager::~SuppPlaneManager()
 //	}
 //}
 
-void SuppPlaneManager::draw()
+void SuppPlaneManager::draw(double sceneMetric)
 {
 	for (unsigned int i = 0; i < m_suppPlanes.size(); i++)
 	{
 		//QColor c = GetColorFromSet(m_model->getID());
 		//m_suppPlanes[i]->Draw(c);
 
-		m_suppPlanes[i]->draw();
+		m_suppPlanes[i]->draw(sceneMetric);
 	}
 }
 
@@ -621,7 +621,7 @@ void SuppPlaneManager::saveSuppPlane()
 
 	for (int i = 0; i < m_suppPlanes.size(); i++)
 	{
-		MathLib::Vector3 *corners = m_suppPlanes[i]->GetCorners();
+		std::vector<MathLib::Vector3> corners = m_suppPlanes[i]->GetCorners();
 
 		for (int c = 0; c < 4; c++)
 		{
@@ -631,7 +631,7 @@ void SuppPlaneManager::saveSuppPlane()
 
 	suppFile.close();
 
-	std::cout << "\t support plane saved\n";
+	std::cout << "\t support plane saved to " << suppPlaneFilename.toStdString() << "\n";
 }
 
 bool SuppPlaneManager::loadSuppPlane()
@@ -650,8 +650,9 @@ bool SuppPlaneManager::loadSuppPlane()
 
 	if (!suppFile.open(QIODevice::ReadOnly | QIODevice::Text)) return false;
 
-	std::vector<MathLib::Vector3> suppCorners, obbAxis;
-	obbAxis = m_model->getOBBAxis();
+	std::vector<MathLib::Vector3> suppCorners;
+	//std::vector<MathLib::Vector3>  obbAxis;
+	//obbAxis = m_model->getOBBAxis();
 
 	int planeID = 0;
 
@@ -682,10 +683,12 @@ bool SuppPlaneManager::loadSuppPlane()
 
 		if (!suppCorners.empty())
 		{
-			SuppPlane *p = new SuppPlane(suppCorners, obbAxis);
+			//SuppPlane *p = new SuppPlane(suppCorners, obbAxis);
+			SuppPlane *p = new SuppPlane(suppCorners, 1);
 
+			p->m_sceneMetric = m_model->getSceneMetric();
 			p->setModelID(m_model->getID());
-			p->setColor(GetColorFromSet(planeID));
+			p->setColor(GetColorFromSet(planeID+1));
 			p->setSuppPlaneID(planeID);
 			m_suppPlanes.push_back(p);
 			planeID++;
@@ -701,4 +704,18 @@ bool SuppPlaneManager::loadSuppPlane()
 
 	std::cout << "SuppPlaneManager: support plane loaded\n";
 	return true;
+}
+
+void SuppPlaneManager::clearSupportPlanes()
+{
+	if (!m_suppPlanes.empty())
+	{
+		for (int i = 0; i < m_suppPlanes.size(); i++)
+		{
+			delete m_suppPlanes[i];
+			m_suppPlanes[i] = NULL;
+		}
+
+		m_suppPlanes.clear();
+	}
 }

@@ -22,6 +22,7 @@ public:
 	bool m_drawOBB;
 	bool m_drawSupp;
 	bool m_drawFaceClusters;
+	bool m_drawFrontDir;
 
 private:
 	CModel* m_model;

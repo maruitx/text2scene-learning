@@ -24,10 +24,11 @@ public:
 	void pruneSuppPlanes();
 
 	void addSupportPlane(SuppPlane *p) { m_suppPlanes.push_back(p); };
+	void clearSupportPlanes();
 
 	void sortFaceIdsByHeight();
 
-	void draw();
+	void draw(double sceneMetric = 1.0);
 
 	std::vector<SuppPlane*> getAllSuppPlanes() { return m_suppPlanes; };
 	SuppPlane* getLargestAreaSuppPlane();

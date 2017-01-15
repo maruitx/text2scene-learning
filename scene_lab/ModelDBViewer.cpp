@@ -20,7 +20,7 @@ void ModelDBViewer::draw()
 {
 	if (m_model != NULL)
 	{
-		m_model->draw(1, m_drawOBB, m_drawSupp);
+		m_model->draw(1, m_drawOBB, m_drawSupp, m_drawFrontDir);
 	}
 }
 

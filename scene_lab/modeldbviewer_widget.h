@@ -24,6 +24,7 @@ void updateModelIdList();
 void update3DModel();
 
 void updateRenderingOptions();
+void updateRenderingOptions(bool showOBB, bool showFrontDir, bool showSuppPlane);
 
 void buildSuppPlaneForCurrModel();
 void builSuppPlaceForModelList();

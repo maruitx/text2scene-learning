@@ -135,6 +135,7 @@ public:
 	std::vector<int> suppChindrenList;
 	int supportLevel;  //  0 is support by floor
 	MathLib::Vector3 parentContactNormal;
+	MathLib::Vector3 parentContactPos;
 
 	std::vector<std::vector<int>> suppGridPos; // grid pos that is filled by current model
 

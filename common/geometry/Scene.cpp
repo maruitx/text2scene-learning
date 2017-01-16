@@ -165,6 +165,12 @@ void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int ob
 					}
 				}
 
+				if (currLine.contains("parentContactPosition "))
+				{
+					std::vector<float> floatList = StringToFloatList(currLine.toStdString(), "parentContactPosition ");
+					m_modelList[currModelID]->parentContactPos = MathLib::Vector3(floatList[0], floatList[1], floatList[2]);
+				}
+
 				if (currLine.contains("parentContactNormal "))
 				{
 					std::vector<int> intList =  StringToIntegerList(currLine.toStdString(), "parentContactNormal ");
@@ -230,18 +236,10 @@ void CScene::buildRelationGraph()
 	for (int i = 0; i < m_modelList.size(); i++)
 	{
 		CModel *m = m_modelList[i];
-		if( m->loadOBB() == -1)
+		if( !m->hasOBB())
 		{
-			if (m_uprightVec == MathLib::Vector3(0, 0, 1))
-			{
-				m->computeOBB(2); // fix Z
-			}
-			else if (m_uprightVec == MathLib::Vector3(0, 1, 0))
-			{
-				m->computeOBB(1); // fix Y
-			}
-
-			m->saveOBB();
+			std::cout << "\t no OBB found, computing OBB first\n";
+			return;
 		}
 	}
 
@@ -625,6 +623,7 @@ std::vector<double> CScene::getUVonSuppPlaneForModel(int modelId)
 	{
 		SuppPlane *suppPlane = parentModel->getSuppPlane(0);	
 		MathLib::Vector3 pos = currModel->getModelPosOBB();  // in real world pos
+		//MathLib::Vector3 pos = currModel->parentContactPos;
 		
 		uv = suppPlane->GetUVForPoint(pos);
 
@@ -664,7 +663,7 @@ double CScene::getHightToSuppPlaneForModel(int modelId)
 	}
 }
 
-std::vector<MathLib::Vector3> CScene::getSuppPlaneCorners(int modelId)
+std::vector<MathLib::Vector3> CScene::getParentSuppPlaneCorners(int modelId)
 {
 	CModel *currModel = m_modelList[modelId];
 	int parentId = currModel->suppParentID;
@@ -675,9 +674,6 @@ std::vector<MathLib::Vector3> CScene::getSuppPlaneCorners(int modelId)
 	}
 
 	CModel *parentModel = m_modelList[parentId];
-	double d;
-
-
 	if (parentModel->hasSuppPlane())
 	{
 		SuppPlane *suppPlane = parentModel->getSuppPlane(0);
@@ -689,6 +685,24 @@ std::vector<MathLib::Vector3> CScene::getSuppPlaneCorners(int modelId)
 	{
 		return std::vector<MathLib::Vector3>(4, MathLib::Vector3(0, 0, 0));
 	}
+}
+
+std::vector<MathLib::Vector3> CScene::getCurrModelSuppPlaneCorners(int modelId)
+{
+	CModel *currModel = m_modelList[modelId];
+
+	if (currModel->hasSuppPlane())
+	{
+		SuppPlane *suppPlane = currModel->getSuppPlane(0);
+		std::vector<MathLib::Vector3> corners = suppPlane->GetCorners();
+
+		return corners;
+	}
+	else
+	{
+		return std::vector<MathLib::Vector3>(4, MathLib::Vector3(0, 0, 0));
+	}
+
 }
 
 

@@ -20,6 +20,13 @@ const QString SSGPairRelStrings[] = {"vert_support", "horizon_support", "contain
 const QString SSGGroupRelStrings[] = {"around", "aligned", "grouped", "stacked", "scattered"};
 const QString SSGGroupAttrStings[] = {"messy", "clean", "organized", "disorganized", "formal", "casual", "spacious", "crowded"};
 
+struct GroupAnnotation 
+{
+	QString name;
+	int refModelId;
+	std::vector<int> actModelIds;
+};
+
 class SceneSemGraph : public SemanticGraph
 {
 public:

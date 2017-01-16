@@ -421,11 +421,8 @@ std::vector<double> SuppPlane::GetUVForPoint(const MathLib::Vector3 &pt)
 	MathLib::Vector3 toOrigninVec = pt - planeOrigin;
 
 	// compute projected x and y to get uv
-	projectPt.x = toOrigninVec.dot(m_axis[0]);
-	projectPt.y = toOrigninVec.dot(m_axis[1]);
-
-	double u = (projectPt.x - planeOrigin.x) / m_length;
-	double v = (projectPt.y - planeOrigin.y) / m_width;
+	double u = toOrigninVec.dot(m_axis[0]) / m_length;
+	double v = toOrigninVec.dot(m_axis[1]) / m_width;
 
 	if (u <= 0 || u >= 1 || v <= 0 || v >= 1)
 	{

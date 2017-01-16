@@ -4,6 +4,7 @@
 #include "../common/geometry/OBB.h"
 #include "../common/geometry/RelationGraph.h"
 #include "../scene_lab/modelDatabase.h"
+#include "../common/utilities/utility.h"
 
 
 SceneSemGraph::SceneSemGraph(CScene *s, ModelDatabase *db)
@@ -45,9 +46,10 @@ void SceneSemGraph::generateGraph()
 			{
 				newMetaModelInstance->position = m_scene->getOBBInitPos(i);
 			}
+			newMetaModelInstance->parentId = m_scene->getSuppParentId(i);
 			newMetaModelInstance->onSuppPlaneUV = m_scene->getUVonSuppPlaneForModel(i);
-			newMetaModelInstance->positionToSuPPlaneDist = m_scene->getHightToSuppPlaneForModel(i);
-			newMetaModelInstance->suppPlaneCorners = m_scene->getSuppPlaneCorners(i);
+			newMetaModelInstance->positionToSuppPlaneDist = m_scene->getHightToSuppPlaneForModel(i);
+			newMetaModelInstance->suppPlaneCorners = m_scene->getCurrModelSuppPlaneCorners(i);
 
 			m_metaModelList.push_back(newMetaModelInstance);
 
@@ -70,9 +72,10 @@ void SceneSemGraph::generateGraph()
 			newMetaModel->setIdStr(modelNameStr);
 			newMetaModel->setTransMat(m_scene->getModelInitTransMat(i));
 
+			newMetaModel->parentId = m->suppParentID;
 			newMetaModel->onSuppPlaneUV = m_scene->getUVonSuppPlaneForModel(i);
-			newMetaModel->positionToSuPPlaneDist = m_scene->getHightToSuppPlaneForModel(i);
-			newMetaModel->suppPlaneCorners = m_scene->getSuppPlaneCorners(i);
+			newMetaModel->positionToSuppPlaneDist = m_scene->getHightToSuppPlaneForModel(i);
+			newMetaModel->suppPlaneCorners = m_scene->getCurrModelSuppPlaneCorners(i);
 
 			newMetaModel->dbID = m_modelDB->dbMetaModels.size();
 			//m_modelDB->dbMetaModels[modelNameStr] = newMetaModel;
@@ -99,7 +102,16 @@ void SceneSemGraph::generateGraph()
 
 void SceneSemGraph::buildFromModelDBAnnotation()
 {
+	for (int i = 0; i < m_metaModelList.size(); i++)
+	{
+		DBMetaModel *currDBModel = m_metaModelList[i];
 
+		for (int a = 0; a < currDBModel->m_attributes.size(); a++)
+		{
+			addNode(QString(SSGNodeType[1]), currDBModel->m_attributes[a]);
+			addEdge(m_nodeNum-1, i);
+		}
+	}
 }
 
 void SceneSemGraph::extractRelationsFromRelationGraph()
@@ -260,7 +272,7 @@ std::vector<QString> SceneSemGraph::computeSpatialSideRelForModelPair(int refMod
 	if (frontDirDot > sideSectionVal)
 	{
 		QString refName = m_metaModelList[refModelId]->getProcessedCatName();
-		if (refName == "tv" || refName == "monitor")  //  object requires to face to
+		if (refName == "tv" || refName == "monitor" || refName.contains("table") || refName == "desk")  //  object requires to face to
 		{
 			MathLib::Vector3 testFront = testModel->getFrontDir();
 			if (testFront.dot(refFront) < 0)  // test and ref should be opposite
@@ -285,20 +297,20 @@ std::vector<QString> SceneSemGraph::computeSpatialSideRelForModelPair(int refMod
 	MathLib::Vector3 roomFront = m_scene->getRoomFront();
 
 	// if ref front is same to th room front (e.g. view inside 0, -1, 0)
-	bool useViewCentric = false;
-	if (refFront.dot(roomFront) > sideSectionVal  && useViewCentric)
-	{
-		// use view-centric
-		if (rightDirDot >= sideSectionVal) // right of obj
-		{
-			relationStrings.push_back(SSGPairRelStrings[5]); // left in view
-		}
-		else if (rightDirDot <= -sideSectionVal) // left of obj
-		{
-			relationStrings.push_back(SSGPairRelStrings[6]); // right in view
-		}
-	}
-	else
+	//bool useViewCentric = false;
+	//if (refFront.dot(roomFront) > sideSectionVal  && useViewCentric)
+	//{
+	//	// use view-centric
+	//	if (rightDirDot >= sideSectionVal) // right of obj
+	//	{
+	//		relationStrings.push_back(SSGPairRelStrings[5]); // left in view
+	//	}
+	//	else if (rightDirDot <= -sideSectionVal) // left of obj
+	//	{
+	//		relationStrings.push_back(SSGPairRelStrings[6]); // right in view
+	//	}
+	//}
+	//else
 	{
 		if (rightDirDot >= sideSectionVal) // right of obj
 		{
@@ -316,7 +328,83 @@ std::vector<QString> SceneSemGraph::computeSpatialSideRelForModelPair(int refMod
 
 void SceneSemGraph::loadAttributeNodeFromAnnotation()
 {
+	QString sceneANNPath = "C:/Ruim/Graphics/T2S_MPC/text2scene/t2s-evol/SceneDB/ANN/";
 
+	QString sceneName = m_scene->getSceneName();
+
+	QString annFileName = sceneANNPath + sceneName + ".snn";
+
+	QFile inFile(annFileName);
+	QTextStream ifs(&inFile);
+
+	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
+	{
+		return;
+	}
+
+	//std::vector<GroupAnnotation> annotations;
+
+	while (!ifs.atEnd())
+	{
+		QString currLine = ifs.readLine(); // format line
+
+		if (!currLine.contains("SceneNN") && !currLine.contains("Stanford") 
+			&& !currLine.contains("model") && !currLine.contains("Model")
+			&& !currLine.contains("new") && !currLine.contains("transform"))
+		{
+			QStringList parts = currLine.split(",");
+
+			for (int i = 0; i < parts.size(); i++)
+			{
+				bool isNumber = false;
+				parts[i].toInt(&isNumber);
+
+				if (isNumber)
+				{
+					int groupNum = i;
+					for (int g = 0; g < groupNum; g++)
+					{
+						GroupAnnotation ann;
+						ann.name = parts[g];
+						if (parts[groupNum]=="")
+						{
+							ann.refModelId = -1;
+						}
+						else
+						{
+							ann.refModelId = parts[groupNum].toInt();
+						}
+
+						QString actString = parts[groupNum + 1];
+						QStringList actStringList = actString.split(" ");
+
+						for (int t = 0; t < actStringList.size(); t++)
+						{
+							if (actStringList[t] !=" ")
+							{
+								ann.actModelIds.push_back(actStringList[t].toInt());
+							}							
+						}
+
+						// add to graph node
+						addNode(SSGNodeType[4], ann.name);
+						addEdge(m_nodeNum - 1, ann.refModelId); // messy --> table
+
+						for (int t = 0; t < ann.actModelIds.size(); t++)
+						{
+							addEdge(ann.actModelIds[t], m_nodeNum-1); // plates -->  messy
+						}
+					}
+					break;
+				}
+			}
+
+		}
+	}
+
+	inFile.close();
+
+	qDebug() << QString("Annotation for scene %1 is loaded\n").arg(sceneName);
 }
 
 void SceneSemGraph::saveGraph()
@@ -345,14 +433,13 @@ void SceneSemGraph::saveGraph()
 			ofs << "frontDir " << m_metaModelList[i]->frontDir[0] << " " << m_metaModelList[i]->frontDir[1] << " " << m_metaModelList[i]->frontDir[2] << "\n";
 			ofs << "upDir " << m_metaModelList[i]->upDir[0] << " " << m_metaModelList[i]->upDir[1] << " " << m_metaModelList[i]->upDir[2] << "\n";
 
-			if (!m_metaModelList[i]->getIdStr().contains("room"))
-			{
-				ofs << "parentPlane " << m_metaModelList[i]->suppPlaneCorners[0][0] << " " << m_metaModelList[i]->suppPlaneCorners[0][1] << " " << m_metaModelList[i]->suppPlaneCorners[0][2] << " "
+
+			ofs << "suppPlane " << m_metaModelList[i]->suppPlaneCorners[0][0] << " " << m_metaModelList[i]->suppPlaneCorners[0][1] << " " << m_metaModelList[i]->suppPlaneCorners[0][2] << " "
 					<< m_metaModelList[i]->suppPlaneCorners[1][0] << " " << m_metaModelList[i]->suppPlaneCorners[1][1] << " " << m_metaModelList[i]->suppPlaneCorners[1][2] << " "
 					<< m_metaModelList[i]->suppPlaneCorners[2][0] << " " << m_metaModelList[i]->suppPlaneCorners[2][1] << " " << m_metaModelList[i]->suppPlaneCorners[2][2] << " "
 					<< m_metaModelList[i]->suppPlaneCorners[3][0] << " " << m_metaModelList[i]->suppPlaneCorners[3][1] << " " << m_metaModelList[i]->suppPlaneCorners[3][2] << "\n";
-				ofs << "parentPlaneUVH " << m_metaModelList[i]->onSuppPlaneUV[0] << " " << m_metaModelList[i]->onSuppPlaneUV[1] << " " << m_metaModelList[i]->positionToSuPPlaneDist << "\n";
-			}
+			ofs << "parentId " << m_metaModelList[i]->parentId << "\n";
+			ofs << "parentPlaneUVH " << m_metaModelList[i]->onSuppPlaneUV[0] << " " << m_metaModelList[i]->onSuppPlaneUV[1] << " " << m_metaModelList[i]->positionToSuppPlaneDist << "\n";
 		}
 
 		// save nodes in format: nodeId,nodeType,nodeName,inEdgeNodeList,outEdgeNodeList

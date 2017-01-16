@@ -37,6 +37,8 @@ ModelDBViewer_widget::ModelDBViewer_widget(ModelDatabase *modleDB, QWidget *pare
 	connect(ui.buildSuppForModelButton, SIGNAL(clicked()), this, SLOT(buildSuppPlaneForCurrModel()));
 	connect(ui.buildSuppForModelListButton, SIGNAL(clicked()), this, SLOT(builSuppPlaceForModelList()));
 
+	connect(ui.computeOBBButton, SIGNAL(clicked()), this, SLOT(computeOBBForList()));
+
 	connect(ui.showSuppCheckBox, SIGNAL(stateChanged(int)), this, SLOT(updateRenderingOptions()));
 	connect(ui.showFaceClustersCheckBox, SIGNAL(stateChanged(int)), this, SLOT(updateRenderingOptions()));
 }
@@ -156,4 +158,32 @@ void ModelDBViewer_widget::updateRenderingOptions(bool showOBB, bool showFrontDi
 	m_viewer->m_drawSupp = showSuppPlane;
 
 	m_viewer->updateGL();
+}
+
+void ModelDBViewer_widget::computeOBBForList()
+{
+	int i = 0;
+	for (auto itr = m_modelDB->dbMetaModels.begin(); itr != m_modelDB->dbMetaModels.end(); itr++)
+	{
+		std::cout << "Start processing model " << i++ << "/" << m_modelDB->dbMetaModels.size() << "\n";
+		DBMetaModel *dbModel = itr->second;
+		QString modelFileName = m_modelDB->getDBPath() + "/" + dbModel->getIdStr() + ".obj";
+
+		CModel *m = new CModel();
+		m->loadModel(modelFileName, 1.0, 0, 0, 1);
+
+		std::cout << "\t computing OBB for Model: " << dbModel->getIdStr().toStdString() << "\n";
+		m->computeOBB(2);  // fix z
+		m->saveOBB();
+
+		// update model meta info
+		m->setSceneMetric(0.0254);
+		m->setCatName(dbModel->getProcessedCatName());
+		m->updateFrontDir(dbModel->frontDir);
+		m->updateUpDir(dbModel->upDir);
+
+		delete m;
+	}
+
+	std::cout << "All model OBB saved!\n";
 }

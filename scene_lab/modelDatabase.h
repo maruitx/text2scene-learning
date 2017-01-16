@@ -19,6 +19,8 @@ public:
 	void addWordNetLemmas(const QString &s) { m_wordNetLemmas.push_back(s); };
 	QString getProcessedCatName();
 
+	void extractAttributeFromShapeNetCatNames();
+
 	void setScale(double s) { m_scale = s; };
 	double getScale() { return m_scale; };
 
@@ -35,8 +37,13 @@ public:
 	MathLib::Vector3 position;
 
 	std::vector<MathLib::Vector3> suppPlaneCorners;
+	int parentId;
 	std::vector<double> onSuppPlaneUV;
-	double positionToSuPPlaneDist; // distance after the transformation (in the real world unit, inch for StanfordSceneDataBase)
+	double positionToSuppPlaneDist; // distance after the transformation (in the real world unit, inch for StanfordSceneDataBase)
+
+	bool m_isCatNameProcessed;
+	QString m_processedCatName;
+	std::vector<QString> m_attributes;
 
 private:
 	QString m_idStr;

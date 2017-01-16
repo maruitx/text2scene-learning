@@ -29,6 +29,8 @@ void updateRenderingOptions(bool showOBB, bool showFrontDir, bool showSuppPlane)
 void buildSuppPlaneForCurrModel();
 void builSuppPlaceForModelList();
 
+void computeOBBForList();
+
 private:
 	Ui::ModelDBViewer_widget ui;
 	ModelDatabase *m_modelDB;

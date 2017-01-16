@@ -530,6 +530,9 @@ void ModelDatabase::loadShapeNetSemTxt()
 				}
 			}
 
+			// extract attributes from shape net cat names
+			candiModel->extractAttributeFromShapeNetCatNames();
+
 			// set sub-category
 			for (int c = 1; c < catNameList.size(); c++)
 			{
@@ -591,10 +594,11 @@ DBMetaModel::DBMetaModel()
 	upDir = MathLib::Vector3(0, 0, 1);
 	position = MathLib::Vector3(0, 0, 0);
 	
-	onSuppPlaneUV[0] = 0.5;
-	onSuppPlaneUV[1] = 0.5;
+	parentId = -1;
+	onSuppPlaneUV = std::vector<double>(2,0.5);
+	positionToSuppPlaneDist = 0; // position to support plane dist after the transformation to real world unit
 
-	positionToSuPPlaneDist = 0; // position to support plane dist after the transformation to realworld unit
+	m_isCatNameProcessed = false;
 }
 
 DBMetaModel::DBMetaModel(const QString &s)
@@ -608,6 +612,12 @@ DBMetaModel::DBMetaModel(const QString &s)
 	frontDir = MathLib::Vector3(0, -1, 0);
 	upDir = MathLib::Vector3(0, 0, 1);
 	position = MathLib::Vector3(0, 0, 0);
+
+	parentId = -1;
+	onSuppPlaneUV = std::vector<double>(2, 0.5);
+	positionToSuppPlaneDist = 0; // position to support plane dist after the transformation to real world unit
+
+	m_isCatNameProcessed = false;
 }
 
 // copy from m
@@ -618,6 +628,8 @@ DBMetaModel::DBMetaModel(DBMetaModel *m)
 	m_scale = m->m_scale;
 	m_initTrans = m->m_initTrans;
 
+	m_attributes = m->m_attributes;
+
 	dbID = m->dbID;
 	frontDir = m->frontDir;
 	upDir = m->upDir;
@@ -626,11 +638,17 @@ DBMetaModel::DBMetaModel(DBMetaModel *m)
 
 QString DBMetaModel::getProcessedCatName()
 {
-	QString processedCatName = "";
+	if (m_isCatNameProcessed)
+	{
+		return m_processedCatName;
+	}
+
+	m_processedCatName = "";
 
 	if (m_shapeNetCategoryNames.empty() && m_wordNetLemmas.empty())
 	{
-		return processedCatName;
+		m_isCatNameProcessed = true;
+		return m_processedCatName;
 	}
 
 	const int badCatNum = 11;
@@ -648,27 +666,32 @@ QString DBMetaModel::getProcessedCatName()
 	{
 		if (!m_wordNetLemmas.empty())
 		{
-			processedCatName = m_wordNetLemmas[0];
+			m_processedCatName = m_wordNetLemmas[0];
 		}
 		else
 		{
-			processedCatName = "noname";
+			m_processedCatName = "noname";
 		}
 		
-		return processedCatName;
+		m_isCatNameProcessed = true;
+		return m_processedCatName;
 	}
 
-	processedCatName = m_shapeNetCategoryNames[0];
+	m_processedCatName = m_shapeNetCategoryNames[0];
 
 	if (m_shapeNetCategoryNames[0] == "chestofdrawers")
 	{
 		if (m_shapeNetCategoryNames.size()>1)
 		{
-			processedCatName = m_shapeNetCategoryNames[1];
+			m_processedCatName = m_shapeNetCategoryNames[1];
 		}
 	}
 
-	return processedCatName;
+	// re-map cat name and add attributes
+
+
+	m_isCatNameProcessed = true;
+	return m_processedCatName;
 }
 
 const QString& DBMetaModel::getShapeNetCatsStr()
@@ -678,5 +701,54 @@ const QString& DBMetaModel::getShapeNetCatsStr()
 
 DBMetaModel::~DBMetaModel()
 {
+
+}
+
+void DBMetaModel::extractAttributeFromShapeNetCatNames()
+{
+	for (int i = 0; i < m_shapeNetCategoryNames.size(); i++)
+	{
+		if (m_shapeNetCategoryNames[i].contains("office"))
+		{
+			m_attributes.push_back("office");
+		}
+
+		if (m_shapeNetCategoryNames[i].contains("coffee"))
+		{
+			m_attributes.push_back("coffee");
+		}
+
+		if (m_shapeNetCategoryNames[i].contains("dining"))
+		{
+			m_attributes.push_back("dining");
+		}
+
+		if (m_shapeNetCategoryNames[i].contains("file"))
+		{
+			m_attributes.push_back("file");
+		}
+
+		if (m_shapeNetCategoryNames[i].contains("round"))
+		{
+			m_attributes.push_back("round");
+		}
+
+		if (m_shapeNetCategoryNames[i].contains("sauce"))
+		{
+			m_attributes.push_back("sauce");
+		}
+
+		if (m_shapeNetCategoryNames[i].contains("recliner") || m_shapeNetCategoryNames[i].contains("accentchair")) // sofa chair
+		{
+			m_attributes.push_back("sofa");   
+		}
+
+	}
+
+	if (std::find(m_attributes.begin(), m_attributes.end(), QString("dining")) != m_attributes.end() 
+		&& std::find(m_attributes.begin(), m_attributes.end(), QString("round")) == m_attributes.end())
+	{
+		m_attributes.push_back("rectangular");
+	}
 
 }

@@ -363,7 +363,7 @@ MathLib::Vector2 SuppPlane::getRandomSamplePos()
 bool SuppPlane::isCoverPos(double x, double y)
 {
 	MathLib::Vector2 testPos(x, y);
-	double boundWidth = 0.08;
+	double boundWidth = 0.08/m_sceneMetric;
 
 	double d;
 	MathLib::Vector2 dv = testPos - MathLib::Vector2(m_corners[0][0], m_corners[0][1]);

@@ -687,7 +687,36 @@ QString DBMetaModel::getProcessedCatName()
 		}
 	}
 
-	// re-map cat name and add attributes
+	
+	if (m_shapeNetCategoryNames[0] == "lamp")
+	{
+		for (int i = 1; i < m_shapeNetCategoryNames.size(); i++)
+		{
+			if (m_shapeNetCategoryNames[i] == "desklamp")
+			{
+				m_processedCatName = "desklamp";
+				break;
+			}
+
+			if (m_shapeNetCategoryNames[i] == "floorlamp")
+			{
+				m_processedCatName = "floorlamp";
+				break;
+			}
+		}
+	}
+
+	if (m_shapeNetCategoryNames[0] == "computer")
+	{
+		for (int i = 1; i < m_shapeNetCategoryNames.size(); i++)
+		{
+			if (m_shapeNetCategoryNames[i] == "laptop")
+			{
+				m_processedCatName = "laptop";
+				break;
+			}
+		}
+	}
 
 
 	m_isCatNameProcessed = true;
@@ -723,10 +752,10 @@ void DBMetaModel::extractAttributeFromShapeNetCatNames()
 			m_attributes.push_back("dining");
 		}
 
-		if (m_shapeNetCategoryNames[i].contains("file"))
-		{
-			m_attributes.push_back("file");
-		}
+		//if (m_shapeNetCategoryNames[i].contains("file"))
+		//{
+		//	m_attributes.push_back("file");
+		//}
 
 		if (m_shapeNetCategoryNames[i].contains("round"))
 		{
@@ -736,11 +765,12 @@ void DBMetaModel::extractAttributeFromShapeNetCatNames()
 		if (m_shapeNetCategoryNames[i].contains("sauce"))
 		{
 			m_attributes.push_back("sauce");
+			m_shapeNetCategoryNames[i] = "bottle";
 		}
 
 		if (m_shapeNetCategoryNames[i].contains("recliner") || m_shapeNetCategoryNames[i].contains("accentchair")) // sofa chair
 		{
-			m_attributes.push_back("sofa");   
+			m_attributes.push_back("sofa");  
 		}
 
 	}

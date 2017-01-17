@@ -2,6 +2,7 @@
 #include "../common/geometry/Scene.h"
 #include "../common/geometry/CModel.h"
 #include "../common/geometry/OBB.h"
+#include "../common/geometry/SuppPlane.h"
 #include "../common/geometry/RelationGraph.h"
 #include "../scene_lab/modelDatabase.h"
 #include "../common/utilities/utility.h"
@@ -239,7 +240,6 @@ std::vector<QString> SceneSemGraph::computeSpatialSideRelForModelPair(int refMod
 	double sceneMetric = m_scene->getSceneMetric();
 	MathLib::Vector3 sceneUpDir = m_scene->getUprightVec();
 
-
 	CModel *refModel = m_scene->getModel(refModelId);
 	CModel *testModel = m_scene->getModel(testModelId);
 
@@ -322,6 +322,19 @@ std::vector<QString> SceneSemGraph::computeSpatialSideRelForModelPair(int refMod
 		}
 	}
 
+	MathLib::Vector3 refOBBTopCenter = refModel->getModelTopCenter();
+	MathLib::Vector3 fromRefTopToTestTop = testModel->getModelTopCenter() - refOBBTopCenter;
+
+	if (fromRefTopToTestTop.dot(refUp) < 0)
+	{
+		SuppPlane* p = refModel->getSuppPlane(0);
+		if (p->isCoverPos(testPos.x, testPos.y))
+		{
+			relationStrings.push_back(SSGPairRelStrings[4]); // under
+		}
+	}
+
+
 	return relationStrings;
 }
 
@@ -378,11 +391,14 @@ void SceneSemGraph::loadAttributeNodeFromAnnotation()
 						QString actString = parts[groupNum + 1];
 						QStringList actStringList = actString.split(" ");
 
+						int actNodeNum = 0;
+
 						for (int t = 0; t < actStringList.size(); t++)
 						{
 							if (actStringList[t] !=" ")
 							{
 								ann.actModelIds.push_back(actStringList[t].toInt());
+								actNodeNum++;
 							}							
 						}
 
@@ -390,9 +406,12 @@ void SceneSemGraph::loadAttributeNodeFromAnnotation()
 						addNode(SSGNodeType[4], ann.name);
 						addEdge(m_nodeNum - 1, ann.refModelId); // messy --> table
 
-						for (int t = 0; t < ann.actModelIds.size(); t++)
+						for (int t = 0; t < actNodeNum; t++)
 						{
-							addEdge(ann.actModelIds[t], m_nodeNum-1); // plates -->  messy
+							if (ann.actModelIds[t]!=0)
+							{
+								addEdge(ann.actModelIds[t], m_nodeNum - 1); // plates -->  messy
+							}							
 						}
 					}
 					break;

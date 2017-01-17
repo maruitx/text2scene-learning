@@ -16,7 +16,7 @@ const int GroupAttriNum = 8;
 
 const QString SSGNodeType[] = { "object", "per_obj_attribute", "pairwise_relationship", "group_relationship", "group_attribute" };
 const QString SSGSingleAttriStrings[] = {"round", "rectangular", "office", "dining", "kitchen", "floor", "wall"};
-const QString SSGPairRelStrings[] = {"vert_support", "horizon_support", "contain", "above", "below", "leftside", "rightside", "front", "back", "near"};
+const QString SSGPairRelStrings[] = {"vert_support", "horizon_support", "contain", "above", "under", "leftside", "rightside", "front", "back", "near"};
 const QString SSGGroupRelStrings[] = {"around", "aligned", "grouped", "stacked", "scattered"};
 const QString SSGGroupAttrStings[] = {"messy", "clean", "organized", "disorganized", "formal", "casual", "spacious", "crowded"};
 

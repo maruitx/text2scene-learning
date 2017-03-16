@@ -8,6 +8,7 @@ class CScene;
 class SceneSemGraph;
 class ModelDatabase;
 class ModelDBViewer_widget;
+class RelationModelManager;
 
 class scene_lab : public QObject
 {
@@ -19,7 +20,7 @@ public:
 
 	void create_widget();
 	void destroy_widget();
-	CScene *getScene() { return m_scene; };
+	CScene *getScene() { return m_currScene; };
 
 public slots:
 	void loadScene();
@@ -32,6 +33,8 @@ public slots:
 
 	void buildSemGraphForCurrentScene(int batchLoading = 0);
 	void buildSemGraphForSceneList();
+
+	void buildRelationModels();
 
 	void collectModelInfoForSceneList();
 
@@ -46,9 +49,13 @@ signals:
 
 private:
 	scene_lab_widget *m_widget;
-	CScene *m_scene;
-	SceneSemGraph*m_currSceneSemGraph;
+	
+	std::vector<CScene*> m_sceneList;
+	CScene *m_currScene;
 
+	SceneSemGraph *m_currSceneSemGraph;
+
+	RelationModelManager *m_relationModelManager;
 
 	ModelDatabase *m_modelDB;
 	ModelDBViewer_widget *m_modelDBViewer_widget;

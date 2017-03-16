@@ -2,6 +2,7 @@
 #include "scene_lab_widget.h"
 #include "modelDatabase.h"
 #include "modelDBViewer_widget.h"
+#include "RelationModelManager.h"
 #include "../common/geometry/Scene.h"
 #include "../t2scene/SceneSemGraph.h"
 #include <set>
@@ -10,8 +11,10 @@ scene_lab::scene_lab(QObject *parent)
 	: QObject(parent)
 {
 	m_widget = NULL;
-	m_scene = NULL;
+	m_currScene = NULL;
 	m_currSceneSemGraph = NULL;
+
+	m_relationModelManager = NULL;
 
 	m_modelDB = NULL; 
 	m_modelDBViewer_widget = NULL;
@@ -36,14 +39,14 @@ void scene_lab::create_widget()
 
 void scene_lab::loadScene()
 {
-	if (m_scene != NULL)
+	if (m_currScene != NULL)
 	{
-		delete m_scene;
+		delete m_currScene;
 	}
 
 	CScene *scene = new CScene();
 	scene->loadSceneFromFile(m_widget->loadSceneName(), 0, 0, 1);
-	m_scene = scene;
+	m_currScene = scene;
 
 	loadModelMetaInfoForScene();
 
@@ -52,8 +55,55 @@ void scene_lab::loadScene()
 
 void scene_lab::loadSceneList()
 {
-	//CScene *scene = new CScene();
-	//scene->loadSceneFile(m_widget->loadSceneName(), 0, 0);
+	if (!m_sceneList.empty())
+	{
+		for (int i = 0; i < m_sceneList.size(); i++)
+		{
+			if (m_sceneList[i]!=NULL)
+			{
+				delete m_sceneList[i];
+			}
+		}
+	}
+
+	m_sceneList.clear();
+
+	// load scene list file
+	QString currPath = QDir::currentPath();
+	QString sceneListFileName = currPath + "/scene_list.txt";
+	QString sceneDBPath = "C:/Ruim/Graphics/T2S_MPC/SceneDB/StanfordSceneDB/scenes";
+
+	QFile inFile(sceneListFileName);
+	QTextStream ifs(&inFile);
+
+	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
+	{
+		std::cout << "SceneLab: cannot open scene list file.\n";
+		return;
+	}
+
+	QString currLine = ifs.readLine();
+
+	if (currLine.contains("StanfordSceneDatabase"))
+	{
+		int sceneNum = StringToIntegerList(currLine.toStdString(), "StanfordSceneDatabase ")[0];
+
+		for (int i = 0; i < sceneNum; i++)
+		{
+			QString sceneName = ifs.readLine();
+
+			if (m_currScene != NULL)
+			{
+				delete m_currScene;
+			}
+
+			CScene *scene = new CScene();
+			QString filename = sceneDBPath + "/" + sceneName + ".txt";
+			scene->loadSceneFromFile(filename, 1, 0, 0);
+
+			m_sceneList.push_back(scene);
+		}
+	}
 }
 
 void scene_lab::loadModelMetaInfoForScene()
@@ -64,22 +114,22 @@ void scene_lab::loadModelMetaInfoForScene()
 		m_modelDB->loadShapeNetSemTxt();
 	}
 
-	if (m_scene!= NULL)
+	if (m_currScene!= NULL)
 	{
-		for (int i = 0; i < m_scene->getModelNum(); i++)
+		for (int i = 0; i < m_currScene->getModelNum(); i++)
 		{
-			QString modelNameString = m_scene->getModelNameString(i);
+			QString modelNameString = m_currScene->getModelNameString(i);
 
 			if (m_modelDB->dbMetaModels.count(modelNameString))
 			{
 				MathLib::Vector3 frontDir = m_modelDB->dbMetaModels[modelNameString]->frontDir;
-				m_scene->updateModelFrontDir(i, frontDir);
+				m_currScene->updateModelFrontDir(i, frontDir);
 
 				MathLib::Vector3 upDir = m_modelDB->dbMetaModels[modelNameString]->upDir;
-				m_scene->updateModelUpDir(i, upDir);
+				m_currScene->updateModelUpDir(i, upDir);
 
 				QString catName = m_modelDB->dbMetaModels[modelNameString]->getProcessedCatName();
-				m_scene->updateModelCat(i, catName);
+				m_currScene->updateModelCat(i, catName);
 			}
 		}
 	}
@@ -100,12 +150,12 @@ void scene_lab::updateSceneRenderingOptions()
 	bool showFrontDir = m_widget->ui->showFrontDirCheckBox->isChecked();
 	bool showSuppPlane = m_widget->ui->showSuppPlaneCheckBox->isChecked();
 	
-	if (m_scene != NULL)
+	if (m_currScene != NULL)
 	{
-		m_scene->setShowModelOBB(showModelOBB);
-		m_scene->setShowSceneGraph(showSuppGraph);
-		m_scene->setShowSuppPlane(showSuppPlane);
-		m_scene->setShowModelFrontDir(showFrontDir);
+		m_currScene->setShowModelOBB(showModelOBB);
+		m_currScene->setShowSceneGraph(showSuppGraph);
+		m_currScene->setShowSuppPlane(showSuppPlane);
+		m_currScene->setShowModelFrontDir(showFrontDir);
 
 	}
 
@@ -142,7 +192,7 @@ void scene_lab::buildSemGraphForCurrentScene(int batchLoading)
 		m_modelDB->loadShapeNetSemTxt();
 	}
 
-	if (m_scene == NULL)
+	if (m_currScene == NULL)
 	{
 		Simple_Message_Box("No scene is loaded");
 		return;
@@ -153,7 +203,7 @@ void scene_lab::buildSemGraphForCurrentScene(int batchLoading)
 		delete m_currSceneSemGraph;
 	}
 
-	m_currSceneSemGraph = new SceneSemGraph(m_scene, m_modelDB);
+	m_currSceneSemGraph = new SceneSemGraph(m_currScene, m_modelDB);
 	m_currSceneSemGraph->generateGraph();
 	m_currSceneSemGraph->saveGraph();
 
@@ -170,53 +220,68 @@ void scene_lab::buildSemGraphForCurrentScene(int batchLoading)
 
 void scene_lab::buildSemGraphForSceneList()
 {
-	// load scene list file
-	QString currPath = QDir::currentPath();
-	QString sceneListFileName = currPath + "/scene_list.txt";
-	QString sceneDBPath = "C:/Ruim/Graphics/T2S_MPC/SceneDB/StanfordSceneDB/scenes";
-
-	QFile inFile(sceneListFileName);
-	QTextStream ifs(&inFile);
-
-	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
-	{
-		std::cout << "SceneLab: cannot open scene list file.\n";
-		return;
-	}
+	loadSceneList();
 
 	std::set<QString> allModelNameStrings;
-
-	QString currLine = ifs.readLine();
-
-	if (currLine.contains("StanfordSceneDatabase"))
+	for (int i = 0; i < m_sceneList.size(); i++)
 	{
-		int sceneNum = StringToIntegerList(currLine.toStdString(), "StanfordSceneDatabase ")[0];
+		m_currScene = m_sceneList[i];
+		loadModelMetaInfoForScene();
+		buildSemGraphForCurrentScene(1);
 
-		for (int i = 0; i < sceneNum; i++)
+		for (int i = 0; i < m_currScene->getModelNum(); i++)
 		{
-			QString sceneName = ifs.readLine();
-
-			if (m_scene != NULL)
-			{
-				delete m_scene;
-			}
-
-			CScene *scene = new CScene();
-			QString filename = sceneDBPath + "/" + sceneName + ".txt";
-			scene->loadSceneFromFile(filename, 1, 0, 0);
-			m_scene = scene;
-			loadModelMetaInfoForScene();
-
-			buildSemGraphForCurrentScene(1);
-
-			for (int i = 0; i < m_scene->getModelNum(); i++)
-			{
-				allModelNameStrings.insert(m_scene->getModelNameString(i));
-			}			
+			allModelNameStrings.insert(m_currScene->getModelNameString(i));
 		}
 	}
 
+	//// load scene list file
+	//QString currPath = QDir::currentPath();
+	//QString sceneListFileName = currPath + "/scene_list.txt";
+	//QString sceneDBPath = "C:/Ruim/Graphics/T2S_MPC/SceneDB/StanfordSceneDB/scenes";
 
+	//QFile inFile(sceneListFileName);
+	//QTextStream ifs(&inFile);
+
+	//if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
+	//{
+	//	std::cout << "SceneLab: cannot open scene list file.\n";
+	//	return;
+	//}
+
+	//std::set<QString> allModelNameStrings;
+
+	//QString currLine = ifs.readLine();
+
+	//if (currLine.contains("StanfordSceneDatabase"))
+	//{
+	//	int sceneNum = StringToIntegerList(currLine.toStdString(), "StanfordSceneDatabase ")[0];
+
+	//	for (int i = 0; i < sceneNum; i++)
+	//	{
+	//		QString sceneName = ifs.readLine();
+
+	//		if (m_currScene != NULL)
+	//		{
+	//			delete m_currScene;
+	//		}
+
+	//		CScene *scene = new CScene();
+	//		QString filename = sceneDBPath + "/" + sceneName + ".txt";
+	//		scene->loadSceneFromFile(filename, 1, 0, 0);
+	//		m_currScene = scene;
+	//		loadModelMetaInfoForScene();
+
+	//		buildSemGraphForCurrentScene(1);
+
+	//		for (int i = 0; i < m_currScene->getModelNum(); i++)
+	//		{
+	//			allModelNameStrings.insert(m_currScene->getModelNameString(i));
+	//		}			
+	//	}
+	//}
+
+	QString currPath = QDir::currentPath();
 	QString correctedModelCatFileName = currPath + "/model_category_corrected.txt";
 
 	QFile outFile(correctedModelCatFileName);
@@ -241,58 +306,63 @@ void scene_lab::buildSemGraphForSceneList()
 	outFile.close();
 
 	std::cout << "\nSceneLab: model category saved.\n";
-
 	std::cout << "\nSceneLab: all scene semantic graph generated.\n";
 }
 
 void scene_lab::buildRelationGraphForCurrentScene()
 {
-	m_scene->buildRelationGraph();
+	m_currScene->buildRelationGraph();
 }
 
 void scene_lab::buildRelationGraphForSceneList()
 {
-	// load scene list file
-	QString currPath = QDir::currentPath();
-	QString sceneListFileName = currPath + "/scene_list.txt";
-	QString sceneDBPath = "C:/Ruim/Graphics/T2S_MPC/SceneDB/StanfordSceneDB/scenes";
-
-	QFile inFile(sceneListFileName);
-	QTextStream ifs(&inFile);
-
-	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
+	for (int i = 0; i < m_sceneList.size(); i++)
 	{
-		std::cout << "SceneLab: cannot open scene list file.\n";
-		return;
+		m_currScene = m_sceneList[i];
+
+		buildRelationGraphForCurrentScene()
 	}
 
-	QString currLine = ifs.readLine();
+	//// load scene list file
+	//QString currPath = QDir::currentPath();
+	//QString sceneListFileName = currPath + "/scene_list.txt";
+	//QString sceneDBPath = "C:/Ruim/Graphics/T2S_MPC/SceneDB/StanfordSceneDB/scenes";
 
-	if (currLine.contains("StanfordSceneDatabase"))
-	{
-		int sceneNum = StringToIntegerList(currLine.toStdString(), "StanfordSceneDatabase ")[0];
+	//QFile inFile(sceneListFileName);
+	//QTextStream ifs(&inFile);
 
-		for (int i = 0; i < sceneNum; i++)
-		{
-			QString sceneName = ifs.readLine();
+	//if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
+	//{
+	//	std::cout << "SceneLab: cannot open scene list file.\n";
+	//	return;
+	//}
 
-			if (m_scene != NULL)
-			{
-				delete m_scene;
-			}
+	//QString currLine = ifs.readLine();
 
-			CScene *scene = new CScene();
-			QString filename = sceneDBPath + "/" + sceneName + ".txt";
-			scene->loadSceneFromFile(filename, 1, 0, 0);
-			m_scene = scene;
+	//if (currLine.contains("StanfordSceneDatabase"))
+	//{
+	//	int sceneNum = StringToIntegerList(currLine.toStdString(), "StanfordSceneDatabase ")[0];
 
-			m_scene->buildRelationGraph();
-		}
-	}
+	//	for (int i = 0; i < sceneNum; i++)
+	//	{
+	//		QString sceneName = ifs.readLine();
+
+	//		if (m_currScene != NULL)
+	//		{
+	//			delete m_currScene;
+	//		}
+
+	//		CScene *scene = new CScene();
+	//		QString filename = sceneDBPath + "/" + sceneName + ".txt";
+	//		scene->loadSceneFromFile(filename, 1, 0, 0);
+	//		m_currScene = scene;
+
+	//		m_currScene->buildRelationGraph();
+	//	}
+	//}
 
 	std::cout << "\nSceneLab: all scene relation graph generated.\n";
 }
-
 
 void scene_lab::collectModelInfoForSceneList()
 {
@@ -323,19 +393,19 @@ void scene_lab::collectModelInfoForSceneList()
 		{
 			QString sceneName = ifs.readLine();
 
-			if (m_scene != NULL)
+			if (m_currScene != NULL)
 			{
-				delete m_scene;
+				delete m_currScene;
 			}
 
 			CScene *scene = new CScene();
 			QString filename = sceneDBPath + "/" + sceneName + ".txt";
 			scene->loadSceneFromFile(filename, 1, 0, 0);
-			m_scene = scene;
+			m_currScene = scene;
 			
-			for (int i = 0; i < m_scene->getModelNum(); i++)
+			for (int i = 0; i < m_currScene->getModelNum(); i++)
 			{
-				allModelNameStrings.insert(m_scene->getModelNameString(i));
+				allModelNameStrings.insert(m_currScene->getModelNameString(i));
 			}			
 		}
 	}
@@ -370,6 +440,20 @@ void scene_lab::collectModelInfoForSceneList()
 	outFile.close();
 
 	std::cout << "\nSceneLab: model meta info saved.\n";
+}
+
+void scene_lab::buildRelationModels()
+{
+	loadSceneList();
+
+	if (m_relationModelManager!=NULL)
+	{
+		delete m_relationModelManager;
+	}
+
+	m_relationModelManager = new RelationModelManager();
+
+
 }
 
 

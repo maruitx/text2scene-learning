@@ -5,7 +5,6 @@
 #include "../common/geometry/SuppPlane.h"
 #include "../common/geometry/RelationGraph.h"
 #include "../scene_lab/modelDatabase.h"
-#include "../common/utilities/utility.h"
 
 
 SceneSemGraph::SceneSemGraph(CScene *s, ModelDatabase *db)

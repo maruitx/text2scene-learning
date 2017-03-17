@@ -1,13 +1,13 @@
 #include "RelationModel.h"
 
 
-RelationModel::RelationModel()
+GroupRelationModel::GroupRelationModel()
 {
 
 }
 
 
-RelationModel::~RelationModel()
+GroupRelationModel::~GroupRelationModel()
 {
 
 }

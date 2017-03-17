@@ -28,7 +28,10 @@ HEADERS += \
 	modeldbviewer_widget.h \
 	ModelDBViewer.h \
 	modelDatabase.h \ 
-	category.h
+	category.h \
+	RelationModel.h \
+	RelationExtractor.h \
+	RelationModelManager.h
 	
 SOURCES += \
 	scene_lab.cpp \
@@ -36,7 +39,10 @@ SOURCES += \
 	modeldbviewer_widget.cpp \
 	ModelDBViewer.cpp \
 	modelDatabase.cpp \
-	category.cpp
+	category.cpp \
+	RelationModel.cpp \
+	RelationExtractor.cpp \
+	RelationModelManager.cpp
 	
 {# Prevent rebuild and Enable debuging in release mode
 	QMAKE_CXXFLAGS_RELEASE += /Zi

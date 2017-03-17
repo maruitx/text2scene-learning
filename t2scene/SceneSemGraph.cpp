@@ -5,11 +5,15 @@
 #include "../common/geometry/SuppPlane.h"
 #include "../common/geometry/RelationGraph.h"
 #include "../scene_lab/modelDatabase.h"
+#include "../scene_lab/RelationExtractor.h"
 
 
-SceneSemGraph::SceneSemGraph(CScene *s, ModelDatabase *db)
-	:m_scene(s), m_modelDB(db)
+SceneSemGraph::SceneSemGraph(CScene *s, ModelDatabase *db, RelationExtractor *relationExtractor)
+	:m_scene(s), m_modelDB(db), m_relationExtractor(relationExtractor)
 {
+	m_relationExtractor->updateCurrScene(s);
+	m_relationExtractor->updateCurrSceneSemGraph(this);
+
 	m_sceneFormat = m_scene->getSceneFormat();
 	m_relGraph = m_scene->getSceneGraph();
 }
@@ -88,19 +92,19 @@ void SceneSemGraph::generateGraph()
 	}
 
 	// extract low-level model attributes from ShapeNetSem annotation
-	buildFromModelDBAnnotation();
+	addModelDBAnnotation();
 
 	// add relationships
-	extractRelationsFromRelationGraph();
-	extractSpatialSideRel();
+	addRelationsFromRelationGraph();
+	addSpatialSideRel();
 
 	// add attributes
-	loadAttributeNodeFromAnnotation();
+	addGroupAttributeFromAnnotation();
 
 	std::cout << "SceneSemGraph: graph generated.\n";
 }
 
-void SceneSemGraph::buildFromModelDBAnnotation()
+void SceneSemGraph::addModelDBAnnotation()
 {
 	for (int i = 0; i < m_metaModelList.size(); i++)
 	{
@@ -114,7 +118,7 @@ void SceneSemGraph::buildFromModelDBAnnotation()
 	}
 }
 
-void SceneSemGraph::extractRelationsFromRelationGraph()
+void SceneSemGraph::addRelationsFromRelationGraph()
 {
 	if (m_relGraph == NULL)
 	{
@@ -132,10 +136,9 @@ void SceneSemGraph::extractRelationsFromRelationGraph()
 		{
 			// e.g. table --> support --> laptop
 		case RelationGraph::CT_VERT_SUPPORT:
-			addNode(SSGNodeType[2], SSGPairRelStrings[0]);
+			addNode(SSGNodeType[2], PairRelStrings[0]);
+
 			// in RG, an edge is (desk, monitor), in SSG will be (monitor, support), (support, desk)
-			//addEdge(relEdge->v1, m_nodeNum-1);   
-			//addEdge(m_nodeNum-1, relEdge->v2);
 			addEdge(relEdge->v2, m_nodeNum - 1);
 			addEdge(m_nodeNum - 1, relEdge->v1);
 			
@@ -150,8 +153,7 @@ void SceneSemGraph::extractRelationsFromRelationGraph()
 	}
 }
 
-
-void SceneSemGraph::extractSpatialSideRel()
+void SceneSemGraph::addSpatialSideRel()
 {
 	if (!m_scene->hasSupportHierarchyBuilt())
 	{
@@ -193,14 +195,14 @@ void SceneSemGraph::extractSpatialSideRel()
 		for (int j = i + 1; j < groundModelIds.size(); j++)
 		{
 			int testModelId = groundModelIds[j];
-			extractSpatialSideRelForModelPair(refModelId, testModelId);		
+			addSpatialSideRelForModelPair(refModelId, testModelId);		
 		}
 	}
 }
 
-void SceneSemGraph::extractSpatialSideRelForModelPair(int refModelId, int testModelId)
+void SceneSemGraph::addSpatialSideRelForModelPair(int refModelId, int testModelId)
 {
-	std::vector<QString> sideRels = computeSpatialSideRelForModelPair(refModelId, testModelId);
+	std::vector<QString> sideRels = m_relationExtractor->extractSpatialSideRelForModelPair(refModelId, testModelId);
 
 	for (int r = 0; r < sideRels.size(); r++)
 	{
@@ -216,7 +218,8 @@ void SceneSemGraph::extractSpatialSideRelForModelPair(int refModelId, int testMo
 	sideRels.clear();
 	int newRefModelId = testModelId;
 	int newTestNodeId = refModelId;
-	sideRels = computeSpatialSideRelForModelPair(newRefModelId, newTestNodeId);
+
+	sideRels = m_relationExtractor->extractSpatialSideRelForModelPair(newRefModelId, newTestNodeId);
 
 	for (int r = 0; r < sideRels.size(); r++)
 	{
@@ -229,116 +232,7 @@ void SceneSemGraph::extractSpatialSideRelForModelPair(int refModelId, int testMo
 	}
 }
 
-
-std::vector<QString> SceneSemGraph::computeSpatialSideRelForModelPair(int refModelId, int testModelId)
-{
-	std::vector<QString> relationStrings;
-
-	double distTh = 1.0;
-
-	double sceneMetric = m_scene->getSceneMetric();
-	MathLib::Vector3 sceneUpDir = m_scene->getUprightVec();
-
-	CModel *refModel = m_scene->getModel(refModelId);
-	CModel *testModel = m_scene->getModel(testModelId);
-
-	COBB refOBB = refModel->getOBB();
-	COBB testOBB = testModel->getOBB();
-
-	double hausdorffDist = refOBB.HausdorffDist(testOBB);
-	double connStrength = refOBB.ConnStrength_HD(testOBB);
-
-	MathLib::Vector3 contactDir;
-	if (refOBB.IsIntersect(testOBB) || connStrength < 2.0)
-	{
-		relationStrings.push_back(SSGPairRelStrings[9]);  // near
-	}
-
-	MathLib::Vector3 refFront = refModel->getHorizonFrontDir();
-	MathLib::Vector3 refUp = refModel->getVertUpDir();
-
-	MathLib::Vector3 refPos = refModel->getOBBInitPos();
-	MathLib::Vector3 testPos = testModel->getOBBInitPos();
-
-	MathLib::Vector3 fromRefToTestVec = testPos - refPos;
-	fromRefToTestVec.normalize();
-
-	// front or back side is not view dependent
-	double frontDirDot = fromRefToTestVec.dot(refFront);
-
-
-	double sideSectionVal = MathLib::Cos(30);
-	if (frontDirDot > sideSectionVal)
-	{
-		QString refName = m_metaModelList[refModelId]->getProcessedCatName();
-		if (refName == "tv" || refName == "monitor" || refName.contains("table") || refName == "desk")  //  object requires to face to
-		{
-			MathLib::Vector3 testFront = testModel->getFrontDir();
-			if (testFront.dot(refFront) < 0)  // test and ref should be opposite
-			{
-				relationStrings.push_back(SSGPairRelStrings[7]); // front
-			}
-		}
-		else
-		{
-			relationStrings.push_back(SSGPairRelStrings[7]); // front
-		}
-	}
-	else if (frontDirDot < -sideSectionVal && frontDirDot > -1)
-	{
-		relationStrings.push_back(SSGPairRelStrings[8]); // back
-	}
-
-	// left or right may be view dependent
-	MathLib::Vector3 refRight = refFront.cross(refUp);
-	double rightDirDot = fromRefToTestVec.dot(refRight);
-
-	MathLib::Vector3 roomFront = m_scene->getRoomFront();
-
-	// if ref front is same to th room front (e.g. view inside 0, -1, 0)
-	//bool useViewCentric = false;
-	//if (refFront.dot(roomFront) > sideSectionVal  && useViewCentric)
-	//{
-	//	// use view-centric
-	//	if (rightDirDot >= sideSectionVal) // right of obj
-	//	{
-	//		relationStrings.push_back(SSGPairRelStrings[5]); // left in view
-	//	}
-	//	else if (rightDirDot <= -sideSectionVal) // left of obj
-	//	{
-	//		relationStrings.push_back(SSGPairRelStrings[6]); // right in view
-	//	}
-	//}
-	//else
-	{
-		if (rightDirDot >= sideSectionVal) // right of obj
-		{
-			relationStrings.push_back(SSGPairRelStrings[6]); // right
-		}
-		else if (rightDirDot <= -sideSectionVal)  // left of obj
-		{
-			relationStrings.push_back(SSGPairRelStrings[5]); // left
-		}
-	}
-
-	MathLib::Vector3 refOBBTopCenter = refModel->getModelTopCenter();
-	MathLib::Vector3 fromRefTopToTestTop = testModel->getModelTopCenter() - refOBBTopCenter;
-
-	if (fromRefTopToTestTop.dot(refUp) < 0)
-	{
-		SuppPlane* p = refModel->getSuppPlane(0);
-		if (p->isCoverPos(testPos.x, testPos.y))
-		{
-			relationStrings.push_back(SSGPairRelStrings[4]); // under
-		}
-	}
-
-
-	return relationStrings;
-}
-
-
-void SceneSemGraph::loadAttributeNodeFromAnnotation()
+void SceneSemGraph::addGroupAttributeFromAnnotation()
 {
 	QString sceneANNPath = "C:/Ruim/Graphics/T2S_MPC/text2scene/t2s-evol/SceneDB/ANN/";
 
@@ -565,7 +459,7 @@ void SceneSemGraph::saveNodeStringToLabelIDMap(const QString &filename)
 		//labelID = 1000;
 		for (int i = 0; i < SingleAttriNum; i++)
 		{
-			ofs << SSGSingleAttriStrings[i] << " " << labelID << " 1\n";
+			ofs << SingleAttriStrings[i] << " " << labelID << " 1\n";
 			labelID++;
 		}
 
@@ -574,7 +468,7 @@ void SceneSemGraph::saveNodeStringToLabelIDMap(const QString &filename)
 		//labelID = 2000;
 		for (int i = 0; i < PairRelNum; i++)
 		{
-			ofs << SSGPairRelStrings[i] << " " << labelID << " 2\n";
+			ofs << PairRelStrings[i] << " " << labelID << " 2\n";
 			labelID++;
 		}
 
@@ -583,7 +477,7 @@ void SceneSemGraph::saveNodeStringToLabelIDMap(const QString &filename)
 		//labelID = 3000;
 		for (int i = 0; i < GroupRelNum; i++)
 		{
-			ofs << SSGGroupRelStrings[i] << " " << labelID << " 3\n";
+			ofs << GroupRelStrings[i] << " " << labelID << " 3\n";
 			labelID++;
 		}
 
@@ -591,7 +485,7 @@ void SceneSemGraph::saveNodeStringToLabelIDMap(const QString &filename)
 		//labelID = 4000;
 		for (int i = 0; i < GroupAttriNum; i++)
 		{
-			ofs << SSGGroupAttrStings[i] << " " << labelID << " 4\n";
+			ofs << GroupAttrStings[i] << " " << labelID << " 4\n";
 			labelID++;
 		}
 
@@ -681,6 +575,11 @@ void SceneSemGraph::saveGMTNodeAttributeFile(const QString &filename)
 	{
 		std::cout << "SceneSemGraph: fail to save GMT attribute file.\n";
 	}
+}
+
+QString SceneSemGraph::getCatName(int modelId)
+{
+	return m_metaModelList[modelId]->getProcessedCatName();
 }
 
 

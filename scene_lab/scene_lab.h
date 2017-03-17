@@ -9,6 +9,7 @@ class SceneSemGraph;
 class ModelDatabase;
 class ModelDBViewer_widget;
 class RelationModelManager;
+class RelationExtractor;
 
 class scene_lab : public QObject
 {
@@ -26,7 +27,7 @@ public slots:
 	void loadScene();
 	void loadSceneList();
 
-	void loadModelMetaInfoForScene();
+	void loadModelMetaInfoForCurrScene();
 
 	void buildRelationGraphForCurrentScene();
 	void buildRelationGraphForSceneList();
@@ -55,7 +56,8 @@ private:
 
 	SceneSemGraph *m_currSceneSemGraph;
 
-	RelationModelManager *m_relationModelManager;
+	RelationModelManager *m_relationModelManager;  // singleton
+	RelationExtractor *m_relationExtractor;  // singleton
 
 	ModelDatabase *m_modelDB;
 	ModelDBViewer_widget *m_modelDBViewer_widget;

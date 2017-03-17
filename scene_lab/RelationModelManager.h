@@ -1,22 +1,30 @@
 #pragma once
 #include "RelationModel.h"
 
-class RelationModel;
+class GroupRelationModel;
 class CScene;
+class ModelDatabase;
+class RelationExtractor;
 
 class RelationModelManager
 {
 public:
-	RelationModelManager();
+	RelationModelManager(ModelDatabase *mDB, RelationExtractor *mExtractor);
 	~RelationModelManager();
 
-	void extractRelativePositions();
+	void updateCurrScene(CScene *s) { m_currScene = s; };
+
+	void collectRelativePosInCurrScene();
 
 public:
-	std::vector<RelationModel*> m_relationModels;
+	std::map<QString, PairwiseRelationModel*> m_pairwiseRelModels;
+	std::map<QString, GroupRelationModel*> m_groupRelModels;
 
 private:
 	std::vector<RelativePos> m_relativePostions;
+
+	RelationExtractor *m_relationExtractor;
+	ModelDatabase *m_modelDB;
 	CScene *m_currScene;
 };
 

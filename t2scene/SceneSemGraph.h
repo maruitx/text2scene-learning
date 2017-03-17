@@ -7,6 +7,8 @@ class CScene;
 class RelationGraph;
 class ModelDatabase;
 class DBMetaModel;
+class RelationExtractor;
+class CModel;
 
 const int NodeTypeNum = 5;
 const int SingleAttriNum = 7;
@@ -15,10 +17,9 @@ const int GroupRelNum = 5;
 const int GroupAttriNum = 8;
 
 const QString SSGNodeType[] = { "object", "per_obj_attribute", "pairwise_relationship", "group_relationship", "group_attribute" };
-const QString SSGSingleAttriStrings[] = {"round", "rectangular", "office", "dining", "kitchen", "floor", "wall"};
-const QString SSGPairRelStrings[] = {"vert_support", "horizon_support", "contain", "above", "under", "leftside", "rightside", "front", "back", "near"};
-const QString SSGGroupRelStrings[] = {"around", "aligned", "grouped", "stacked", "scattered"};
-const QString SSGGroupAttrStings[] = {"messy", "clean", "organized", "disorganized", "formal", "casual", "spacious", "crowded"};
+const QString SingleAttriStrings[] = {"round", "rectangular", "office", "dining", "kitchen", "floor", "wall"};
+
+const QString GroupAttrStings[] = {"messy", "clean", "organized", "disorganized", "formal", "casual", "spacious", "crowded"};
 
 struct GroupAnnotation 
 {
@@ -31,25 +32,26 @@ class SceneSemGraph : public SemanticGraph
 {
 public:
 
-	SceneSemGraph(CScene *s, ModelDatabase *db);
+	SceneSemGraph(CScene *s, ModelDatabase *db, RelationExtractor *relationExtractor);
 	~SceneSemGraph();
 
 	void loadGraph(const QString &filename);
 	void saveGraph();
 
 	void generateGraph();	
-	void buildFromModelDBAnnotation();  // low-level attribute node and edges to object node
+	void addModelDBAnnotation();  // low-level attribute node and edges to object node
 	
-	void extractRelationsFromRelationGraph();  // low-level/high-level relation node and edges to object node
+	void addRelationsFromRelationGraph();  // low-level/high-level relation node and edges to object node
 	
-	void extractSpatialSideRel(); // only extract the side info for objs with support level 0
-	void extractSpatialSideRelForModelPair(int refModelId, int testModelId);
-	std::vector<QString> computeSpatialSideRelForModelPair(int refModelId, int testModelId);
+	void addSpatialSideRel(); // only extract the side info for objs with support level 0
+	void addSpatialSideRelForModelPair(int refModelId, int testModelId);
 
-	void loadAttributeNodeFromAnnotation(); // high-level attribute node and edges to object node
+	void addGroupAttributeFromAnnotation(); // high-level attribute node and edges to object node
 
 	void saveNodeStringToLabelIDMap(const QString &filename);
 	void saveGMTNodeAttributeFile(const QString &filename);
+
+	QString getCatName(int modelId);
 
 private:
 	CScene *m_scene;
@@ -57,6 +59,7 @@ private:
 	RelationGraph *m_relGraph;
 
 	ModelDatabase *m_modelDB;
+	RelationExtractor *m_relationExtractor;  // pointer to the singleton
 	
 	//std::vector<int> m_nonObjNodeIds;  // ids for relation/attribute node
 	std::vector<DBMetaModel*> m_metaModelList;

@@ -3,7 +3,11 @@
 
 struct RelativePos
 {
-	double x, y, z, theta;
+	MathLib::Vector3 pos;
+	double theta;
+
+	MathLib::Matrix4d transMat;  // transformation of anchor to unit box
+
 	QString actObjName;
 	QString anchorObjName;
 };
@@ -14,14 +18,17 @@ struct GaussianModel
 	double weight;
 };
 
-struct RelativeModel
+struct PairwiseRelationModel
 {
 	std::vector<GaussianModel> gaussians;
+
 	QString actObjName;
 	QString anchorObjName;
 
 	std::vector<int> instanceIds;
 
+	QString conditionName; // parent-child, sibling, proximity, or text-specified relation
+	QString relationName;
 };
 
 struct OccurrenceModel
@@ -29,15 +36,14 @@ struct OccurrenceModel
 	std::map<QString, double> m_objOccurProbs;
 };
 
-class RelationModel
+class GroupRelationModel
 {
-public:
-	RelationModel();
-	~RelationModel();
+public: 
+	GroupRelationModel();
+	~GroupRelationModel();
 
 public:
-
-	std::vector<RelativeModel> m_relativeModels;  // relation-conditioned relative model
+	std::vector<PairwiseRelationModel*> m_pairwiseModels;  // relation-conditioned relative model
 	OccurrenceModel m_occurrenceModel;  // relation-conditioned occurrence model
 
 	std::vector<QString> actObjNames;

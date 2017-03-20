@@ -60,7 +60,7 @@ CModel::~CModel()
 	}
 }
 
-bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int obbOnly, int meshOnly, QString sceneDbType)
+bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int obbOnly, int meshAndOBB, QString sceneDbType)
 {
 	m_modelMetric = metric;
 
@@ -104,7 +104,17 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 		return true;
 	}
 
-	if (!obbOnly)
+	if (obbOnly)
+	{
+		bool flag = loadOBB();
+
+		if (flag == -1)
+		{
+			std::cout << "\t OBB does not exist, please compute OBB first\n";
+			return false;
+		}
+	}
+	else
 	{
 		// load mesh data first
 		std::cout << "\t \t loading mesh for " << m_nameStr.toStdString() << "\n";
@@ -118,13 +128,15 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 		}
 
 		computeAABB();
+		m_initAABB = m_AABB;
+
 		buildDisplayList(0, 0);
 
-		if(!meshOnly)  // load both obb and mesh, if obb not exist, compute obb
+		if (meshAndOBB)  // load both obb and mesh, if obb not exist, compute obb
 		{
 			if (!m_hasOBB && loadOBB() == -1)
 			{
-				if (m_sceneUpVec == MathLib::Vector3(0,0,1))
+				if (m_sceneUpVec == MathLib::Vector3(0, 0, 1))
 				{
 					computeOBB(2); // fix Z
 				}
@@ -134,21 +146,61 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 				}
 
 				m_hasOBB = true;
-				
+
 				saveOBB();
 			}
 
 			//loadAnnoFile();
 		}
 	}
-	else  // only load obb, if not exist, return
-	{
-		if (!m_hasOBB && loadOBB() == -1)
-		{
-			std::cout << "\t OBB does not exist, please compute OBB first\n";
-			return false;
-		}
-	}
+
+	//if (!obbOnly)
+	//{
+	//	// load mesh data first
+	//	std::cout << "\t \t loading mesh for " << m_nameStr.toStdString() << "\n";
+
+	//	bool isLoaded;
+	//	isLoaded = m_mesh->readObjFile(qPrintable(filename), metric, sceneDbType);
+
+	//	if (!isLoaded)
+	//	{
+	//		return false;
+	//	}
+
+	//	computeAABB();
+	//	m_initAABB = m_AABB;
+
+	//	buildDisplayList(0, 0);
+
+	//	if(!meshAndOBB)  // load both obb and mesh, if obb not exist, compute obb
+	//	{
+	//		if (!m_hasOBB && loadOBB() == -1)
+	//		{
+	//			if (m_sceneUpVec == MathLib::Vector3(0,0,1))
+	//			{
+	//				computeOBB(2); // fix Z
+	//			}
+	//			else if (m_sceneUpVec == MathLib::Vector3(0, 1, 0))
+	//			{
+	//				computeOBB(1); // fix Y
+	//			}
+
+	//			m_hasOBB = true;
+	//			
+	//			saveOBB();
+	//		}
+
+	//		//loadAnnoFile();
+	//	}
+	//}
+	//else  // only load obb, if not exist, return
+	//{
+	//	if (!m_hasOBB && loadOBB() == -1)
+	//	{
+	//		std::cout << "\t OBB does not exist, please compute OBB first\n";
+	//		return false;
+	//	}
+	//}
 
 	return true;
 }
@@ -1186,6 +1238,27 @@ MathLib::Vector3 CModel::getRightDir()
 SuppPlane* CModel::getSuppPlane(int i)
 {
 	return m_suppPlaneManager->getSuppPlane(i);
+}
+
+void CModel::computeBBAlignMat()
+{
+	MathLib::Vector3 transVec = -m_initAABB.cent;
+
+	MathLib::Vector3 maxVert = m_initAABB.GetMaxV();
+	MathLib::Vector3 minVert = m_initAABB.GetMinV();
+
+	double scaleX = maxVert.x - minVert.x;
+	double scaleY = maxVert.y - minVert.y;
+	double scaleZ = maxVert.z - minVert.z;
+
+	MathLib::Matrix4d translateMat;
+	MathLib::Matrix4d scaleMat;
+
+	translateMat.settranslate(transVec);
+	scaleMat.setscale(1 / scaleX, 1 / scaleY, 1 / scaleZ);
+
+	// first bring model back to init frame, then transform init frame to unit box
+	m_alignBBToUnitBoxMat = scaleMat*translateMat*m_initTransMat.invert();
 }
 
 

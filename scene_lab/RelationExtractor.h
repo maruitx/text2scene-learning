@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../common/utilities/utility.h"
+#include "../scene_lab/RelationModel.h"
 
 class CScene;
 class CModel;
@@ -19,8 +20,11 @@ public:
 	void updateCurrScene(CScene *s) { m_currScene = s; };
 	void updateCurrSceneSemGraph(SceneSemGraph *sg) { m_currSceneSemGraph = sg; };
 
-	QString extractRelationConditionType(CModel *anchorModel, CModel *actModel);
-	void extractRelativePosForModelPair(CModel *anchorModel, CModel *actModel, MathLib::Vector3 &pos, double &theta, MathLib::Matrix4d &transMat);
+	void computeAlignTransformForCurrScene();
+	void computeAlignTransformForModel(CModel *m);
+
+	QString getRelationConditionType(CModel *anchorModel, CModel *actModel);
+	void extractRelativePosForModelPair(CModel *anchorModel, CModel *actModel, RelativePos &relPos);
 
 	std::vector<QString> extractSpatialSideRelForModelPair(int anchorModelId, int actModelId);
 	std::vector<QString> extractSpatialSideRelForModelPair(CModel *anchorModel, CModel *actModel);

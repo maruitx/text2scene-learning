@@ -22,6 +22,11 @@ void RelationModelManager::collectRelativePosInCurrScene()
 {
 	int modelNum = m_currScene->getModelNum();
 
+	if (!m_currScene->loadModelBBAlignMat())
+	{
+		qDebug() << "RelationModelManager: compute model align mat first for "<< m_currScene->getSceneName();
+	}
+
 	for (int i = 0; i < modelNum; i++)
 	{
 		CModel *anchorModel = m_currScene->getModel(i);
@@ -30,17 +35,18 @@ void RelationModelManager::collectRelativePosInCurrScene()
 			if (i==j) continue;
 			
 			CModel *actModel = m_currScene->getModel(i);
-			QString conditionName = m_relationExtractor->extractRelationConditionType(anchorModel, actModel); 
+			QString conditionName = m_relationExtractor->getRelationConditionType(anchorModel, actModel); 
 
 			if (conditionName == "none") continue;
 
 			RelativePos relPos;
-			relPos.actObjName;
-			relPos.anchorObjName;
+			relPos.conditionName = conditionName;
 
-			m_relationExtractor->extractRelativePosForModelPair(anchorModel, actModel, relPos.pos, relPos.theta, relPos.transMat);
+			m_relationExtractor->extractRelativePosForModelPair(anchorModel, actModel, relPos);
 
-			m_relativePostions.push_back(relPos);
+			m_currScene->m_relPositions.push_back(relPos);
 		}
 	}
+
+	m_currScene->saveRelPositions();
 }

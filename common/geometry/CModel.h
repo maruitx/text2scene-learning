@@ -17,7 +17,7 @@ public:
 	CModel();
 	~CModel();
 
-	bool loadModel(QString filename, double metric = 1.0, int metaDataOnly = 0, int obbOnly = 0, int meshOnly = 0, QString sceneDbType = QString());
+	bool loadModel(QString filename, double metric = 1.0, int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0, QString sceneDbType = QString());
 	void saveModel(QString filename);
 	QString getModelFileName() { return m_fileName; };
 	QString getModelFilePath() { return m_filePath; };
@@ -59,6 +59,8 @@ public:
 
 	MathLib::Vector3 getMinVert() { return m_AABB.GetMinV(); };
 	MathLib::Vector3 getMaxVert() { return m_AABB.GetMaxV(); };
+
+	void computeBBAlignMat();
 
 	// obb
 	bool hasOBB() { return m_hasOBB; };
@@ -130,6 +132,14 @@ public:
 
 	// support relationships
 	bool isSupportChild(int id);
+
+	void setVisible(bool v) { m_isVisible = v; };
+	bool isVisible() { return m_isVisible; };
+
+	void setBusy(bool b) { m_isBusy = b; };
+	bool isBusy(){ return m_isBusy; };
+
+public:
 	int suppParentID;
 	int parentSuppPlaneID;   // on which support plane of the parent
 	std::vector<int> suppChindrenList;
@@ -139,11 +149,9 @@ public:
 
 	std::vector<std::vector<int>> suppGridPos; // grid pos that is filled by current model
 
-	void setVisible(bool v) { m_isVisible = v; };
-	bool isVisible() { return m_isVisible; };
+	MathLib::Matrix4d m_alignBBToUnitBoxMat;  // matrix that aligns transformed BB to unit box (center at 0, and each side is 1)
 
-	void setBusy(bool b) { m_isBusy = b; };
-	bool isBusy(){return m_isBusy; };
+	
 
 private:
 	QString m_fileName;
@@ -172,8 +180,9 @@ private:
 	MathLib::Matrix4d m_initTransMat;  // transformation matrix for objs in initial scene
 
 	CMesh *m_mesh;
-	CAABB m_AABB;
-	COBB m_OBB;
+	CAABB m_initAABB; // initial AABB for model loaded from file
+	CAABB m_AABB;  // current AABB for transformed model
+	COBB m_OBB;  // current OBB for transformed model
 	bool m_hasOBB;
 
 	GLuint m_displayListID;

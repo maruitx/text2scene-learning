@@ -20,16 +20,20 @@ scene_lab_widget::scene_lab_widget(scene_lab *s_lab, QWidget *parent/*=0*/)
 
 	connect(ui->openModelDBViewerButton, SIGNAL(clicked()), m_scene_lab, SLOT(create_modelDBViewer_widget()));
 
+	// ssg
 	connect(ui->buildSemGraphButton, SIGNAL(clicked()), m_scene_lab, SLOT(buildSemGraphForCurrentScene()));
 	connect(ui->buildSSGForListButton, SIGNAL(clicked()), m_scene_lab, SLOT(buildSemGraphForSceneList()));
 
+	// structure graph
 	connect(ui->buildRelationGraphButton, SIGNAL(clicked()), m_scene_lab, SLOT(buildRelationGraphForCurrentScene()));
 	connect(ui->buildRGForListButton, SIGNAL(clicked()), m_scene_lab, SLOT(buildRelationGraphForSceneList()));
 
+	// relation model
+	connect(ui->computeBBAlignMatForListButton, SIGNAL(clicked()), m_scene_lab, SLOT(computeBBAlignMatForSceneList()));
+	connect(ui->extractRelPosForList, SIGNAL(clicked()), m_scene_lab, SLOT(extractRelPosForSceneList()));
 	connect(ui->buildRelationModelsButton, SIGNAL(clicked()), m_scene_lab, SLOT(buildRelationModels()));
 
-	connect(ui->collectMetaInfoButton, SIGNAL(clicked()), m_scene_lab, SLOT(collectModelInfoForSceneList()));
-	
+	connect(ui->collectMetaInfoButton, SIGNAL(clicked()), m_scene_lab, SLOT(collectModelInfoForSceneList()));	
 }
 
 scene_lab_widget::~scene_lab_widget()

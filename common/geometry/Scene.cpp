@@ -51,7 +51,7 @@ CScene::~CScene()
 	m_showSuppPlane = false;
 }
 
-void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int obbOnly, int meshOnly)
+void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int obbOnly, int meshAndOBB)
 {
 
 	QFile inFile(filename);
@@ -85,13 +85,14 @@ void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int ob
 
 	if (!obbOnly)
 	{
-		if (meshOnly)
+		if (meshAndOBB)
 		{
-			std::cout << "\tloading objects without obb...\n";
+			std::cout << "\tloading objects with obb...\n";
+			
 		}
 		else
 		{
-			std::cout << "\tloading objects with obb...\n";
+			std::cout << "\tloading objects without obb...\n";
 		}
 	}
 	else
@@ -132,8 +133,8 @@ void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int ob
 				newModel->setSceneUpRightVec(m_uprightVec);
 
 				QString modelNameString = parts[2].c_str();
-				newModel->loadModel(m_modelDBPath + "/" + modelNameString + ".obj", 1.0, metaDataOnly, obbOnly, meshOnly, databaseType);
-
+				newModel->loadModel(m_modelDBPath + "/" + modelNameString + ".obj", 1.0, metaDataOnly, obbOnly, meshAndOBB, databaseType);
+				
 				currModelID += 1;
 
 				m_modelList[currModelID] = newModel;
@@ -704,6 +705,82 @@ std::vector<MathLib::Vector3> CScene::getCurrModelSuppPlaneCorners(int modelId)
 	}
 
 }
+
+void CScene::computeModelBBAlignMat()
+{
+	for (int i = 0; i < m_modelNum; i++)
+	{
+		m_modelList[i]->computeBBAlignMat();
+	}
+
+	saveModelBBAlignMat();
+}
+
+bool CScene::loadModelBBAlignMat()
+{
+	QString filename = m_sceneFilePath + "/" + m_sceneFileName + ".alignMat";
+
+	QFile inFile(filename);
+	QTextStream ifs(&inFile);
+
+	if (inFile.open(QIODevice::ReadOnly))
+	{
+		for (int i = 0; i < m_modelNum; i++)
+		{
+			QString currLine = ifs.readLine();
+
+			std::vector<float> transformVec = StringToFloatList(currLine.toStdString(), "");
+			MathLib::Matrix4d transMat(transformVec);
+
+			m_modelList[i]->m_alignBBToUnitBoxMat = transMat;
+		}
+
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void CScene::saveModelBBAlignMat()
+{
+	QString filename = m_sceneFilePath + "/" + m_sceneFileName + ".alignMat";
+
+	QFile outFile(filename);
+	QTextStream ofs(&outFile);
+
+	if (outFile.open(QIODevice::ReadWrite | QIODevice::Text | QIODevice::Truncate))
+	{
+		for (int i = 0; i < m_modelNum; i++)
+		{
+			ofs << GetTransformationString(m_modelList[i]->m_alignBBToUnitBoxMat) << "\n";
+		}
+
+		outFile.close();
+	}
+}
+
+void CScene::saveRelPositions()
+{
+	QString filename = m_sceneFilePath + "/" + m_sceneFileName + ".relPos";
+
+	QFile outFile(filename);
+	QTextStream ofs(&outFile);
+
+	if (outFile.open(QIODevice::ReadWrite | QIODevice::Text | QIODevice::Truncate))
+	{
+		for (int i = 0; i < m_relPositions.size(); i++)
+		{
+			RelativePos& relPos = m_relPositions[i];
+			ofs << relPos.anchorObjName << "," << relPos.actObjName << "," << relPos.conditionName << "\n";
+			ofs << relPos.pos.x << " " << relPos.pos.y << " " << relPos.pos.z << " " << relPos.theta << "," << GetTransformationString(relPos.actAlignMat) << "\n";
+		}
+
+		outFile.close();
+	}
+}
+
 
 
 //void CScene::computeTransformation(const std::vector<MathLib::Vector3> &source, const std::vector<MathLib::Vector3> &target, Eigen::Matrix4d &mat)

@@ -5,6 +5,7 @@
 #include "Model.h"  // starlab Model class
 
 #include "CModel.h"
+#include "../scene_lab/RelationModel.h"
 
 class RelationGraph;
 
@@ -15,12 +16,16 @@ public:
 	CScene();
 	~CScene();
 
-	void loadSceneFromFile(const QString &filename, int metaDataOnly = 0, int obbOnly = 0, int meshOnly = 1);
+	void loadSceneFromFile(const QString &filename, int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0);  // default load mesh only
 
 	void computeAABB();
 	void updateSeneAABB(CAABB addedBox) { m_AABB.Merge(addedBox); };
 	MathLib::Vector3 getMinVert() { return m_AABB.GetMinV(); };
 	MathLib::Vector3 getMaxVert() { return m_AABB.GetMaxV(); };
+
+	void computeModelBBAlignMat();
+	bool loadModelBBAlignMat();
+	void saveModelBBAlignMat();
 
 	//void insertModel(QString modelFileName);
 	//void insertModel(CModel *m);
@@ -82,6 +87,9 @@ public:
 	void updateRelationGraph(int modelID, int suppModelID, int suppPlaneID);
 	//void updateSupportHierarchy(int modelID, int suppModelID, int suppPlaneID);
 
+	// relative pos
+	void saveRelPositions();
+
 	// collision
 	void prepareForIntersect();
 	bool isSegIntersectModel(MathLib::Vector3 &startPt, MathLib::Vector3 &endPt, int modelID, double radius = 0);
@@ -97,6 +105,9 @@ public:
 	//void setShowSuppChildOBB(bool s) { m_showSuppChildOBB = s; }
 
 	void updateDrawArea() { m_drawArea->updateGL(); };
+
+public:
+	std::vector<RelativePos> m_relPositions;
 
 private:
 	Starlab::DrawArea *m_drawArea;

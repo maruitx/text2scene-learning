@@ -3,13 +3,14 @@
 
 struct RelativePos
 {
-	MathLib::Vector3 pos;
+	MathLib::Vector3 pos;  // rel pos of actObj in anchor's unit frame
 	double theta;
-
-	MathLib::Matrix4d transMat;  // transformation of anchor to unit box
+	MathLib::Matrix4d actAlignMat;  // transformation of actObj to anchorObj's unit frame,  anchorAlignMat*inverse(actInitTransMat)
 
 	QString actObjName;
 	QString anchorObjName;
+
+	QString conditionName;
 };
 
 struct GaussianModel

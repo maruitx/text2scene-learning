@@ -25,16 +25,21 @@ public:
 
 public slots:
 	void loadScene();
-	void loadSceneList();
+	void loadSceneList(int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0);
 
-	void loadModelMetaInfoForCurrScene();
+	void updateModelMetaInfoForScene(CScene *s);
 
+	// structure graph
 	void buildRelationGraphForCurrentScene();
 	void buildRelationGraphForSceneList();
 
+	// ssg
 	void buildSemGraphForCurrentScene(int batchLoading = 0);
 	void buildSemGraphForSceneList();
 
+	// relational model
+	void computeBBAlignMatForSceneList();
+	void extractRelPosForSceneList();
 	void buildRelationModels();
 
 	void collectModelInfoForSceneList();

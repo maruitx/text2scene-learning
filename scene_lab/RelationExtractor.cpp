@@ -3,7 +3,6 @@
 #include "../common/geometry/Scene.h"
 #include "../t2scene/SceneSemGraph.h"
 #include "../common/geometry/SuppPlane.h"
-#include "../scene_lab/RelationModel.h"
 
 RelationExtractor::RelationExtractor()
 {
@@ -14,7 +13,7 @@ RelationExtractor::~RelationExtractor()
 {
 }
 
-QString RelationExtractor::extractRelationConditionType(CModel *anchorModel, CModel *actModel)
+QString RelationExtractor::getRelationConditionType(CModel *anchorModel, CModel *actModel)
 {
 	int anchorModelId = anchorModel->getID();
 	int actModelId = actModel->getID();
@@ -160,8 +159,16 @@ bool RelationExtractor::isInProximity(CModel *anchorModel, CModel *actModel)
 	
 }
 
-void RelationExtractor::extractRelativePosForModelPair(CModel *anchorModel, CModel *actModel, MathLib::Vector3 &pos, double &theta, MathLib::Matrix4d &transMat)
+void RelationExtractor::extractRelativePosForModelPair(CModel *anchorModel, CModel *actModel, RelativePos &relPos)
 {
+	relPos.anchorObjName = anchorModel->getCatName();
+	relPos.actObjName = actModel->getCatName();
 
+	MathLib::Matrix4d actModelAlignMat = anchorModel->m_alignBBToUnitBoxMat*actModel->getInitTransMat();
+	MathLib::Vector3 actModelInitPos = actModel->getOBBInitPos();
+
+	relPos.actAlignMat = actModelAlignMat;
+	relPos.pos = actModelAlignMat.transform(actModelInitPos);
+	relPos.theta = 0;
 }
 

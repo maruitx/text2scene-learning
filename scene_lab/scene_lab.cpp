@@ -47,6 +47,8 @@ void scene_lab::loadScene()
 	}
 
 	CScene *scene = new CScene();
+
+	// only load scene mesh
 	scene->loadSceneFromFile(m_widget->loadSceneName(), 0, 0, 1);
 	m_currScene = scene;
 
@@ -61,13 +63,24 @@ void scene_lab::loadScene()
 		m_relationExtractor = new RelationExtractor();
 	}
 
-	loadModelMetaInfoForCurrScene();
+	updateModelMetaInfoForScene(m_currScene);
 
 	emit sceneLoaded();
 }
 
-void scene_lab::loadSceneList()
+void scene_lab::loadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
 {
+	if (m_modelDB == NULL)
+	{
+		m_modelDB = new ModelDatabase();
+		m_modelDB->loadShapeNetSemTxt();
+	}
+
+	if (m_relationExtractor == NULL)
+	{
+		m_relationExtractor = new RelationExtractor();
+	}
+
 	if (!m_sceneList.empty())
 	{
 		for (int i = 0; i < m_sceneList.size(); i++)
@@ -107,42 +120,31 @@ void scene_lab::loadSceneList()
 
 			CScene *scene = new CScene();
 			QString filename = sceneDBPath + "/" + sceneName + ".txt";
-			scene->loadSceneFromFile(filename, 1, 0, 0);
-
+			scene->loadSceneFromFile(filename, metaDataOnly, obbOnly, meshAndOBB);
 			m_sceneList.push_back(scene);
 		}
 	}
-
-	if (m_modelDB == NULL)
-	{
-		m_modelDB = new ModelDatabase();
-		m_modelDB->loadShapeNetSemTxt();
-	}
-
-	if (m_relationExtractor == NULL)
-	{
-		m_relationExtractor = new RelationExtractor();
-	}
 }
 
-void scene_lab::loadModelMetaInfoForCurrScene()
+// update cat name, front dir, up dir for model
+void scene_lab::updateModelMetaInfoForScene(CScene *s)
 {
-	if (m_currScene!= NULL)
+	if (s!= NULL)
 	{
-		for (int i = 0; i < m_currScene->getModelNum(); i++)
+		for (int i = 0; i < s->getModelNum(); i++)
 		{
-			QString modelNameString = m_currScene->getModelNameString(i);
+			QString modelNameString = s->getModelNameString(i);
 
 			if (m_modelDB->dbMetaModels.count(modelNameString))
 			{
 				MathLib::Vector3 frontDir = m_modelDB->dbMetaModels[modelNameString]->frontDir;
-				m_currScene->updateModelFrontDir(i, frontDir);
+				s->updateModelFrontDir(i, frontDir);
 
 				MathLib::Vector3 upDir = m_modelDB->dbMetaModels[modelNameString]->upDir;
-				m_currScene->updateModelUpDir(i, upDir);
+				s->updateModelUpDir(i, upDir);
 
 				QString catName = m_modelDB->dbMetaModels[modelNameString]->getProcessedCatName();
-				m_currScene->updateModelCat(i, catName);
+				s->updateModelCat(i, catName);
 			}
 		}
 	}
@@ -227,13 +229,13 @@ void scene_lab::buildSemGraphForCurrentScene(int batchLoading)
 
 void scene_lab::buildSemGraphForSceneList()
 {
-	loadSceneList();
+	loadSceneList(1);
 
 	std::set<QString> allModelNameStrings;
 	for (int i = 0; i < m_sceneList.size(); i++)
 	{
 		m_currScene = m_sceneList[i];
-		loadModelMetaInfoForCurrScene();
+		updateModelMetaInfoForScene(m_currScene);
 		buildSemGraphForCurrentScene(1);
 
 		for (int i = 0; i < m_currScene->getModelNum(); i++)
@@ -284,7 +286,7 @@ void scene_lab::buildRelationGraphForCurrentScene()
 
 void scene_lab::buildRelationGraphForSceneList()
 {
-	loadSceneList();
+	loadSceneList(0,1);
 
 	for (int i = 0; i < m_sceneList.size(); i++)
 	{
@@ -377,7 +379,8 @@ void scene_lab::collectModelInfoForSceneList()
 
 void scene_lab::buildRelationModels()
 {
-	loadSceneList();
+	// load metadata
+	loadSceneList(1);
 
 	if (m_relationModelManager!=NULL)
 	{
@@ -390,9 +393,45 @@ void scene_lab::buildRelationModels()
 	{
 		m_currScene = m_sceneList[i];
 
+		updateModelMetaInfoForScene(m_currScene);
 		m_relationModelManager->updateCurrScene(m_currScene);
 
 
+	}
+}
+
+void scene_lab::computeBBAlignMatForSceneList()
+{
+	// load mesh without OBB
+	loadSceneList(0, 0, 0);
+
+	for (int i = 0; i < m_sceneList.size(); i++)
+	{
+		// update front dir for alignment
+		updateModelMetaInfoForScene(m_currScene);
+		m_sceneList[i]->computeModelBBAlignMat();
+	}
+}
+
+void scene_lab::extractRelPosForSceneList()
+{
+	// load OBB only
+	loadSceneList(0, 1);
+
+	if (m_relationModelManager != NULL)
+	{
+		delete m_relationModelManager;
+	}
+
+	m_relationModelManager = new RelationModelManager(m_modelDB, m_relationExtractor);
+
+	for (int i = 0; i < m_sceneList.size(); i++)
+	{
+		m_currScene = m_sceneList[i];
+		m_relationModelManager->updateCurrScene(m_currScene);
+
+		updateModelMetaInfoForScene(m_currScene);
+		m_relationModelManager->collectRelativePosInCurrScene();
 	}
 }
 

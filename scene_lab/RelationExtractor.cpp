@@ -30,8 +30,12 @@ QString RelationExtractor::getRelationConditionType(CModel *anchorModel, CModel 
 		return ConditionName[1];
 	}
 
+	QString anchorCatName = anchorModel->getCatName();
+	QString actCatName = actModel->getCatName();
+
 	// test for proximity relation
-	if (isInProximity(anchorModel, actModel))
+	// do not consider proximity for "room"
+	if (anchorCatName != "room" && actCatName != "room" && isInProximity(anchorModel, actModel))
 	{
 		return ConditionName[2];
 	}
@@ -147,10 +151,9 @@ bool RelationExtractor::isInProximity(CModel *anchorModel, CModel *actModel)
 	COBB refOBB = anchorModel->getOBB();
 	COBB testOBB = actModel->getOBB();
 
-	double hausdorffDist = refOBB.HausdorffDist(testOBB);
-	double connStrength = refOBB.ConnStrength_HD(testOBB);
+	double closestBBDist = refOBB.ClosestDist_Approx(testOBB);
 
-	if (refOBB.IsIntersect(testOBB) || connStrength < 2.0)
+	if (closestBBDist < 0.5 / sceneMetric)
 	{
 		return true;
 	}
@@ -164,11 +167,15 @@ void RelationExtractor::extractRelativePosForModelPair(CModel *anchorModel, CMod
 	relPos.anchorObjName = anchorModel->getCatName();
 	relPos.actObjName = actModel->getCatName();
 
+	// first transform actModel into the scene and then bring it back using anchor model's alignMat
 	MathLib::Matrix4d actModelAlignMat = anchorModel->m_alignBBToUnitBoxMat*actModel->getInitTransMat();
 	MathLib::Vector3 actModelInitPos = actModel->getOBBInitPos();
 
 	relPos.actAlignMat = actModelAlignMat;
 	relPos.pos = actModelAlignMat.transform(actModelInitPos);
-	relPos.theta = 0;
+
+	MathLib::Vector3 anchorModelFrontDir = anchorModel->getFrontDir();
+	MathLib::Vector3 actModelFrontDir = actModel->getFrontDir();
+	relPos.theta = MathLib::Acos(anchorModelFrontDir.dot(actModelFrontDir));
 }
 

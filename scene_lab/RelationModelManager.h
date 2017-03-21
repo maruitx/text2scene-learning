@@ -3,28 +3,31 @@
 
 class GroupRelationModel;
 class CScene;
-class ModelDatabase;
 class RelationExtractor;
 
 class RelationModelManager
 {
 public:
-	RelationModelManager(ModelDatabase *mDB, RelationExtractor *mExtractor);
+	RelationModelManager(RelationExtractor *mExtractor);
 	~RelationModelManager();
 
-	void updateCurrScene(CScene *s) { m_currScene = s; };
+	void updateCurrScene(CScene *s);
 
 	void collectRelativePosInCurrScene();
+	void addRelativePosForCurrScene();
+
+	void buildRelationModels();
 
 public:
-	std::map<QString, PairwiseRelationModel*> m_pairwiseRelModels;
-	std::map<QString, GroupRelationModel*> m_groupRelModels;
+	std::vector<PairwiseRelationModel*> m_pairwiseRelModels;
+	std::vector<GroupRelationModel*> m_groupRelModels;
+
+
 
 private:
-	std::vector<RelativePos> m_relativePostions;
+	std::vector<RelativePos> m_relativePostions;  // load from saved file for per scene
 
 	RelationExtractor *m_relationExtractor;
-	ModelDatabase *m_modelDB;
 	CScene *m_currScene;
 };
 

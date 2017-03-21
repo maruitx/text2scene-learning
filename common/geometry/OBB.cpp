@@ -1061,6 +1061,42 @@ void COBB::ClosestPoint(const MathLib::Vector3 &p, MathLib::Vector3 &cp) const
 	}
 }
 
+
+// closet dist from vertices of one OBB to the other
+double COBB::ClosestDist_Approx(const COBB &bb)
+{
+	if (IsIntersect(bb))
+	{
+		return 0;
+	}
+
+	MathLib::Vector3 cp;	// closest point
+	double sd;
+	double minDist = 1e6;
+	for (unsigned int i = 0; i < bb.vp.size(); i++) {
+		ClosestPoint(bb.vp[i], cp);  // closest point on current bb
+		sd = bb.vp[i].squaredistance(cp);
+		
+		if (sd < minDist)
+		{
+			minDist = sd;
+		}
+	}
+
+	// swap the BB and re-test
+	for (unsigned int i = 0; i < vp.size(); i++) {
+		bb.ClosestPoint(vp[i], cp);  // closest point on test bb
+		sd = vp[i].squaredistance(cp);
+		if (sd < minDist)
+		{
+			minDist = sd;
+		}
+	}
+
+	return sqrt(minDist);
+}
+
+
 double COBB::ConnStrength_HD(const COBB &obb) const
 {
 	double cs = (dl + obb.dl) / (HausdorffDist(obb) + std::numeric_limits<double>::epsilon());

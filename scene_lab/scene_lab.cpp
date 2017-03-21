@@ -121,6 +121,8 @@ void scene_lab::loadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
 			CScene *scene = new CScene();
 			QString filename = sceneDBPath + "/" + sceneName + ".txt";
 			scene->loadSceneFromFile(filename, metaDataOnly, obbOnly, meshAndOBB);
+			
+			updateModelMetaInfoForScene(scene);
 			m_sceneList.push_back(scene);
 		}
 	}
@@ -387,17 +389,18 @@ void scene_lab::buildRelationModels()
 		delete m_relationModelManager;
 	}
 
-	m_relationModelManager = new RelationModelManager(m_modelDB, m_relationExtractor);
+	m_relationModelManager = new RelationModelManager(m_relationExtractor);
 
 	for (int i = 0; i < m_sceneList.size(); i++)
 	{
 		m_currScene = m_sceneList[i];
-
-		updateModelMetaInfoForScene(m_currScene);
 		m_relationModelManager->updateCurrScene(m_currScene);
 
+		m_relationModelManager->addRelativePosForCurrScene();
 
 	}
+
+
 }
 
 void scene_lab::computeBBAlignMatForSceneList()
@@ -408,8 +411,10 @@ void scene_lab::computeBBAlignMatForSceneList()
 	for (int i = 0; i < m_sceneList.size(); i++)
 	{
 		// update front dir for alignment
-		updateModelMetaInfoForScene(m_currScene);
-		m_sceneList[i]->computeModelBBAlignMat();
+		m_currScene = m_sceneList[i];
+		m_currScene->computeModelBBAlignMat();
+
+		qDebug() << "SceneLab: bounding box alignment matrix saved for " << m_currScene->getSceneName();
 	}
 }
 
@@ -423,15 +428,16 @@ void scene_lab::extractRelPosForSceneList()
 		delete m_relationModelManager;
 	}
 
-	m_relationModelManager = new RelationModelManager(m_modelDB, m_relationExtractor);
+	m_relationModelManager = new RelationModelManager(m_relationExtractor);
 
 	for (int i = 0; i < m_sceneList.size(); i++)
 	{
 		m_currScene = m_sceneList[i];
 		m_relationModelManager->updateCurrScene(m_currScene);
 
-		updateModelMetaInfoForScene(m_currScene);
 		m_relationModelManager->collectRelativePosInCurrScene();
+
+		qDebug() << "SceneLab: relative position saved for " << m_currScene->getSceneName();
 	}
 }
 

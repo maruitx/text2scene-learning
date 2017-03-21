@@ -53,6 +53,9 @@ public:
 	int Dissimilarity(const COBB &bb, double dDMax, double &d) const;
 	double HausdorffDist(const COBB &bb) const;
 	double HausdorffDist_Proj(const COBB &bb, const MathLib::Vector3 &dir) const;
+
+	double ClosestDist_Approx(const COBB &bb);
+
 	void Anisotropy(MathLib::Vector3 &c) const;
 	void ClosestPoint(const MathLib::Vector3 &p, MathLib::Vector3 &cp) const;
 	double SqDistance_Approx(const COBB &bb) const;

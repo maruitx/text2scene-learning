@@ -128,7 +128,6 @@ void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int ob
 				int modelIndex = StringToInt(parts[1]);
 
 				CModel *newModel = new CModel();
-				newModel->setID(currModelID);
 				newModel->setSceneMetric(m_metric);
 				newModel->setSceneUpRightVec(m_uprightVec);
 
@@ -136,7 +135,7 @@ void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int ob
 				newModel->loadModel(m_modelDBPath + "/" + modelNameString + ".obj", 1.0, metaDataOnly, obbOnly, meshAndOBB, databaseType);
 				
 				currModelID += 1;
-
+				newModel->setID(currModelID);
 				m_modelList[currModelID] = newModel;
 
 				m_modelCatNameList.push_back(newModel->getCatName());
@@ -182,10 +181,6 @@ void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int ob
 			if (currLine.contains("transform "))
 			{
 				std::vector<float> transformVec = StringToFloatList(currLine.toStdString(), "transform ");
-				//Eigen::Map<Eigen::Matrix4f> trasMat(transformVec.data());
-
-				//Eigen::Matrix4f transMat(transformVec.data()); // transformation vector in scene file is column wise as Eigen
-
 				MathLib::Matrix4d transMat(transformVec);
 
 				//if (databaseType == "SceneNNConversionOutput")

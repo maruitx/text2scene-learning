@@ -18,8 +18,8 @@ CModel::CModel()
 
 	m_fullTransMat.setidentity();
 	m_lastTransMat.setidentity();
-	m_initFrontDir = MathLib::Vector3(0, -1, 0);
-	m_upDir = MathLib::Vector3(0, 0, 1);
+	m_initFrontDir = m_currFrontDir = MathLib::Vector3(0, -1, 0);
+	m_initUpDir = m_currUpDir = MathLib::Vector3(0, 0, 1);
 
 	m_sceneMetric = 1.0;
 	m_modelMetric = 1.0;
@@ -504,9 +504,9 @@ void CModel::transformModel(const MathLib::Matrix4d &transMat)
 	}
 
 	// transform front dir
-	m_initFrontDir = transMat.transformVec(m_initFrontDir);
-	m_initFrontDir.normalize();
-	m_initFrontDir = m_initFrontDir / m_sceneMetric;
+	m_currFrontDir = transMat.transformVec(m_currFrontDir);
+	m_currFrontDir.normalize();
+	m_currFrontDir = m_currFrontDir / m_sceneMetric;
 
 	buildDisplayList();
 
@@ -556,7 +556,7 @@ void CModel::computeTransMat(double tarOBBDiagLen, const MathLib::Vector3 &tarOB
 
 	double scaleFactor = tarOBBDiagLen / m_initOBBDiagLen;
 	scaleMat.setscale(scaleFactor, scaleFactor, scaleFactor);
-	rotMat = GetRotMat(m_initFrontDir, tarFrontDir);
+	rotMat = GetRotMat(m_currFrontDir, tarFrontDir);
 
 	m_lastTransMat = rotMat*scaleMat;
 
@@ -620,7 +620,7 @@ void CModel::builSuppPlaneUsingBBTop()
 
 	// adjust corner order based on the model front orientation
 	std::vector<MathLib::Vector3> orderedCorners(4);
-	MathLib::Vector3 modelFront = m_initFrontDir;
+	MathLib::Vector3 modelFront = m_currFrontDir;
 
 	modelFront.normalize();
 
@@ -869,12 +869,12 @@ void CModel::drawFrontDir()
 	MathLib::Vector3 startPt, endPt;
 
 	startPt = m_OBB.cent;
-	endPt = startPt + m_initFrontDir/m_sceneMetric;
+	endPt = startPt + m_currFrontDir/m_sceneMetric;
 
 	MathLib::Vector3 rightDir = getRightDir();
 	MathLib::Vector3 endRight = startPt + rightDir / m_sceneMetric;
 
-	MathLib::Vector3 endUp = startPt + m_upDir / m_sceneMetric;
+	MathLib::Vector3 endUp = startPt + m_currUpDir / m_sceneMetric;
 
 	QColor red(0, 255, 0);
 	QColor green(255,0,0);
@@ -939,111 +939,6 @@ double CModel::getOBBDiagLength()
 {
 	return m_OBB.GetDiagLength();
 }
-
-//std::vector<int> CModel::computeClosestFaceIds(const std::vector<int> &obbFaceIds)
-//{
-//	std::vector<int> closeFaceIds;
-//	std::vector<MathLib::Vector3> faceNormals = m_mesh->getfaceNormals();
-//
-//	for (int i = 0; i < obbFaceIds.size(); i++)
-//	{
-//		MathLib::Vector3 obbNormal = m_OBB.getFaceNormal(obbFaceIds[i]);
-//		MathLib::Vector3 obbCent = m_OBB.GetFaceCent(obbFaceIds[i]);
-//
-//		int closeFid = -1;
-//		double minDist = 1e6;
-//
-//		for (int fid = 0; fid < faceNormals.size(); fid++)
-//		{
-//			if (faceNormals[fid].dot(obbNormal) > 0.99)
-//			{
-//				double d = (m_mesh->getFaceCenter(fid) - obbCent).magnitude();
-//
-//				if (d < minDist)
-//				{
-//					minDist = d;
-//					closeFid = fid;
-//				}
-//			}
-//		}
-//
-//		closeFaceIds.push_back(closeFid);
-//	}
-//
-//	return closeFaceIds;
-//}
-//
-//std::vector<int> CModel::computeCloseOBBIdsByTriIds(const std::vector<int> &triFaceIds)
-//{
-//	std::vector<int> obbIds;
-//
-//	double minDist = 1e6;
-//
-//	for (int i = 0; i < triFaceIds.size(); i++)
-//	{
-//		int fid = triFaceIds[i];
-//
-//		if (fid == -1)
-//		{
-//			continue;
-//		}
-//
-//		MathLib::Vector3 faceNormal = m_mesh->getFaceNormal(fid);
-//		MathLib::Vector3 faceCenter = m_mesh->getFaceCenter(fid);
-//
-//		int closeOBBId = -1;
-//		for (int obbId = 0; obbId < 6; obbId++)
-//		{
-//			MathLib::Vector3 obbFaceNormal = m_OBB.getFaceNormal(obbId);
-//			MathLib::Vector3 obbFaceCenter = m_OBB.GetFaceCent(obbId);
-//
-//			if (std::abs(obbFaceNormal.dot(MathLib::Vector3(0, 0, 1))) > 0.5)
-//			{
-//				continue;
-//			}
-//
-//			if (obbFaceNormal.dot(faceNormal) > 0.5)   
-//			{
-//				double d = (obbFaceCenter - faceCenter).magnitude();
-//
-//				if (d < minDist)
-//				{
-//					closeOBBId = obbId;
-//					minDist = d;
-//				}
-//			}
-//		}
-//		//else
-//		//{
-//		//	closeOBBId = hitOBBFaceIds[0];
-//		//}
-//
-//		obbIds.push_back(closeOBBId);
-//	}
-//
-//	if (m_nameStr == "c7f991b1a9bfcff0fe1e2f026632da15")   // book 2 has a face normal problem due to smoothing in 3ds max
-//	{
-//		if (obbIds[0] == 0 || obbIds[0] == -1)
-//		{
-//			MathLib::Vector3 currDir = m_OBB.getFaceNormal(0);
-//			double dotV = currDir.dot(MathLib::Vector3(0, 0, 1));
-//
-//			if (obbIds[0] == -1)
-//			{
-//				obbIds.clear();
-//				obbIds.push_back(3);
-//			}
-//		}
-//	}
-//
-//	if (m_nameStr == "1d7830c5d0322518d95aa859a460a9ec")   // cell phone 2 has a face normal problem due to smoothing in 3ds max
-//	{
-//		obbIds.clear();
-//		obbIds.push_back(4);
-//	}
-//
-//	return obbIds;
-//}
 
 MathLib::Vector3 CModel::getFaceCenter(int fid)
 {
@@ -1181,29 +1076,33 @@ bool CModel::isSupportChild(int id)
 
 void CModel::updateFrontDir(const MathLib::Vector3 &loadedDir)
 {
+	m_initFrontDir = loadedDir;
+
 	MathLib::Vector3 transedDir = m_fullTransMat.transformVec(loadedDir);
 	transedDir.normalize();
-	m_initFrontDir = transedDir;
+	m_currFrontDir = transedDir;
 }
 
 void CModel::updateUpDir(const MathLib::Vector3 &loadedDir)
 {
+	m_initUpDir = loadedDir;
+
 	MathLib::Vector3 transedDir = m_fullTransMat.transformVec(loadedDir);
 	transedDir.normalize();
-	m_upDir = transedDir;
+	m_currUpDir = transedDir;
 }
 
 MathLib::Vector3 CModel::getHorizonFrontDir()
 {
 	MathLib::Vector3 refHorizonFront;
 
-	if (m_initFrontDir.dot(m_sceneUpVec) < 0.1)
+	if (m_currFrontDir.dot(m_sceneUpVec) < 0.1)
 	{
-		refHorizonFront = m_initFrontDir;
+		refHorizonFront = m_currFrontDir;
 	}
-	else if (m_initFrontDir.dot(m_sceneUpVec) > 0.9)
+	else if (m_currFrontDir.dot(m_sceneUpVec) > 0.9)
 	{
-		refHorizonFront = -m_upDir; // suppose for bed
+		refHorizonFront = -m_currUpDir; // suppose for bed
 	}
 
 	refHorizonFront.normalize();
@@ -1215,13 +1114,13 @@ MathLib::Vector3 CModel::getVertUpDir()
 {
 	MathLib::Vector3 refVertUpDir;
 
-	if (m_upDir.dot(m_sceneUpVec) > 0.9)
+	if (m_currUpDir.dot(m_sceneUpVec) > 0.9)
 	{
-		refVertUpDir = m_upDir;
+		refVertUpDir = m_currUpDir;
 	}
-	else if (m_upDir.dot(m_sceneUpVec) < 0.1)
+	else if (m_currUpDir.dot(m_sceneUpVec) < 0.1)
 	{
-		refVertUpDir = m_initFrontDir; // suppose for bed
+		refVertUpDir = m_currFrontDir; // suppose for bed
 	}
 
 	refVertUpDir.normalize();
@@ -1230,7 +1129,7 @@ MathLib::Vector3 CModel::getVertUpDir()
 
 MathLib::Vector3 CModel::getRightDir()
 {
-	MathLib::Vector3 rightDir = m_initFrontDir.cross(m_upDir);
+	MathLib::Vector3 rightDir = m_currFrontDir.cross(m_currUpDir);
 
 	return rightDir;
 }
@@ -1252,13 +1151,17 @@ void CModel::computeBBAlignMat()
 	double scaleZ = maxVert.z - minVert.z;
 
 	MathLib::Matrix4d translateMat;
+	MathLib::Matrix4d rotMat;
 	MathLib::Matrix4d scaleMat;
 
 	translateMat.settranslate(transVec);
 	scaleMat.setscale(1 / scaleX, 1 / scaleY, 1 / scaleZ);
 
+	// rotate init front dir to word Y direction
+	rotMat = GetRotMat(m_initFrontDir, MathLib::Vector3(0,1,0));
+
 	// first bring model back to init frame, then transform init frame to unit box
-	m_alignBBToUnitBoxMat = scaleMat*translateMat*m_initTransMat.invert();
+	m_alignBBToUnitBoxMat = rotMat*scaleMat*translateMat*m_initTransMat.invert();
 }
 
 

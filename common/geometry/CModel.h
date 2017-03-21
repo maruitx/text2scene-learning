@@ -23,11 +23,6 @@ public:
 	QString getModelFilePath() { return m_filePath; };
 	QString getNameStr() { return m_nameStr; };
 
-	//void loadAnnoFile();
-	//void saveAnnoFile();
-	//std::vector<int> computeClosestFaceIds(const std::vector<int> &obbFaceIds);
-	//std::vector<int> computeCloseOBBIdsByTriIds(const std::vector<int> &triFaceIds);
-	//std::vector<int> getAnnoTriIds() { return m_annoTriIds; };
 	MathLib::Vector3 getFaceCenter(int fid);
 	MathLib::Vector3 getFaceNormal(int fid);
 
@@ -85,8 +80,8 @@ public:
 	void selectOBBFace(const MathLib::Vector3 &origin, const MathLib::Vector3 &dir);
 	MathLib::Vector3 getOBBFrontFaceCenter();
 
-	MathLib::Vector3 getFrontDir() { return m_initFrontDir; };
-	MathLib::Vector3 getUpDir(){ return m_upDir; };
+	MathLib::Vector3 getFrontDir() { return m_currFrontDir; };
+	MathLib::Vector3 getUpDir(){ return m_currUpDir; };
 	MathLib::Vector3 getHorizonFrontDir();
 	MathLib::Vector3 getVertUpDir();
 
@@ -169,9 +164,11 @@ private:
 
 	double m_initOBBDiagLen;
 	MathLib::Vector3 m_initOBBPos;
-	MathLib::Vector3 m_currOBBPos;
+
 	MathLib::Vector3 m_initFrontDir;
-	MathLib::Vector3 m_upDir;
+	MathLib::Vector3 m_currFrontDir;
+	MathLib::Vector3 m_initUpDir;
+	MathLib::Vector3 m_currUpDir;
 
 
 	MathLib::Matrix4d m_lastTransMat;

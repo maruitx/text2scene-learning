@@ -19,8 +19,11 @@ struct GaussianModel
 	double weight;
 };
 
-struct PairwiseRelationModel
+class PairwiseRelationModel
 {
+	PairwiseRelationModel() {};
+	~PairwiseRelationModel() {};
+
 	std::vector<GaussianModel> gaussians;
 
 	QString actObjName;

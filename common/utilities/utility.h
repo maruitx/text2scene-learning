@@ -753,4 +753,7 @@ static std::vector<int> topValueIDsFromVector(std::vector<double> v, int K, int 
 	return topValueIDsFromPairs(vpairs, K, sortMethod);
 }
 
-
+static QString toQString(std::string s)
+{
+	return QString(s.c_str());
+}

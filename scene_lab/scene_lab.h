@@ -49,6 +49,8 @@ public slots:
 	void create_modelDBViewer_widget();
 	void destory_modelDBViewer_widget();
 
+	void testMatlab();
+
 signals:
 	void sceneLoaded();
 	void sceneRenderingUpdated();

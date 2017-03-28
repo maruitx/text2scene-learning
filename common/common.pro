@@ -60,6 +60,8 @@ SOURCES += \
 	
 # Opcode lib
 INCLUDEPATH *= $$PWD/third_party/opcode/include
+
+
 win32 {
     !contains(QMAKE_TARGET.arch, x86_64) {
 		Debug: LIBS += -L$$PWD/third_party/opcode/lib/win32 -lOPCODE_D

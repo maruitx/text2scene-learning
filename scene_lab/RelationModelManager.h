@@ -14,15 +14,14 @@ public:
 	void updateCurrScene(CScene *s);
 
 	void collectRelativePosInCurrScene();
-	void addRelativePosForCurrScene();
+	void addRelativePosFromCurrScene();
 
 	void buildRelationModels();
 
 public:
-	std::vector<PairwiseRelationModel*> m_pairwiseRelModels;
-	std::vector<GroupRelationModel*> m_groupRelModels;
-
-
+	std::map<QString, PairwiseRelationModel*> m_relativeModels;  // relative models with general relations
+	std::map<QString, PairwiseRelationModel*> m_pairwiseRelModels;  // pairwise relation models
+	std::map<QString, GroupRelationModel*> m_groupRelModels;
 
 private:
 	std::vector<RelativePos> m_relativePostions;  // load from saved file for per scene

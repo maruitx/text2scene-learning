@@ -702,7 +702,7 @@ bool SuppPlaneManager::loadSuppPlane()
 
 	suppFile.close();
 
-	std::cout << "SuppPlaneManager: support plane loaded\n";
+	//std::cout << "SuppPlaneManager: support plane loaded\n";
 	return true;
 }
 

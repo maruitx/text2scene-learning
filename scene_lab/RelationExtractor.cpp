@@ -164,8 +164,8 @@ bool RelationExtractor::isInProximity(CModel *anchorModel, CModel *actModel)
 
 void RelationExtractor::extractRelativePosForModelPair(CModel *anchorModel, CModel *actModel, RelativePos &relPos)
 {
-	relPos.anchorObjName = anchorModel->getCatName();
-	relPos.actObjName = actModel->getCatName();
+	relPos.m_anchorObjName = anchorModel->getCatName();
+	relPos.m_actObjName = actModel->getCatName();
 
 	// first transform actModel into the scene and then bring it back using anchor model's alignMat
 	MathLib::Matrix4d actModelAlignMat = anchorModel->m_alignBBToUnitBoxMat*actModel->getInitTransMat();

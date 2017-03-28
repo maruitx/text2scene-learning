@@ -7,6 +7,10 @@
 #include "../common/geometry/Scene.h"
 #include "../t2scene/SceneSemGraph.h"
 #include <set>
+#include "engine.h"
+#include <stdio.h>
+
+Engine *matlabEngine;
 
 scene_lab::scene_lab(QObject *parent)
 	: QObject(parent)
@@ -201,6 +205,53 @@ void scene_lab::destory_modelDBViewer_widget()
 
 }
 
+#define BUFSIZE 1000
+void scene_lab::testMatlab()
+{
+	// 1. Open MATLAB engine
+	matlabEngine = engOpen(NULL);
+	if (matlabEngine == NULL) {
+		printf("Can't start MATLAB engine!!!\n");
+		exit(-1);
+	}
+
+	// 2. Call MATLAB engine
+	{
+		// 2.1. Pre-work: capture MATLAB output. Ensure the buffer is always NULL terminated.
+		char buffer[BUFSIZE + 1];
+		buffer[BUFSIZE] = '\0';
+		engOutputBuffer(matlabEngine, buffer, BUFSIZE);
+		engEvalString(matlabEngine, "clc;clear;"); // clear all variables (optional)
+
+											 // 2.2. Setup inputs: a, b
+		mxArray *a = mxCreateDoubleScalar(2); // assume a=2
+		mxArray *b = mxCreateDoubleScalar(3); // assume b=3
+		engPutVariable(matlabEngine, "a", a); // put into matlab
+		engPutVariable(matlabEngine, "b", b); // put into matlab
+
+										// 2.3. Call MATLAB
+		engEvalString(matlabEngine, "cd \'C:\\Ruim\\Graphics\\T2S_MPC\\text2scene-learning\\scene_lab'");
+		engEvalString(matlabEngine, "[y, z] = myadd2(a, b);");
+		printf("%s\n", buffer); // get error messages or prints (optional)
+
+							 // 2.4. Get result: y, z
+		mxArray *y = engGetVariable(matlabEngine, "y");
+		mxArray *z = engGetVariable(matlabEngine, "z");
+		double y_res = mxGetScalar(y);
+		double z_res = mxGetScalar(z);
+		printf("y=%f\nz=%f\n", y_res, z_res);
+
+		// 2.5. Release (to all mxArray)
+		mxDestroyArray(a);
+		mxDestroyArray(b);
+		mxDestroyArray(y);
+		mxDestroyArray(z);
+	}
+
+	// 3. Close MATLAB engine
+	engClose(matlabEngine);
+}
+
 void scene_lab::buildSemGraphForCurrentScene(int batchLoading)
 {
 	if (m_currScene == NULL)
@@ -381,6 +432,8 @@ void scene_lab::collectModelInfoForSceneList()
 
 void scene_lab::buildRelationModels()
 {
+	//testMatlab();
+
 	// load metadata
 	loadSceneList(1);
 
@@ -396,9 +449,10 @@ void scene_lab::buildRelationModels()
 		m_currScene = m_sceneList[i];
 		m_relationModelManager->updateCurrScene(m_currScene);
 
-		m_relationModelManager->addRelativePosForCurrScene();
-
+		m_relationModelManager->addRelativePosFromCurrScene();
 	}
+
+	m_relationModelManager->buildRelationModels();
 
 
 }

@@ -768,7 +768,7 @@ void CScene::saveRelPositions()
 		for (int i = 0; i < m_relPositions.size(); i++)
 		{
 			RelativePos& relPos = m_relPositions[i];
-			ofs << relPos.anchorObjName << "," << relPos.actObjName << "," << relPos.conditionName << "\n";
+			ofs << relPos.m_anchorObjName << "," << relPos.m_actObjName << "," << relPos.m_conditionName << "\n";
 			ofs << relPos.pos.x << " " << relPos.pos.y << " " << relPos.pos.z << " " << relPos.theta << "," << GetTransformationString(relPos.actAlignMat) << "\n";
 		}
 

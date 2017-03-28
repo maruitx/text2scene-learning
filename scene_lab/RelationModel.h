@@ -7,10 +7,10 @@ struct RelativePos
 	double theta;
 	MathLib::Matrix4d actAlignMat;  // transformation of actObj to anchorObj's unit frame,  anchorAlignMat*inverse(actInitTransMat)
 
-	QString actObjName;
-	QString anchorObjName;
+	QString m_actObjName;
+	QString m_anchorObjName;
 
-	QString conditionName;
+	QString m_conditionName;
 };
 
 struct GaussianModel
@@ -21,18 +21,21 @@ struct GaussianModel
 
 class PairwiseRelationModel
 {
-	PairwiseRelationModel() {};
+public:
+	PairwiseRelationModel(const QString &anchorName, const QString &actName, const QString &conditionName, const QString & relationName = "general");
 	~PairwiseRelationModel() {};
+
+	void fitGMM();
 
 	std::vector<GaussianModel> gaussians;
 
-	QString actObjName;
-	QString anchorObjName;
+	QString m_actObjName;
+	QString m_anchorObjName;
 
-	std::vector<int> instanceIds;
+	std::vector<RelativePos> m_instances;
 
-	QString conditionName; // parent-child, sibling, proximity, or text-specified relation
-	QString relationName;
+	QString m_conditionName; // parent-child, sibling, proximity, or text-specified relation
+	QString m_relationName;  // none, left, right, etc.
 };
 
 struct OccurrenceModel
@@ -50,8 +53,8 @@ public:
 	std::vector<PairwiseRelationModel*> m_pairwiseModels;  // relation-conditioned relative model
 	OccurrenceModel m_occurrenceModel;  // relation-conditioned occurrence model
 
-	std::vector<QString> actObjNames;
-	QString anchorObjName;
+	std::vector<QString> m_actObjNames;
+	QString m_anchorObjName;
 
 	QString m_relationName;
 };

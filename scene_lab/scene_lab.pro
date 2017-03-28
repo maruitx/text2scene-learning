@@ -44,6 +44,7 @@ SOURCES += \
 	RelationExtractor.cpp \
 	RelationModelManager.cpp
 	
+	
 {# Prevent rebuild and Enable debuging in release mode
 	QMAKE_CXXFLAGS_RELEASE += /Zi
     QMAKE_LFLAGS_RELEASE += /DEBUG

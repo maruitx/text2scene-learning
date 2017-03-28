@@ -84,7 +84,7 @@ void RelationModelManager::addRelativePosFromCurrScene()
 		relPos.pos = MathLib::Vector3(pos[0], pos[1], pos[2]);
 		relPos.theta = pos[3]; 
 
-		std::vector<float> transformVec = StringToFloatList(currLine.toStdString(), "");
+		std::vector<float> transformVec = StringToFloatList(parts[1], "");
 		MathLib::Matrix4d transMat(transformVec);
 		relPos.actAlignMat = transMat;
 

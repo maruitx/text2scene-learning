@@ -710,7 +710,8 @@ static MathLib::Matrix4d convertToMatrix4d(const Eigen::Matrix4d &eigenMat)
 	{
 		for (int j = 0; j < 4; j++)
 		{
-			mat.m[i][j] = eigenMat(i,j);
+			//mat.m[i][j] = eigenMat(i,j);
+			mat.m[j][i] = eigenMat(i, j);
 		}
 	}
 	return mat;

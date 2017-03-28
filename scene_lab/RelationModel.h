@@ -6,6 +6,7 @@ struct RelativePos
 	MathLib::Vector3 pos;  // rel pos of actObj in anchor's unit frame
 	double theta;
 	MathLib::Matrix4d actAlignMat;  // transformation of actObj to anchorObj's unit frame,  anchorAlignMat*inverse(actInitTransMat)
+	double unitFactor;
 
 	QString m_actObjName;
 	QString m_anchorObjName;

@@ -22,12 +22,20 @@ void PairwiseRelationModel::fitGMM()
 	}
 
 	double *observations = new double[instanceNum*3];
+	double *alignMats = new double[instanceNum * 16];
 
 	for (int i=0; i< instanceNum; i++)
 	{
-		observations[3 * i] = m_instances[i].pos.x;
-		observations[3 * i +1] = m_instances[i].pos.y;
-		observations[3 * i +2] = m_instances[i].pos.z;
+		RelativePos &relPos = m_instances[i];
+		observations[3 * i] = relPos.pos.x;
+		observations[3 * i +1] = relPos.pos.y;
+		observations[3 * i +2] = relPos.pos.z;
+
+		MathLib::Matrix4d alignM = relPos.actAlignMat;
+		for (int j=0; j < 16; j++)
+		{
+			alignMats[16 * i + j] = alignM.M[j];
+		}
 	}
 
 	const int BUFSIZE = 1024;
@@ -35,13 +43,19 @@ void PairwiseRelationModel::fitGMM()
 	buffer[BUFSIZE] = '\0';
 	engOutputBuffer(matlabEngine, buffer, BUFSIZE);
 
+	// clear all variables (optional)
+	engEvalString(matlabEngine, "clc;clear;"); 
+
 	mxArray *observationArray = mxCreateDoubleMatrix(3, instanceNum, mxREAL);
 	memcpy((void *)mxGetPr(observationArray), (void *)observations, sizeof(double)*3*instanceNum);
 	engPutVariable(matlabEngine, "X", observationArray); // put into matlab
 
-	engEvalString(matlabEngine, "clc;clear;"); // clear all variables (optional)
+	mxArray *alignMatsArray = mxCreateDoubleMatrix(16, instanceNum, mxREAL);
+	memcpy((void *)mxGetPr(alignMatsArray), (void *)alignMats, sizeof(double) * 16 * instanceNum);
+	engPutVariable(matlabEngine, "alignMats", alignMatsArray); // put into matlab
+
 	engEvalString(matlabEngine, "cd \'C:\\Ruim\\Graphics\\T2S_MPC\\text2scene-learning\\scene_lab'");
-	engEvalString(matlabEngine, "[mu, sigma, numK] = fitGMMWithAIC(X, 4)");
+	engEvalString(matlabEngine, "[mu, sigma, numK] = fitGMMWithAIC(X, 4, alignMats)");
 
 	printf("%s\n", buffer); // get error messages or prints (optional)
 

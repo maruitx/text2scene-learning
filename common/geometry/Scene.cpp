@@ -727,7 +727,7 @@ bool CScene::loadModelBBAlignMat()
 			std::vector<float> transformVec = StringToFloatList(currLine.toStdString(), "");
 			MathLib::Matrix4d transMat(transformVec);
 
-			m_modelList[i]->m_alignBBToUnitBoxMat = transMat;
+			m_modelList[i]->m_WorldBBToUnitBoxMat = transMat;
 		}
 
 		return true;
@@ -749,7 +749,7 @@ void CScene::saveModelBBAlignMat()
 	{
 		for (int i = 0; i < m_modelNum; i++)
 		{
-			ofs << GetTransformationString(m_modelList[i]->m_alignBBToUnitBoxMat) << "\n";
+			ofs << GetTransformationString(m_modelList[i]->m_WorldBBToUnitBoxMat) << "\n";
 		}
 
 		outFile.close();
@@ -769,7 +769,9 @@ void CScene::saveRelPositions()
 		{
 			RelativePos& relPos = m_relPositions[i];
 			ofs << relPos.m_anchorObjName << "," << relPos.m_actObjName << "," << relPos.m_conditionName << "\n";
-			ofs << relPos.pos.x << " " << relPos.pos.y << " " << relPos.pos.z << " " << relPos.theta << "," << GetTransformationString(relPos.actAlignMat) << "\n";
+			ofs << relPos.pos.x << " " << relPos.pos.y << " " << relPos.pos.z << " " << relPos.theta << "," 
+				<< GetTransformationString(relPos.anchorAlignMat) << ","
+				<< GetTransformationString(relPos.actAlignMat) << "\n";
 		}
 
 		outFile.close();

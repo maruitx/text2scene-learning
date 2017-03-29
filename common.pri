@@ -4,7 +4,7 @@ Release: LIBS += -L$$PWD/common/lib/release/ -lcommon
 
 # Matlab
 INCLUDEPATH *= "C:/Program Files/MATLAB/R2016b/extern/include"
-LIBS += -L"C:/Program Files/MATLAB/R2016b/extern/lib/win64/microsoft" -llibmx -llibeng
+LIBS += -L"C:/Program Files/MATLAB/R2016b/extern/lib/win64/microsoft" -llibmx -llibeng -llibmex
 
 # Opcode lib
 INCLUDEPATH *= $$PWD/common/third_party/opcode/include

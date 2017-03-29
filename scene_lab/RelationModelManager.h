@@ -17,6 +17,7 @@ public:
 	void addRelativePosFromCurrScene();
 
 	void buildRelationModels();
+	void saveRelationModels(const QString &filePath);
 
 public:
 	std::map<QString, PairwiseRelationModel*> m_relativeModels;  // relative models with general relations

@@ -168,14 +168,14 @@ void RelationExtractor::extractRelativePosForModelPair(CModel *anchorModel, CMod
 	relPos.m_actObjName = actModel->getCatName();
 
 	// first transform actModel into the scene and then bring it back using anchor model's alignMat
-	MathLib::Matrix4d actModelAlignMat = anchorModel->m_alignBBToUnitBoxMat*actModel->getInitTransMat();
-	MathLib::Vector3 actModelInitPos = actModel->getOBBInitPos();
+	relPos.anchorAlignMat = anchorModel->m_WorldBBToUnitBoxMat;
+	relPos.actAlignMat = relPos.anchorAlignMat*actModel->getInitTransMat();
 
-	relPos.actAlignMat = actModelAlignMat;
-	relPos.pos = actModelAlignMat.transform(actModelInitPos);
+	MathLib::Vector3 actModelInitPos = actModel->getOBBInitPos(); // init pos when load the file
+	relPos.pos = relPos.actAlignMat.transform(actModelInitPos);
 
 	MathLib::Vector3 anchorModelFrontDir = anchorModel->getFrontDir();
 	MathLib::Vector3 actModelFrontDir = actModel->getFrontDir();
-	relPos.theta = MathLib::Acos(anchorModelFrontDir.dot(actModelFrontDir));
+	relPos.theta = MathLib::AcosR(anchorModelFrontDir.dot(actModelFrontDir));
 }
 

@@ -5,7 +5,8 @@ struct RelativePos
 {
 	MathLib::Vector3 pos;  // rel pos of actObj in anchor's unit frame
 	double theta;
-	MathLib::Matrix4d actAlignMat;  // transformation of actObj to anchorObj's unit frame,  anchorAlignMat*inverse(actInitTransMat)
+	MathLib::Matrix4d anchorAlignMat;  // transformation of anchorObj to unit frame
+	MathLib::Matrix4d actAlignMat;  // transformation of actObj to anchorObj's unit frame,  anchorAlignMat*actInitTransMat
 	double unitFactor;
 
 	QString m_actObjName;
@@ -16,8 +17,11 @@ struct RelativePos
 
 struct GaussianModel
 {
-	double mean, stdVar;
-	double weight;
+	int dim;
+	Eigen::VectorXd mean; 
+	Eigen::MatrixXd covarMat;
+	
+	double weight;   // mixing weight
 };
 
 class PairwiseRelationModel
@@ -28,12 +32,14 @@ public:
 
 	void fitGMM();
 
-	std::vector<GaussianModel> gaussians;
+	int m_numGauss;
+	int m_numInstance;
+
+	std::vector<RelativePos> m_instances;
+	std::vector<GaussianModel> m_gaussians;
 
 	QString m_actObjName;
 	QString m_anchorObjName;
-
-	std::vector<RelativePos> m_instances;
 
 	QString m_conditionName; // parent-child, sibling, proximity, or text-specified relation
 	QString m_relationName;  // none, left, right, etc.

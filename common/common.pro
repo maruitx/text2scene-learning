@@ -23,6 +23,9 @@ DEPENDPATH += utilities
 INCLUDEPATH += geometry
 INCLUDEPATH += utilities
 
+INCLUDEPATH *= "C:/Program Files/MATLAB/R2016b/extern/include"
+LIBS += -L"C:/Program Files/MATLAB/R2016b/extern/lib/win64/microsoft" -llibmx -llibeng -libmex
+
 HEADERS += \
 	geometry/Scene.h \
 	geometry/CModel.h \
@@ -39,7 +42,8 @@ HEADERS += \
 	third_party/clustering/Kmeans.h \
 	utilities/utility.h \
 	utilities/mathlib.h \
-	utilities/Eigen3x3.h 
+	utilities/Eigen3x3.h \
+	utilities/eigenMat.h
 
 	
 SOURCES += \

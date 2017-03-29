@@ -144,7 +144,7 @@ public:
 
 	std::vector<std::vector<int>> suppGridPos; // grid pos that is filled by current model
 
-	MathLib::Matrix4d m_alignBBToUnitBoxMat;  // matrix that aligns transformed BB to unit box (center at 0, and each side is 1)
+	MathLib::Matrix4d m_WorldBBToUnitBoxMat;  // matrix that aligns transformed BB in world frame to unit box (center at 0, and each side is 1)
 
 	
 

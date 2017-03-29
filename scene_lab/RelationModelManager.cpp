@@ -24,6 +24,7 @@ void RelationModelManager::collectRelativePosInCurrScene()
 	if (!m_currScene->loadModelBBAlignMat())
 	{
 		qDebug() << "RelationModelManager: compute model align mat first for "<< m_currScene->getSceneName();
+		return;
 	}
 
 	for (int i = 0; i < modelNum; i++)
@@ -80,13 +81,16 @@ void RelationModelManager::addRelativePosFromCurrScene()
 
 		currLine = ifs.readLine();
 		parts = PartitionString(currLine.toStdString(), ",");
+
 		std::vector<float> pos = StringToFloatList(parts[0], "");
 		relPos.pos = MathLib::Vector3(pos[0], pos[1], pos[2]);
-		relPos.theta = pos[3]; 
+		relPos.theta = pos[3];
 
 		std::vector<float> transformVec = StringToFloatList(parts[1], "");
-		MathLib::Matrix4d transMat(transformVec);
-		relPos.actAlignMat = transMat;
+		relPos.anchorAlignMat = MathLib::Matrix4d(transformVec);
+
+		transformVec = StringToFloatList(parts[2], "");
+		relPos.actAlignMat = MathLib::Matrix4d(transformVec);
 
 		m_relativePostions.push_back(relPos);
 	}
@@ -123,12 +127,37 @@ void RelationModelManager::buildRelationModels()
 	{
 		PairwiseRelationModel *relModel = iter->second;
 		relModel->fitGMM();
-
 	}
-
-	// save relation model
-
 
 	// 3. Close MATLAB engine
 	engClose(matlabEngine);
+}
+
+void RelationModelManager::saveRelationModels(const QString &filePath)
+{
+	QString filename = filePath + "/Relative.model";
+
+	QFile outFile(filename);
+	QTextStream ofs(&outFile);
+
+	if (outFile.open(QIODevice::ReadWrite | QIODevice::Text | QIODevice::Truncate))
+	{
+		// save relative relations
+		for (auto iter = m_relativeModels.begin(); iter != m_relativeModels.end(); iter++)
+		{
+			PairwiseRelationModel *relModel = iter->second;
+			ofs << relModel->m_anchorObjName << "," << relModel->m_actObjName << "," << relModel->m_conditionName << "\n";
+			ofs << relModel->m_numGauss<< " "<< relModel->m_numInstance <<"\n";
+
+			for (int i = 0; i < relModel->m_numGauss; i++)
+			{
+				GaussianModel & currGauss = relModel->m_gaussians[i];
+				ofs << currGauss.weight << ",";
+				ofs << currGauss.mean(0) << " " << currGauss.mean(1) << " " << currGauss.mean(2)<< " " << currGauss.mean(3) <<",";
+				ofs << GetTransformationString(currGauss.covarMat)<<"\n";
+			}
+		}
+
+		outFile.close();
+	}
 }

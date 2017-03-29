@@ -342,12 +342,33 @@ static QString GetTransformationString(const MathLib::Matrix4d &transMat)
 	QString outString;
 	QTextStream outStream(&outString);
 
-	// Matrix4d.M is saved row-wise	
+	// Matrix4d.M is saved column-wise
 	// transformation string is saved column-wise
 	outStream << QString("%1").arg(transMat.M[0], 0, 'f') << " " << QString("%1").arg(transMat.M[1], 0, 'f') << " " << QString("%1").arg(transMat.M[2], 0, 'f') << " " << QString("%1").arg(transMat.M[3], 0, 'f') << " "
 		<< QString("%1").arg(transMat.M[4], 0, 'f') << " " << QString("%1").arg(transMat.M[5], 0, 'f') << " " << QString("%1").arg(transMat.M[6], 0, 'f') << " " << QString("%1").arg(transMat.M[7], 0, 'f') << " "
 		<< QString("%1").arg(transMat.M[8], 0, 'f') << " " << QString("%1").arg(transMat.M[9], 0, 'f') << " " << QString("%1").arg(transMat.M[10], 0, 'f') << " " << QString("%1").arg(transMat.M[11], 0, 'f') << " "
 		<< QString("%1").arg(transMat.M[12], 0, 'f') << " " << QString("%1").arg(transMat.M[13], 0, 'f') << " " << QString("%1").arg(transMat.M[14], 0, 'f') << " " << QString("%1").arg(transMat.M[15], 0, 'f'); 
+
+	return outString;
+}
+
+static QString GetTransformationString(const Eigen::MatrixXd &transMat)
+{
+	QString outString;
+	QTextStream outStream(&outString);
+
+	int numRow = transMat.rows();
+	int numCol = transMat.cols();
+	
+	for (int j = 0; j < numCol; j++)
+	{
+		for (int i = 0; i < numRow; i++)
+		{
+			outStream << QString("%1").arg(transMat(i, j), 0, 'f') << " ";
+		}
+	}
+
+	outString = outString.left(outString.size() - 1);
 
 	return outString;
 }

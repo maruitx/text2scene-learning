@@ -454,6 +454,8 @@ void scene_lab::buildRelationModels()
 
 	m_relationModelManager->buildRelationModels();
 
+	QString dbPath = "C:/Ruim/Graphics/T2S_MPC/SceneDB";
+	m_relationModelManager->saveRelationModels(dbPath);
 
 }
 

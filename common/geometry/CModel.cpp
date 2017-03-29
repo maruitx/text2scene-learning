@@ -1161,7 +1161,7 @@ void CModel::computeBBAlignMat()
 	rotMat = GetRotMat(m_initFrontDir, MathLib::Vector3(0,1,0));
 
 	// first bring model back to init frame, then transform init frame to unit box
-	m_alignBBToUnitBoxMat = rotMat*scaleMat*translateMat*m_initTransMat.invert();
+	m_WorldBBToUnitBoxMat = rotMat*scaleMat*translateMat*m_initTransMat.invert();
 }
 
 

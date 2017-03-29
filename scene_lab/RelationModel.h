@@ -1,8 +1,12 @@
 #pragma once
 #include "../common/utilities/utility.h"
 
-struct RelativePos
+class RelativePos
 {
+public:
+	RelativePos() {};
+	~RelativePos() {};
+
 	MathLib::Vector3 pos;  // rel pos of actObj in anchor's unit frame
 	double theta;
 	MathLib::Matrix4d anchorAlignMat;  // transformation of anchorObj to unit frame
@@ -35,7 +39,7 @@ public:
 	int m_numGauss;
 	int m_numInstance;
 
-	std::vector<RelativePos> m_instances;
+	std::vector<RelativePos*> m_instances;
 	std::vector<GaussianModel> m_gaussians;
 
 	QString m_actObjName;

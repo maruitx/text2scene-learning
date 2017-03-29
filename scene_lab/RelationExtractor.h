@@ -20,11 +20,8 @@ public:
 	void updateCurrScene(CScene *s) { m_currScene = s; };
 	void updateCurrSceneSemGraph(SceneSemGraph *sg) { m_currSceneSemGraph = sg; };
 
-	void computeAlignTransformForCurrScene();
-	void computeAlignTransformForModel(CModel *m);
-
 	QString getRelationConditionType(CModel *anchorModel, CModel *actModel);
-	void extractRelativePosForModelPair(CModel *anchorModel, CModel *actModel, RelativePos &relPos);
+	void extractRelativePosForModelPair(CModel *anchorModel, CModel *actModel, RelativePos *relPos);
 
 	std::vector<QString> extractSpatialSideRelForModelPair(int anchorModelId, int actModelId);
 	std::vector<QString> extractSpatialSideRelForModelPair(CModel *anchorModel, CModel *actModel);

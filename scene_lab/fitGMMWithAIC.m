@@ -1,9 +1,13 @@
 function [mus, sigmas, weights, numComp] = fitGMMWithAIC(X, maxK, alignMats)
 
-figure
-hold on
-scatter(X(1,:),X(2,:), 'filled');
-hold off
+vis = 0;
+
+if vis
+    figure
+    hold on
+    scatter(X(1,:),X(2,:), 'filled');
+    hold off
+end
 
 if nargin == 3
     % enrich input data by jittering
@@ -34,14 +38,16 @@ if nargin == 3
         
         Xrich(:,(i-1)*jitterNum+1:i*jitterNum) = X_col + Xs;
     end
-   
+    
     Xrich = Xrich';
     X = Xrich;
     
-    figure
-    hold on
-    scatter(Xrich(:,1),Xrich(:,2), 'filled');
-    hold off    
+    if vis
+        figure
+        hold on
+        scatter(Xrich(:,1),Xrich(:,2), 'filled');
+        hold off
+    end
 else
     X = X';
 end

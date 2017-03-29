@@ -25,7 +25,7 @@ public:
 	std::map<QString, GroupRelationModel*> m_groupRelModels;
 
 private:
-	std::vector<RelativePos> m_relativePostions;  // load from saved file for per scene
+	std::vector<RelativePos*> m_relativePostions;  // load from saved file for per scene
 
 	RelationExtractor *m_relationExtractor;
 	CScene *m_currScene;

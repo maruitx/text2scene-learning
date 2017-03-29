@@ -162,20 +162,20 @@ bool RelationExtractor::isInProximity(CModel *anchorModel, CModel *actModel)
 	
 }
 
-void RelationExtractor::extractRelativePosForModelPair(CModel *anchorModel, CModel *actModel, RelativePos &relPos)
+void RelationExtractor::extractRelativePosForModelPair(CModel *anchorModel, CModel *actModel, RelativePos *relPos)
 {
-	relPos.m_anchorObjName = anchorModel->getCatName();
-	relPos.m_actObjName = actModel->getCatName();
+	relPos->m_anchorObjName = anchorModel->getCatName();
+	relPos->m_actObjName = actModel->getCatName();
 
 	// first transform actModel into the scene and then bring it back using anchor model's alignMat
-	relPos.anchorAlignMat = anchorModel->m_WorldBBToUnitBoxMat;
-	relPos.actAlignMat = relPos.anchorAlignMat*actModel->getInitTransMat();
+	relPos->anchorAlignMat = anchorModel->m_WorldBBToUnitBoxMat;
+	relPos->actAlignMat = relPos->anchorAlignMat*actModel->getInitTransMat();
 
 	MathLib::Vector3 actModelInitPos = actModel->getOBBInitPos(); // init pos when load the file
-	relPos.pos = relPos.actAlignMat.transform(actModelInitPos);
+	relPos->pos = relPos->actAlignMat.transform(actModelInitPos);
 
 	MathLib::Vector3 anchorModelFrontDir = anchorModel->getFrontDir();
 	MathLib::Vector3 actModelFrontDir = actModel->getFrontDir();
-	relPos.theta = MathLib::AcosR(anchorModelFrontDir.dot(actModelFrontDir));
+	relPos->theta = MathLib::AcosR(anchorModelFrontDir.dot(actModelFrontDir));
 }
 

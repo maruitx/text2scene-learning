@@ -107,7 +107,7 @@ public:
 	void updateDrawArea() { m_drawArea->updateGL(); };
 
 public:
-	std::vector<RelativePos> m_relPositions;
+	std::vector<RelativePos*> m_relPositions;
 
 private:
 	Starlab::DrawArea *m_drawArea;

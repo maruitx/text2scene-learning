@@ -16,10 +16,9 @@ void PairwiseRelationModel::fitGMM()
 	double observationTh = 10;
 
 	// prepare data points
-	m_numInstance = m_instances.size();
-
 	if (m_numInstance < observationTh)
 	{
+		m_numGauss = 0;
 		return;
 	}
 
@@ -29,11 +28,11 @@ void PairwiseRelationModel::fitGMM()
 	//for (int i=0; i< m_numInstance; i++)
 	//{
 	//	RelativePos &relPos = m_instances[i];
-	//	observations[3 * i] = relPos.pos.x;
-	//	observations[3 * i +1] = relPos.pos.y;
-	//	observations[3 * i +2] = relPos.pos.z;
+	//	observations[3 * i] = relPos->pos.x;
+	//	observations[3 * i +1] = relPos->pos.y;
+	//	observations[3 * i +2] = relPos->pos.z;
 
-	//	MathLib::Matrix4d alignM = relPos.anchorAlignMat;  // world to unit bb mat
+	//	MathLib::Matrix4d alignM = relPos->anchorAlignMat;  // world to unit bb mat
 	//	for (int j=0; j < 16; j++)
 	//	{
 	//		alignMats[16 * i + j] = alignM.M[j];
@@ -49,13 +48,13 @@ void PairwiseRelationModel::fitGMM()
 	Eigen::MatrixXd alignMats(16, m_numInstance);
 	for (int i = 0; i< m_numInstance; i++)
 	{
-		RelativePos &relPos = m_instances[i];
-		observations(0, i) = relPos.pos.x;
-		observations(1, i) = relPos.pos.y;
-		observations(2, i) = relPos.pos.z;
-		observations(3, i) = relPos.theta;
+		RelativePos *relPos = m_instances[i];
+		observations(0, i) = relPos->pos.x;
+		observations(1, i) = relPos->pos.y;
+		observations(2, i) = relPos->pos.z;
+		observations(3, i) = relPos->theta;
 
-		MathLib::Matrix4d alignM = relPos.anchorAlignMat;  // world to unit bb mat
+		MathLib::Matrix4d alignM = relPos->anchorAlignMat;  // world to unit bb mat
 		for (int j = 0; j < 16; j++)
 		{
 			alignMats(j, i) = alignM.M[j];
@@ -78,7 +77,7 @@ void PairwiseRelationModel::fitGMM()
 	engEvalString(matlabEngine, "cd \'C:\\Ruim\\Graphics\\T2S_MPC\\text2scene-learning\\scene_lab'");
 	engEvalString(matlabEngine, "[mus, sigmas, weights, numComp] = fitGMMWithAIC(X, 4, alignMats)");
 
-	printf("%s\n", buffer); // get error messages or prints (optional)
+	//printf("%s\n", buffer); // get error messages or prints (optional)
 
 	mxArray *mus = engGetVariable(matlabEngine, "mus");
 	mxArray *sigmas = engGetVariable(matlabEngine, "sigmas");

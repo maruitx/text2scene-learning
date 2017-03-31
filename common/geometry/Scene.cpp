@@ -8,6 +8,8 @@
 #include "CMesh.h"
 //#include "ICP.h"
 
+#include "../t2scene/SceneSemGraph.h"
+
 #include <QFileDialog>
 #include <QTextStream>
 
@@ -23,6 +25,8 @@ CScene::CScene()
 	m_relationGraph = NULL;
 	m_hasRelGraph = false;
 	m_hasSupportHierarchy = false;
+
+	m_ssg = NULL;
 
 	m_showSceneGaph = false;
 	m_showModelOBB = false;
@@ -566,6 +570,17 @@ void CScene::updateRelationGraph(int modelID, int suppModelID, int suppPlaneID)
 
 }
 
+void CScene::loadSSG()
+{
+	if (m_ssg!=NULL)
+	{
+		delete m_ssg;
+	}
+
+	QString ssgFileName = m_sceneFilePath + "/" + m_sceneFileName + ".ssg";
+	m_ssg = new SceneSemGraph(ssgFileName);
+}
+
 int CScene::getRoomID()
 {
 	// if already know room id
@@ -724,6 +739,11 @@ bool CScene::loadModelBBAlignMat()
 		{
 			QString currLine = ifs.readLine();
 
+			if (currLine.contains("nan"))
+			{
+				qDebug() << "invalid matrix";
+			}
+
 			std::vector<float> transformVec = StringToFloatList(currLine.toStdString(), "");
 			MathLib::Matrix4d transMat(transformVec);
 
@@ -768,7 +788,8 @@ void CScene::saveRelPositions()
 		for (int i = 0; i < m_relPositions.size(); i++)
 		{
 			RelativePos *relPos = m_relPositions[i];
-			ofs << relPos->m_anchorObjName << "," << relPos->m_actObjName << "," << relPos->m_conditionName << "\n";
+			ofs << relPos->m_anchorObjName << "," << relPos->m_actObjName << "," << relPos->m_conditionName << "," 
+				<< relPos->m_instanceHash<<"\n";
 			ofs << relPos->pos.x << " " << relPos->pos.y << " " << relPos->pos.z << " " << relPos->theta << "," 
 				<< GetTransformationString(relPos->anchorAlignMat) << ","
 				<< GetTransformationString(relPos->actAlignMat) << "\n";

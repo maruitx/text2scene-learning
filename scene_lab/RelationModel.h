@@ -17,6 +17,14 @@ public:
 	QString m_anchorObjName;
 
 	QString m_conditionName;
+
+	int m_actObjId;
+	int m_anchorObjId;
+	QString m_sceneName;
+
+	QString m_instanceHash;
+
+	bool isValid;
 };
 
 struct GaussianModel
@@ -61,12 +69,12 @@ public:
 	~GroupRelationModel();
 
 public:
-	std::vector<PairwiseRelationModel*> m_pairwiseModels;  // relation-conditioned relative model
+	std::map<QString, PairwiseRelationModel*> m_pairwiseModels;  // relation-conditioned relative model
 	OccurrenceModel m_occurrenceModel;  // relation-conditioned occurrence model
 
 	std::vector<QString> m_actObjNames;
-	QString m_anchorObjName;
 
+	QString m_anchorObjName;
 	QString m_relationName;
 };
 

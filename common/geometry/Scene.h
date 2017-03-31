@@ -8,6 +8,7 @@
 #include "../scene_lab/RelationModel.h"
 
 class RelationGraph;
+class SceneSemGraph;
 
 class CScene
 {
@@ -87,6 +88,9 @@ public:
 	void updateRelationGraph(int modelID, int suppModelID, int suppPlaneID);
 	//void updateSupportHierarchy(int modelID, int suppModelID, int suppPlaneID);
 
+	// SSG
+	void loadSSG();
+
 	// relative pos
 	void saveRelPositions();
 
@@ -108,6 +112,7 @@ public:
 
 public:
 	std::vector<RelativePos*> m_relPositions;
+	SceneSemGraph *m_ssg;
 
 private:
 	Starlab::DrawArea *m_drawArea;

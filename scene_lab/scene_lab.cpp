@@ -43,7 +43,7 @@ void scene_lab::create_widget()
 	std::cout << "SceneLab: widget created.\n";
 }
 
-void scene_lab::loadScene()
+void scene_lab::LoadScene()
 {
 	if (m_currScene != NULL)
 	{
@@ -72,7 +72,7 @@ void scene_lab::loadScene()
 	emit sceneLoaded();
 }
 
-void scene_lab::loadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
+void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
 {
 	if (m_modelDB == NULL)
 	{
@@ -130,6 +130,11 @@ void scene_lab::loadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
 			m_sceneList.push_back(scene);
 		}
 	}
+}
+
+void scene_lab::loadSceneNamesFrontList()
+{
+
 }
 
 // update cat name, front dir, up dir for model
@@ -252,7 +257,7 @@ void scene_lab::testMatlab()
 	engClose(matlabEngine);
 }
 
-void scene_lab::buildSemGraphForCurrentScene(int batchLoading)
+void scene_lab::BuildSemGraphForCurrentScene(int batchLoading)
 {
 	if (m_currScene == NULL)
 	{
@@ -271,25 +276,25 @@ void scene_lab::buildSemGraphForCurrentScene(int batchLoading)
 
 	if (batchLoading == 0)
 	{
-		QString currPath = QDir::currentPath();
-		QString mapFilename = currPath + "./SSGNodeLabelMap.txt";
-		QString gmtAttriFilename = currPath + "./.gm_default_attributes";
+		//QString currPath = QDir::currentPath();
+		//QString mapFilename = currPath + "./SSGNodeLabelMap.txt";
+		//QString gmtAttriFilename = currPath + "./.gm_default_attributes";
 
-		m_currSceneSemGraph->saveNodeStringToLabelIDMap(mapFilename);
-		m_currSceneSemGraph->saveGMTNodeAttributeFile(gmtAttriFilename);
+		//m_currSceneSemGraph->saveNodeStringToLabelIDMap(mapFilename);
+		//m_currSceneSemGraph->saveGMTNodeAttributeFile(gmtAttriFilename);
 	}
 }
 
-void scene_lab::buildSemGraphForSceneList()
+void scene_lab::BuildSemGraphForSceneList()
 {
-	loadSceneList(1);
+	LoadSceneList(1);
 
 	std::set<QString> allModelNameStrings;
 	for (int i = 0; i < m_sceneList.size(); i++)
 	{
 		m_currScene = m_sceneList[i];
 		updateModelMetaInfoForScene(m_currScene);
-		buildSemGraphForCurrentScene(1);
+		BuildSemGraphForCurrentScene(1);
 
 		for (int i = 0; i < m_currScene->getModelNum(); i++)
 		{
@@ -326,7 +331,7 @@ void scene_lab::buildSemGraphForSceneList()
 	std::cout << "\nSceneLab: all scene semantic graph generated.\n";
 }
 
-void scene_lab::buildRelationGraphForCurrentScene()
+void scene_lab::BuildRelationGraphForCurrentScene()
 {
 	if (m_currScene == NULL)
 	{
@@ -337,21 +342,21 @@ void scene_lab::buildRelationGraphForCurrentScene()
 	m_currScene->buildRelationGraph();
 }
 
-void scene_lab::buildRelationGraphForSceneList()
+void scene_lab::BuildRelationGraphForSceneList()
 {
-	loadSceneList(0,1);
+	LoadSceneList(0,1);
 
 	for (int i = 0; i < m_sceneList.size(); i++)
 	{
 		m_currScene = m_sceneList[i];
 
-		buildRelationGraphForCurrentScene();
+		BuildRelationGraphForCurrentScene();
 	}
 
 	std::cout << "\nSceneLab: all scene relation graph generated.\n";
 }
 
-void scene_lab::collectModelInfoForSceneList()
+void scene_lab::CollectModelInfoForSceneList()
 {
 	// collect model meta info for current scene list. (subset of the whole shapenetsem meta file)
 
@@ -391,9 +396,9 @@ void scene_lab::collectModelInfoForSceneList()
 			scene->loadSceneFromFile(filename, 1, 0, 0);
 			m_currScene = scene;
 			
-			for (int i = 0; i < m_currScene->getModelNum(); i++)
+			for (int mi = 0; mi < m_currScene->getModelNum(); mi++)
 			{
-				allModelNameStrings.insert(m_currScene->getModelNameString(i));
+				allModelNameStrings.insert(m_currScene->getModelNameString(mi));
 			}			
 		}
 	}
@@ -430,12 +435,12 @@ void scene_lab::collectModelInfoForSceneList()
 	std::cout << "\nSceneLab: model meta info saved.\n";
 }
 
-void scene_lab::buildRelationModels()
+void scene_lab::BuildRelativeRelationModels()
 {
 	//testMatlab();
 
 	// load metadata
-	loadSceneList(1);
+	LoadSceneList(1);
 
 	if (m_relationModelManager!=NULL)
 	{
@@ -452,17 +457,45 @@ void scene_lab::buildRelationModels()
 		m_relationModelManager->addRelativePosFromCurrScene();
 	}
 
-	m_relationModelManager->buildRelationModels();
+	m_relationModelManager->buildRelativeRelationModels();
 
 	QString dbPath = "C:/Ruim/Graphics/T2S_MPC/SceneDB";
-	m_relationModelManager->saveRelationModels(dbPath);
+	m_relationModelManager->saveRelativeRelationModels(dbPath);
 
 }
 
-void scene_lab::computeBBAlignMatForSceneList()
+void scene_lab::BuildPairwiseRelationModels()
+{
+
+}
+
+void scene_lab::BuildGroupRelationModels()
+{
+	LoadSceneList(1);
+
+	if (m_relationModelManager != NULL)
+	{
+		delete m_relationModelManager;
+	}
+
+	m_relationModelManager = new RelationModelManager(m_relationExtractor);
+
+	for (int i = 0; i < m_sceneList.size(); i++)
+	{
+		m_currScene = m_sceneList[i];
+		m_currScene->loadSSG();
+
+		m_relationModelManager->updateCurrScene(m_currScene);
+		m_relationModelManager->addRelativePosFromCurrScene();
+
+		m_relationModelManager->buildGroupRelationModels();
+	}
+}
+
+void scene_lab::ComputeBBAlignMatForSceneList()
 {
 	// load mesh without OBB
-	loadSceneList(0, 0, 0);
+	LoadSceneList(0, 0, 0);
 
 	for (int i = 0; i < m_sceneList.size(); i++)
 	{
@@ -474,10 +507,10 @@ void scene_lab::computeBBAlignMatForSceneList()
 	}
 }
 
-void scene_lab::extractRelPosForSceneList()
+void scene_lab::ExtractRelPosForSceneList()
 {
 	// load OBB only
-	loadSceneList(0, 1);
+	LoadSceneList(0, 1);
 
 	if (m_relationModelManager != NULL)
 	{

@@ -16,7 +16,7 @@ const int PairRelNum = 10;
 const int GroupRelNum = 5;
 const int GroupAttriNum = 8;
 
-const QString SSGNodeType[] = { "object", "per_obj_attribute", "pairwise_relationship", "group_relationship", "group_attribute" };
+const QString SSGNodeType[] = { "object", "per_obj_attribute", "pairwise_relationship", "group_relationship", "group_relationship_anno" };
 const QString SingleAttriStrings[] = {"round", "rectangular", "office", "dining", "kitchen", "floor", "wall"};
 
 const QString GroupAttrStings[] = {"messy", "clean", "organized", "disorganized", "formal", "casual", "spacious", "crowded"};
@@ -24,14 +24,14 @@ const QString GroupAttrStings[] = {"messy", "clean", "organized", "disorganized"
 struct GroupAnnotation 
 {
 	QString name;
-	int refModelId;
+	int anchorModelId;
 	std::vector<int> actModelIds;
 };
 
 class SceneSemGraph : public SemanticGraph
 {
 public:
-
+	SceneSemGraph(const QString &s);
 	SceneSemGraph(CScene *s, ModelDatabase *db, RelationExtractor *relationExtractor);
 	~SceneSemGraph();
 
@@ -66,5 +66,7 @@ private:
 	int m_modelNum;
 
 	std::map<QString, int> m_catStringToLabelIDMap;
+
+	QString m_fullFilename;
 };
 

@@ -18,6 +18,12 @@ SceneSemGraph::SceneSemGraph(CScene *s, ModelDatabase *db, RelationExtractor *re
 	m_relGraph = m_scene->getSceneGraph();
 }
 
+SceneSemGraph::SceneSemGraph(const QString &s)
+	: m_fullFilename(s)
+{
+	loadGraph(m_fullFilename);
+}
+
 SceneSemGraph::~SceneSemGraph()
 {
 	for (int i = 0; i < m_metaModelList.size(); i++)
@@ -100,6 +106,8 @@ void SceneSemGraph::generateGraph()
 
 	// add attributes
 	addGroupAttributeFromAnnotation();
+
+	parseNodeNeighbors();
 
 	std::cout << "SceneSemGraph: graph generated.\n";
 }
@@ -274,11 +282,11 @@ void SceneSemGraph::addGroupAttributeFromAnnotation()
 						ann.name = parts[g];
 						if (parts[groupNum]=="")
 						{
-							ann.refModelId = -1;
+							ann.anchorModelId = -1;
 						}
 						else
 						{
-							ann.refModelId = parts[groupNum].toInt();
+							ann.anchorModelId = parts[groupNum].toInt();
 						}
 
 						QString actString = parts[groupNum + 1];
@@ -297,7 +305,7 @@ void SceneSemGraph::addGroupAttributeFromAnnotation()
 
 						// add to graph node
 						addNode(SSGNodeType[4], ann.name);
-						addEdge(m_nodeNum - 1, ann.refModelId); // messy --> table
+						addEdge(m_nodeNum - 1, ann.anchorModelId); // messy --> table
 
 						for (int t = 0; t < actNodeNum; t++)
 						{
@@ -419,11 +427,55 @@ void SceneSemGraph::loadGraph(const QString &filename)
 				newMetaModel->setTransMat(transMat);
 			}
 
+
 			m_metaModelList.push_back(newMetaModel);
 		}
 	}
 
-	
+	//	load nodes
+	currLine = ifs.readLine();
+	if (currLine.contains("nodeNum "))
+	{
+		int nodeNum = StringToIntegerList(currLine.toStdString(), "nodeNum ")[0];
+		for (int i = 0; i < nodeNum; i++)
+		{
+			currLine = ifs.readLine();
+			std::vector<std::string> parts = PartitionString(currLine.toStdString(), ",");
+
+			// object node
+			if (toQString(parts[1]) == "object")
+			{
+				if (parts.size() > 2)
+				{
+					addNode(toQString(parts[1]), toQString(parts[2]));
+				}
+				else
+				{
+					addNode(toQString(parts[1]), "noname");
+				}
+			}
+			else
+			{
+				addNode(toQString(parts[1]), toQString(parts[2]));
+			}
+		}
+	}
+
+	currLine = ifs.readLine();
+
+	// load edges
+	if (currLine.contains("edgeNum "))
+	{
+		int edgeNum = StringToIntegerList(currLine.toStdString(), "edgeNum ")[0];
+		for (int i = 0; i < edgeNum; i++)
+		{
+			currLine = ifs.readLine();
+			std::vector<int> parts = StringToIntegerList(currLine.toStdString(), "", ",");
+			addEdge(parts[1], parts[2]);
+		}
+	}
+
+	parseNodeNeighbors();
 	inFile.close();
 }
 

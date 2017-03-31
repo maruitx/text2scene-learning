@@ -7,7 +7,7 @@ public:
 	SemNode(const QString &t, const QString &n, int id) { nodeType = t; nodeName = n; nodeId = id; };
 	~SemNode() {};
 
-	// node types: e.g., object, per_obj_attribute, pairwise_relation, group_relation, group_attribute, 
+	// node types: e.g., object, per_obj_attribute, pairwise_relation, group_relation, group_relation_anno, 
 	QString nodeType;
 
 	// model category name, relationship name or attribute name, e.g. chair, support, messy
@@ -24,6 +24,11 @@ public:
 	// for relation/attribute node: from relation/attribute node to object, e.g. messy --> book, messy --> utensils
 	// for object: from passive object to relation/attribute node, e.g. table --> support
 	std::vector<int> outEdgeNodeList;
+
+	// parsed from in and out edge node list
+	std::vector<int> nodeLabels;  // idx of per-object attribute node, valid for "object" node
+	std::vector<int> activeNodeList; // idx of active object node, valid for "relation" node
+	std::vector<int> anchorNodeList; // idx of anchor object node, valid for "relation" node
 
 };
 
@@ -44,7 +49,8 @@ public:
 	~SemanticGraph();
 
 	void addNode(const QString &nType, const QString &nName);
-	void addEdge(int s, int t);
+	void addEdge(int s, int t); // after adding edge, parseNodeNeighbors must be called to update the neighbor list
+	void parseNodeNeighbors();  // parse in and out node list to node labels, active and anchor node list
 
 public:
 	int m_nodeNum, m_edgeNum;

@@ -167,8 +167,20 @@ void RelationExtractor::extractRelativePosForModelPair(CModel *anchorModel, CMod
 	relPos->m_anchorObjName = anchorModel->getCatName();
 	relPos->m_actObjName = actModel->getCatName();
 
+	relPos->m_actObjId = actModel->getID();
+	relPos->m_anchorObjId = anchorModel->getID();
+
+	relPos->m_instanceHash = QString("%1_%2_%3").arg(relPos->m_sceneName).arg(relPos->m_anchorObjId).arg(relPos->m_actObjId);
+
 	// first transform actModel into the scene and then bring it back using anchor model's alignMat
 	relPos->anchorAlignMat = anchorModel->m_WorldBBToUnitBoxMat;
+
+	if (relPos->anchorAlignMat.M[0] >1e10)
+	{
+		relPos->isValid = false;
+		return;
+	}
+
 	relPos->actAlignMat = relPos->anchorAlignMat*actModel->getInitTransMat();
 
 	MathLib::Vector3 actModelInitPos = actModel->getOBBInitPos(); // init pos when load the file
@@ -177,5 +189,7 @@ void RelationExtractor::extractRelativePosForModelPair(CModel *anchorModel, CMod
 	MathLib::Vector3 anchorModelFrontDir = anchorModel->getFrontDir();
 	MathLib::Vector3 actModelFrontDir = actModel->getFrontDir();
 	relPos->theta = MathLib::AcosR(anchorModelFrontDir.dot(actModelFrontDir));
+
+	relPos->isValid = true;
 }
 

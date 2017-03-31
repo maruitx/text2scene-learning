@@ -2,6 +2,7 @@
 #include "RelationExtractor.h"
 #include "../common/geometry/Scene.h"
 #include "../common/geometry/CModel.h"
+#include "../t2scene/SceneSemGraph.h"
 
 #include "engine.h"
 extern Engine *matlabEngine;
@@ -14,10 +15,16 @@ RelationModelManager::RelationModelManager(RelationExtractor *mExtractor)
 
 RelationModelManager::~RelationModelManager()
 {
-	for (int i=0; i < m_relativePostions.size(); i++)
+	for (auto it = m_relativePostions.begin(); it != m_relativePostions.end(); it++)
 	{
-		delete m_relativePostions[i];
+		delete it->second;
 	}
+}
+
+void RelationModelManager::updateCurrScene(CScene *s)
+{
+	m_currScene = s;
+	m_relationExtractor->updateCurrScene(m_currScene);
 }
 
 void RelationModelManager::collectRelativePosInCurrScene()
@@ -44,21 +51,21 @@ void RelationModelManager::collectRelativePosInCurrScene()
 
 			RelativePos *relPos = new RelativePos();
 			relPos->m_conditionName = conditionName;
+			relPos->m_sceneName = m_currScene->getSceneName();
 
 			m_relationExtractor->extractRelativePosForModelPair(anchorModel, actModel, relPos);
 
-			m_currScene->m_relPositions.push_back(relPos);
+			// check whether observed relPos is valid
+			if (relPos->isValid)
+			{
+				m_currScene->m_relPositions.push_back(relPos);
+			}
 		}
 	}
 
 	m_currScene->saveRelPositions();
 }
 
-void RelationModelManager::updateCurrScene(CScene *s)
-{
-	m_currScene = s;
-	m_relationExtractor->updateCurrScene(m_currScene);
-}
 
 void RelationModelManager::addRelativePosFromCurrScene()
 {
@@ -82,6 +89,11 @@ void RelationModelManager::addRelativePosFromCurrScene()
 		relPos->m_actObjName = toQString(parts[1]);
 		relPos->m_conditionName = toQString(parts[2]);
 
+		std::vector<std::string> subParts = PartitionString(parts[3], "_");
+		relPos->m_sceneName = toQString(subParts[0]);
+		relPos->m_anchorObjId = StringToInt(subParts[1]);
+		relPos->m_actObjId = StringToInt(subParts[2]);
+
 		currLine = ifs.readLine();
 		parts = PartitionString(currLine.toStdString(), ",");
 
@@ -95,7 +107,7 @@ void RelationModelManager::addRelativePosFromCurrScene()
 		transformVec = StringToFloatList(parts[2], "");
 		relPos->actAlignMat = MathLib::Matrix4d(transformVec);
 
-		m_relativePostions.push_back(relPos);
+		m_relativePostions[relPos->m_instanceHash] = relPos;
 	}
 
 	inFile.close();
@@ -103,25 +115,25 @@ void RelationModelManager::addRelativePosFromCurrScene()
 	qDebug() << "RelationModelManager: loaded relative position for scene " << m_currScene->getSceneName();
 }
 
-void RelationModelManager::buildRelationModels()
+void RelationModelManager::buildRelativeRelationModels()
 {
 	// collect instance ids for relative models
-	for (int i = 0; i < m_relativePostions.size(); i++)
+	for(auto it = m_relativePostions.begin(); it!=m_relativePostions.end(); it++)
 	{
-		RelativePos *relPos = m_relativePostions[i];
-		QString mapKey = relPos->m_anchorObjName + relPos->m_actObjName + relPos->m_conditionName;
+		RelativePos *relPos = it->second;
+		QString relationKey = relPos->m_anchorObjName + relPos->m_actObjName + relPos->m_conditionName;
 
-		if (!m_relativeModels.count(mapKey))
+		if (!m_relativeModels.count(relationKey))
 		{
 			PairwiseRelationModel *relativeModel = new PairwiseRelationModel(relPos->m_anchorObjName, relPos->m_actObjName, relPos->m_conditionName);
 			
 			relativeModel->m_instances.push_back(relPos);
-			m_relativeModels[mapKey] = relativeModel;
+			m_relativeModels[relationKey] = relativeModel;
 		}
 		else
-			m_relativeModels[mapKey]->m_instances.push_back(relPos);
+			m_relativeModels[relationKey]->m_instances.push_back(relPos); 
 
-		m_relativeModels[mapKey]->m_numInstance = m_relativeModels[mapKey]->m_instances.size();
+		m_relativeModels[relationKey]->m_numInstance = m_relativeModels[relationKey]->m_instances.size();
 	}
 
 	// 1. Open MATLAB engine
@@ -136,9 +148,36 @@ void RelationModelManager::buildRelationModels()
 
 	// 3. Close MATLAB engine
 	engClose(matlabEngine);
+
+	qDebug() << "Relative relations extracted";
 }
 
-void RelationModelManager::saveRelationModels(const QString &filePath)
+void RelationModelManager::buildGroupRelationModels()
+{
+	SceneSemGraph *currSSG = m_currScene->m_ssg;
+	QString sceneName = m_currScene->getSceneName();
+
+	for (int i=0; i< currSSG->m_nodeNum; i++)
+	{
+		SemNode &sgNode = currSSG->m_nodes[i];
+
+		if (sgNode.nodeName.contains("group"))
+		{
+			int anchorObjId = sgNode.anchorNodeList[0];
+			for (int t=0; t<sgNode.activeNodeList.size(); t++)
+			{
+				QString instanceHash = QString("%1_%2_%3").arg(sceneName).arg(anchorObjId).arg(sgNode.activeNodeList[t]);
+				if (m_relativePostions.count(instanceHash))
+				{
+					RelativePos* relPos = m_relativePostions[instanceHash];
+					QString relationKey = relPos->m_anchorObjName + relPos->m_actObjName + relPos->m_conditionName;
+				}
+			}
+		}
+	}
+}
+
+void RelationModelManager::saveRelativeRelationModels(const QString &filePath)
 {
 	QString filename = filePath + "/Relative.model";
 

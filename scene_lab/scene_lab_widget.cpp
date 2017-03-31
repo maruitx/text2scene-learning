@@ -11,7 +11,7 @@ scene_lab_widget::scene_lab_widget(scene_lab *s_lab, QWidget *parent/*=0*/)
 
 	m_lastUsedDirectory = QString();
 
-	connect(ui->loadSceneButton, SIGNAL(clicked()), m_scene_lab, SLOT(loadScene()));
+	connect(ui->loadSceneButton, SIGNAL(clicked()), m_scene_lab, SLOT(LoadScene()));
 	connect(ui->showOBBCheckBox, SIGNAL(stateChanged(int)), m_scene_lab, SLOT(updateSceneRenderingOptions()));
 	connect(ui->showGraphCheckBox, SIGNAL(stateChanged(int)), m_scene_lab, SLOT(updateSceneRenderingOptions()));
 	connect(ui->showFrontDirCheckBox, SIGNAL(stateChanged(int)), m_scene_lab, SLOT(updateSceneRenderingOptions()));
@@ -21,19 +21,21 @@ scene_lab_widget::scene_lab_widget(scene_lab *s_lab, QWidget *parent/*=0*/)
 	connect(ui->openModelDBViewerButton, SIGNAL(clicked()), m_scene_lab, SLOT(create_modelDBViewer_widget()));
 
 	// ssg
-	connect(ui->buildSemGraphButton, SIGNAL(clicked()), m_scene_lab, SLOT(buildSemGraphForCurrentScene()));
-	connect(ui->buildSSGForListButton, SIGNAL(clicked()), m_scene_lab, SLOT(buildSemGraphForSceneList()));
+	connect(ui->buildSemGraphButton, SIGNAL(clicked()), m_scene_lab, SLOT(BuildSemGraphForCurrentScene()));
+	connect(ui->buildSSGForListButton, SIGNAL(clicked()), m_scene_lab, SLOT(BuildSemGraphForSceneList()));
 
 	// structure graph
-	connect(ui->buildRelationGraphButton, SIGNAL(clicked()), m_scene_lab, SLOT(buildRelationGraphForCurrentScene()));
-	connect(ui->buildRGForListButton, SIGNAL(clicked()), m_scene_lab, SLOT(buildRelationGraphForSceneList()));
+	connect(ui->buildRelationGraphButton, SIGNAL(clicked()), m_scene_lab, SLOT(BuildRelationGraphForCurrentScene()));
+	connect(ui->buildRGForListButton, SIGNAL(clicked()), m_scene_lab, SLOT(BuildRelationGraphForSceneList()));
 
 	// relation model
-	connect(ui->computeBBAlignMatForListButton, SIGNAL(clicked()), m_scene_lab, SLOT(computeBBAlignMatForSceneList()));
-	connect(ui->extractRelPosForList, SIGNAL(clicked()), m_scene_lab, SLOT(extractRelPosForSceneList()));
-	connect(ui->buildRelationModelsButton, SIGNAL(clicked()), m_scene_lab, SLOT(buildRelationModels()));
+	connect(ui->computeBBAlignMatForListButton, SIGNAL(clicked()), m_scene_lab, SLOT(ComputeBBAlignMatForSceneList()));
+	connect(ui->extractRelPosForList, SIGNAL(clicked()), m_scene_lab, SLOT(ExtractRelPosForSceneList()));
 
-	connect(ui->collectMetaInfoButton, SIGNAL(clicked()), m_scene_lab, SLOT(collectModelInfoForSceneList()));	
+	connect(ui->buildRelationModelsButton, SIGNAL(clicked()), m_scene_lab, SLOT(BuildRelativeRelationModels()));
+	connect(ui->buildGroupRelationButton, SIGNAL(clicked()), m_scene_lab, SLOT(BuildGroupRelationModels()));
+
+	connect(ui->collectMetaInfoButton, SIGNAL(clicked()), m_scene_lab, SLOT(CollectModelInfoForSceneList()));	
 }
 
 scene_lab_widget::~scene_lab_widget()

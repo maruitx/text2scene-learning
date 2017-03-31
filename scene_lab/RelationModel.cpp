@@ -13,7 +13,7 @@ PairwiseRelationModel::PairwiseRelationModel(const QString &anchorName, const QS
 
 void PairwiseRelationModel::fitGMM()
 {
-	double observationTh = 10;
+	double observationTh = 15;
 
 	// prepare data points
 	if (m_numInstance < observationTh)
@@ -75,14 +75,22 @@ void PairwiseRelationModel::fitGMM()
 	engPutVariable(matlabEngine, "alignMats", alignMatsArray); // put into matlab
 
 	engEvalString(matlabEngine, "cd \'C:\\Ruim\\Graphics\\T2S_MPC\\text2scene-learning\\scene_lab'");
-	engEvalString(matlabEngine, "[mus, sigmas, weights, numComp] = fitGMMWithAIC(X, 4, alignMats)");
+	engEvalString(matlabEngine, "[isFitSuccess, mus, sigmas, weights, numComp] = fitGMMWithAIC(X, 4, alignMats);");
 
-	//printf("%s\n", buffer); // get error messages or prints (optional)
+	printf("%s\n", buffer); // get error messages or prints (optional)
 
+	mxArray *isFitSuccess = engGetVariable(matlabEngine, "isFitSuccess");
 	mxArray *mus = engGetVariable(matlabEngine, "mus");
 	mxArray *sigmas = engGetVariable(matlabEngine, "sigmas");
 	mxArray *weights = engGetVariable(matlabEngine, "weights");
 	mxArray *numComp = engGetVariable(matlabEngine, "numComp");
+
+	int isGuassFitted = mxGetScalar(isFitSuccess);
+	if (!isGuassFitted)
+	{
+		m_numGauss = 0;
+		return;
+	}
 
 	int numGauss = mxGetScalar(numComp);
 	Eigen::Map<Eigen::MatrixXd> gaussMus = fromMATd(mus);

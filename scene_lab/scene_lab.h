@@ -24,25 +24,29 @@ public:
 	CScene *getScene() { return m_currScene; };
 
 public slots:
-	void loadScene();
-	void loadSceneList(int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0);
+	void LoadScene();
+	void LoadSceneList(int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0);
+	void loadSceneNamesFrontList();
 
 	void updateModelMetaInfoForScene(CScene *s);
 
 	// structure graph
-	void buildRelationGraphForCurrentScene();
-	void buildRelationGraphForSceneList();
+	void BuildRelationGraphForCurrentScene();
+	void BuildRelationGraphForSceneList();
 
 	// ssg
-	void buildSemGraphForCurrentScene(int batchLoading = 0);
-	void buildSemGraphForSceneList();
+	void BuildSemGraphForCurrentScene(int batchLoading = 0);
+	void BuildSemGraphForSceneList();
 
 	// relational model
-	void computeBBAlignMatForSceneList();
-	void extractRelPosForSceneList();
-	void buildRelationModels();
+	void ComputeBBAlignMatForSceneList();
+	void ExtractRelPosForSceneList();
 
-	void collectModelInfoForSceneList();
+	void BuildRelativeRelationModels();
+	void BuildPairwiseRelationModels();
+	void BuildGroupRelationModels();
+
+	void CollectModelInfoForSceneList();
 
 	void updateSceneRenderingOptions();
 

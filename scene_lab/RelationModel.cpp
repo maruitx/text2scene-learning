@@ -11,12 +11,10 @@ PairwiseRelationModel::PairwiseRelationModel(const QString &anchorName, const QS
 
 }
 
-void PairwiseRelationModel::fitGMM()
+void PairwiseRelationModel::fitGMM(int instanceTh)
 {
-	double observationTh = 15;
-
 	// prepare data points
-	if (m_numInstance < observationTh)
+	if (m_numInstance < instanceTh)
 	{
 		m_numGauss = 0;
 		return;
@@ -112,13 +110,57 @@ void PairwiseRelationModel::fitGMM()
 	m_numGauss = m_gaussians.size();
 }
 
+void PairwiseRelationModel::output(QTextStream &ofs)
+{
+	ofs << m_anchorObjName << "," << m_actObjName << "," << m_conditionName << "\n";
+	ofs << m_numGauss << " " << m_numInstance << "\n";
+
+	if (m_numGauss > 0)
+	{
+		for (int i = 0; i < m_numGauss; i++)
+		{
+			GaussianModel & currGauss = m_gaussians[i];
+			ofs << currGauss.weight << ",";
+			ofs << currGauss.mean(0) << " " << currGauss.mean(1) << " " << currGauss.mean(2) << " " << currGauss.mean(3) << ",";
+			ofs << GetTransformationString(currGauss.covarMat) << "\n";
+		}
+	}
+
+	else
+	{
+		for (int i = 0; i < m_numInstance; i++)
+		{
+			RelativePos *relPos = m_instances[i];
+			if (i < m_numInstance - 1)
+			{
+				ofs << relPos->pos.x << " " << relPos->pos.y << " " << relPos->pos.z << " " << relPos->theta << ",";
+			}
+			else
+				ofs << relPos->pos.x << " " << relPos->pos.y << " " << relPos->pos.z << " " << relPos->theta << "\n";
+		}
+	}
+}
+
 GroupRelationModel::GroupRelationModel()
 {
 
 }
 
-
 GroupRelationModel::~GroupRelationModel()
+{
+
+}
+
+void GroupRelationModel::fitGMMs()
+{
+	for (auto iter = m_pairwiseModels.begin(); iter!=m_pairwiseModels.end(); iter++)
+	{
+		PairwiseRelationModel *relModel = iter->second;
+		relModel->fitGMM(15);
+	}
+}
+
+void GroupRelationModel::output(QTextStream &ofs)
 {
 
 }

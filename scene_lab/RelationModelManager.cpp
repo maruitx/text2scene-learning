@@ -66,7 +66,6 @@ void RelationModelManager::collectRelativePosInCurrScene()
 	m_currScene->saveRelPositions();
 }
 
-
 void RelationModelManager::addRelativePosFromCurrScene()
 {
 	QString filename = m_currScene->getFilePath() + "/" + m_currScene->getSceneName() + ".relPos";
@@ -93,6 +92,8 @@ void RelationModelManager::addRelativePosFromCurrScene()
 		relPos->m_sceneName = toQString(subParts[0]);
 		relPos->m_anchorObjId = StringToInt(subParts[1]);
 		relPos->m_actObjId = StringToInt(subParts[2]);
+
+		relPos->m_instanceHash = QString("%1_%2_%3").arg(relPos->m_sceneName).arg(relPos->m_anchorObjId).arg(relPos->m_actObjId);;
 
 		currLine = ifs.readLine();
 		parts = PartitionString(currLine.toStdString(), ",");
@@ -143,7 +144,7 @@ void RelationModelManager::buildRelativeRelationModels()
 	for (auto iter = m_relativeModels.begin(); iter != m_relativeModels.end(); iter++)
 	{
 		PairwiseRelationModel *relModel = iter->second;
-		relModel->fitGMM();
+		relModel->fitGMM(15);
 	}
 
 	// 3. Close MATLAB engine
@@ -154,6 +155,25 @@ void RelationModelManager::buildRelativeRelationModels()
 
 void RelationModelManager::buildGroupRelationModels()
 {
+
+	// 1. Open MATLAB engine
+	matlabEngine = engOpen(NULL);
+
+	// fit GMM model
+	for (auto iter = m_groupRelModels.begin(); iter != m_groupRelModels.end(); iter++)
+	{
+		GroupRelationModel *groupModel = iter->second;
+		groupModel->fitGMMs();
+	}
+
+	// 3. Close MATLAB engine
+	engClose(matlabEngine);
+
+	qDebug() << "Relative relations extracted";
+}
+
+void RelationModelManager::collectGroupInstanceFromCurrScene()
+{
 	SceneSemGraph *currSSG = m_currScene->m_ssg;
 	QString sceneName = m_currScene->getSceneName();
 
@@ -161,18 +181,54 @@ void RelationModelManager::buildGroupRelationModels()
 	{
 		SemNode &sgNode = currSSG->m_nodes[i];
 
-		if (sgNode.nodeName.contains("group"))
+		if (sgNode.nodeType.contains("group"))
 		{
-			int anchorObjId = sgNode.anchorNodeList[0];
-			for (int t=0; t<sgNode.activeNodeList.size(); t++)
+			int anchoNodeId = sgNode.anchorNodeList[0];
+
+			QString anchorObjName = currSSG->m_nodes[anchoNodeId].nodeName;
+			QString groupKey = sgNode.nodeName + anchorObjName;
+
+			if (!m_groupRelModels.count(groupKey))
 			{
-				QString instanceHash = QString("%1_%2_%3").arg(sceneName).arg(anchorObjId).arg(sgNode.activeNodeList[t]);
-				if (m_relativePostions.count(instanceHash))
-				{
-					RelativePos* relPos = m_relativePostions[instanceHash];
-					QString relationKey = relPos->m_anchorObjName + relPos->m_actObjName + relPos->m_conditionName;
-				}
+				GroupRelationModel *newGroupModel = new GroupRelationModel();
+				newGroupModel->m_anchorObjName = anchorObjName;
+				newGroupModel->m_relationName = sgNode.nodeName;
+
+				collectInstanceForGroupModel(newGroupModel, sceneName, anchoNodeId, sgNode.activeNodeList);
+
+				m_groupRelModels[groupKey] = newGroupModel;
+
 			}
+
+			else
+				collectInstanceForGroupModel(m_groupRelModels[groupKey], sceneName, anchoNodeId, sgNode.activeNodeList);
+		}
+	}
+}
+
+void RelationModelManager::collectInstanceForGroupModel(GroupRelationModel *groupModel, const QString &sceneName, int anchorNodeId, const std::vector<int> &actNodeList)
+{
+	for (int t = 0; t < actNodeList.size(); t++)
+	{
+		QString instanceHash = QString("%1_%2_%3").arg(sceneName).arg(anchorNodeId).arg(actNodeList[t]);
+
+		if (m_relativePostions.count(instanceHash))
+		{
+			RelativePos* relPos = m_relativePostions[instanceHash];
+			QString relationKey = relPos->m_anchorObjName + relPos->m_actObjName + relPos->m_conditionName;
+
+			if (!groupModel->m_pairwiseModels.count(relationKey))
+			{
+				PairwiseRelationModel *relativeModel = new PairwiseRelationModel(relPos->m_anchorObjName, relPos->m_actObjName, relPos->m_conditionName);
+
+				relativeModel->m_instances.push_back(relPos);
+				groupModel->m_pairwiseModels[relationKey] = relativeModel;
+			}
+
+			else
+				groupModel->m_pairwiseModels[relationKey]->m_instances.push_back(relPos);
+
+			groupModel->m_pairwiseModels[relationKey]->m_numInstance = groupModel->m_pairwiseModels[relationKey]->m_instances.size();
 		}
 	}
 }
@@ -190,33 +246,26 @@ void RelationModelManager::saveRelativeRelationModels(const QString &filePath)
 		for (auto iter = m_relativeModels.begin(); iter != m_relativeModels.end(); iter++)
 		{
 			PairwiseRelationModel *relModel = iter->second;
-			ofs << relModel->m_anchorObjName << "," << relModel->m_actObjName << "," << relModel->m_conditionName << "\n";
-			ofs << relModel->m_numGauss<< " "<< relModel->m_numInstance <<"\n";
+			relModel->output(ofs);
+		}
 
-			if (relModel->m_numGauss > 0 )
-			{
-				for (int i = 0; i < relModel->m_numGauss; i++)
-				{
-					GaussianModel & currGauss = relModel->m_gaussians[i];
-					ofs << currGauss.weight << ",";
-					ofs << currGauss.mean(0) << " " << currGauss.mean(1) << " " << currGauss.mean(2) << " " << currGauss.mean(3) << ",";
-					ofs << GetTransformationString(currGauss.covarMat) << "\n";
-				}
-			}
+		outFile.close();
+	}
+}
 
-			else
-			{
-				for (int i=0; i < relModel->m_numInstance; i++)
-				{
-					RelativePos *relPos = relModel->m_instances[i];
-					if (i < relModel->m_numInstance -1)
-					{
-						ofs << relPos->pos.x << " " << relPos->pos.y << " " << relPos->pos.z << " " << relPos->theta << ",";
-					}
-					else
-						ofs << relPos->pos.x << " " << relPos->pos.y << " " << relPos->pos.z << " " << relPos->theta << "\n";					
-				}
-			}
+void RelationModelManager::saveGroupRelationModels(const QString &filePath)
+{
+	QString filename = filePath + "/Group.model";
+
+	QFile outFile(filename);
+	QTextStream ofs(&outFile);
+
+	if (outFile.open(QIODevice::ReadWrite | QIODevice::Text | QIODevice::Truncate))
+	{
+		for (auto giter = m_groupRelModels.begin(); giter != m_groupRelModels.end(); giter++)
+		{
+			GroupRelationModel *groupModel = giter->second;
+			groupModel->output(ofs);
 		}
 
 		outFile.close();

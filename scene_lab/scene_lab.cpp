@@ -12,6 +12,8 @@
 
 Engine *matlabEngine;
 
+const QString sceneDBPath = "C:/Ruim/Graphics/T2S_MPC/SceneDB";
+
 scene_lab::scene_lab(QObject *parent)
 	: QObject(parent)
 {
@@ -101,7 +103,7 @@ void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
 	// load scene list file
 	QString currPath = QDir::currentPath();
 	QString sceneListFileName = currPath + "/scene_list.txt";
-	QString sceneDBPath = "C:/Ruim/Graphics/T2S_MPC/SceneDB/StanfordSceneDB/scenes";
+	QString sceneFolder = sceneDBPath + "/StanfordSceneDB/scenes";
 
 	QFile inFile(sceneListFileName);
 	QTextStream ifs(&inFile);
@@ -123,7 +125,7 @@ void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
 			QString sceneName = ifs.readLine();
 
 			CScene *scene = new CScene();
-			QString filename = sceneDBPath + "/" + sceneName + ".txt";
+			QString filename = sceneFolder + "/" + sceneName + ".txt";
 			scene->loadSceneFromFile(filename, metaDataOnly, obbOnly, meshAndOBB);
 			
 			updateModelMetaInfoForScene(scene);
@@ -459,8 +461,7 @@ void scene_lab::BuildRelativeRelationModels()
 
 	m_relationModelManager->buildRelativeRelationModels();
 
-	QString dbPath = "C:/Ruim/Graphics/T2S_MPC/SceneDB";
-	m_relationModelManager->saveRelativeRelationModels(dbPath);
+	m_relationModelManager->saveRelativeRelationModels(sceneDBPath);
 
 }
 
@@ -487,9 +488,11 @@ void scene_lab::BuildGroupRelationModels()
 
 		m_relationModelManager->updateCurrScene(m_currScene);
 		m_relationModelManager->addRelativePosFromCurrScene();
-
-		m_relationModelManager->buildGroupRelationModels();
+		m_relationModelManager->collectGroupInstanceFromCurrScene();
 	}
+
+	m_relationModelManager->buildGroupRelationModels();
+	m_relationModelManager->saveGroupRelationModels(sceneDBPath);
 }
 
 void scene_lab::ComputeBBAlignMatForSceneList()

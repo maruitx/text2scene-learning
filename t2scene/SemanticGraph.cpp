@@ -54,7 +54,7 @@ void SemanticGraph::parseNodeNeighbors()
 			}
 		}
 
-		if (sgNode.nodeType.contains("relation"))
+		if (sgNode.nodeType.contains("relation") || sgNode.nodeType.contains("group_attribute"))
 		{
 			sgNode.activeNodeList.clear();
 			sgNode.anchorNodeList.clear();

@@ -42,7 +42,8 @@ public:
 	PairwiseRelationModel(const QString &anchorName, const QString &actName, const QString &conditionName, const QString & relationName = "general");
 	~PairwiseRelationModel() {};
 
-	void fitGMM();
+	void fitGMM(int instanceTh);
+	void output(QTextStream &ofs);
 
 	int m_numGauss;
 	int m_numInstance;
@@ -60,6 +61,8 @@ public:
 struct OccurrenceModel
 {
 	std::map<QString, double> m_objOccurProbs;
+
+	int instNum;
 };
 
 class GroupRelationModel
@@ -68,11 +71,12 @@ public:
 	GroupRelationModel();
 	~GroupRelationModel();
 
+	void fitGMMs();
+	void output(QTextStream &ofs);
+
 public:
 	std::map<QString, PairwiseRelationModel*> m_pairwiseModels;  // relation-conditioned relative model
 	OccurrenceModel m_occurrenceModel;  // relation-conditioned occurrence model
-
-	std::vector<QString> m_actObjNames;
 
 	QString m_anchorObjName;
 	QString m_relationName;

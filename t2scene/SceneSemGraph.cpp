@@ -400,40 +400,40 @@ void SceneSemGraph::loadGraph(const QString &filename)
 	ifs >> m_sceneFormat;
 
 	// load model info
-	QString currLine = ifs.readLine();
-
-	if (currLine.contains("modelCount "))
-	{
-		m_modelNum = StringToIntegerList(currLine.toStdString(), "modelCount ")[0];
-	}
-
-	for (int i = 0; i < m_modelNum; i++)
+	int currModelID = -1;
+	QString currLine;
+	while (!ifs.atEnd() && !currLine.contains("nodeNum"))
 	{
 		currLine = ifs.readLine();
+
+		//	load model info
+		if (currLine.contains("modelCount "))
+		{
+			m_modelNum = StringToIntegerList(currLine.toStdString(), "modelCount ")[0];
+		}
+
 		if (currLine.contains("newModel "))
-		{			
+		{
 			std::vector<std::string> parts = PartitionString(currLine.toStdString(), " ");
 			int modelIndex = StringToInt(parts[1]);
 			QString modelNameString = QString(parts[2].c_str());
 
 			DBMetaModel *newMetaModel = new DBMetaModel(modelNameString);
-
-			currLine = ifs.readLine();
-			
-			if (currLine.contains("transform "))
-			{
-				std::vector<float> transformVec = StringToFloatList(currLine.toStdString(), "transform ");
-				MathLib::Matrix4d transMat(transformVec);
-				newMetaModel->setTransMat(transMat);
-			}
-
-
 			m_metaModelList.push_back(newMetaModel);
+
+			currModelID++;
+		}
+
+		if (currLine.contains("transform "))
+		{
+			std::vector<float> transformVec = StringToFloatList(currLine.toStdString(), "transform ");  // transformation vector in stanford scene file is column-wise
+			MathLib::Matrix4d transMat(transformVec);
+			transMat = transMat.transpose();
+			m_metaModelList[currModelID]->setTransMat(transMat);
 		}
 	}
 
 	//	load nodes
-	currLine = ifs.readLine();
 	if (currLine.contains("nodeNum "))
 	{
 		int nodeNum = StringToIntegerList(currLine.toStdString(), "nodeNum ")[0];
@@ -476,6 +476,8 @@ void SceneSemGraph::loadGraph(const QString &filename)
 	}
 
 	parseNodeNeighbors();
+
+	
 	inFile.close();
 }
 

@@ -66,6 +66,8 @@ public:
 	bool IsSupport(CModel *pOther, bool roughOBB, double dDistT, const MathLib::Vector3 &Upright);
 	double getOBBBottomHeight();
 	double getOBBHeight();
+	double getHorizonShortRange();
+	double getHorizonLongRange();
 	MathLib::Vector3 getOBBCenter() { return m_OBB.C(); };
 	COBB& getOBB() { return m_OBB; };
 	std::vector<MathLib::Vector3> getOBBAxis() { return m_OBB.A(); };
@@ -76,6 +78,7 @@ public:
 	MathLib::Vector3 getModelAlongDirOBBFaceCenter();
 	MathLib::Vector3 getModelNormalDirOBBFaceCenter();
 	MathLib::Vector3 getAlongDirOBBAxis();
+	double getOBBVolume() { return m_OBB.Vol(); };
 
 	void selectOBBFace(const MathLib::Vector3 &origin, const MathLib::Vector3 &dir);
 	MathLib::Vector3 getOBBFrontFaceCenter();

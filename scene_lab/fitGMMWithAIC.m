@@ -1,4 +1,6 @@
-function [isFitSuccess, mus, sigmas, weights, numComp] = fitGMMWithAIC(X, maxK, alignMats)
+function [isFitSuccess, mus, sigmas, weights, numComp, pTh] = fitGMMWithAIC(X, maxK, alignMats)
+
+% probTh: probability value that 80% of observations have passed
 
 isFitSuccess = 0;
 
@@ -13,6 +15,8 @@ if vis
     scatter(X(1,:),X(2,:), 'filled');
     hold off
 end
+
+Xinput = X';  % each row of Xinput is a data observation
 
 if nargin == 3
     % enrich input data by jittering
@@ -80,10 +84,12 @@ if ~isempty(GMModels{numComp})
     mus = GMModels{numComp}.mu;
     sigmas = GMModels{numComp}.Sigma;
     weights = GMModels{numComp}.ComponentProportion;
+    pTh = computeProbTh(GMModels{numComp}, Xinput, [20 50 80]);
 else
     mus = [];
     sigmas = [];
     weights = [];
+    pTh = [];
 end
 
 %save('GMM', 'mus', 'sigmas', 'weights')
@@ -93,4 +99,12 @@ function X =  removeOutlier(X)
 % each row of X is a data point
 o = moutlier1(X,0.1);
 X(o, :) = [];
+end
+
+function percentProb = computeProbTh(gmModel, X, percent)
+% e.g. percent = 20
+
+probsX = pdf(gmModel, X);
+percentProb = prctile(probsX, percent);
+
 end

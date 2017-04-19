@@ -1038,6 +1038,58 @@ double CModel::getOBBHeight()
 	return m_OBB.GetHeight();
 }
 
+double CModel::getHorizonShortRange()
+{
+	int zIdx = -1;
+	for (int i = 0; i < 3; i++)
+	{
+		if (std::abs(m_OBB.axis[i].dot(MathLib::Vector3(0, 0, 1)) > 0.9))
+		{
+			zIdx = i;
+		}
+	}
+
+	double rangeVal = 1e6;
+	for (int i=0; i <3; i++)
+	{
+		if (zIdx!=i)
+		{
+			if (m_OBB.size[i] < rangeVal)
+			{
+				rangeVal = m_OBB.size[i];
+			}
+		}
+	}
+
+	return rangeVal;
+}
+
+double CModel::getHorizonLongRange()
+{
+	int zIdx = -1;
+	for (int i = 0; i < 3; i++)
+	{
+		if (std::abs(m_OBB.axis[i].dot(MathLib::Vector3(0, 0, 1)) > 0.95))
+		{
+			zIdx = i;
+		}
+	}
+
+	double rangeVal = 0;
+	for (int i = 0; i < 3; i++)
+	{
+		if (zIdx != i)
+		{
+			if (m_OBB.size[i] > rangeVal)
+			{
+				rangeVal = m_OBB.size[i];
+			}
+		}
+	}
+
+	return rangeVal;
+}
+
 MathLib::Vector3 CModel::getAlongDirOBBAxis()
 {
 	MathLib::Vector3 frontDir = getFrontDir();

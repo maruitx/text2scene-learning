@@ -651,9 +651,9 @@ QString DBMetaModel::getProcessedCatName()
 		return m_processedCatName;
 	}
 
-	const int badCatNum = 11;
+	const int badCatNum = 12;
 	QString badCatNames[badCatNum] = { "_stanfordscenedbmodels", "_scenegallerymodels", "_oimwhitelist", "_attributestrain", 
-		"_attributes", "_evalsetinscenes", "_pilotstudymodels", "_geoautotagevalset", "_randomsetstudymodels", "drinkingutensil", "fooditem"};
+		"_attributes", "_evalsetinscenes", "_pilotstudymodels", "_geoautotagevalset", "_randomsetstudymodels", "_evalsetexclude","drinkingutensil", "fooditem"};
 
 	for (int i = 0; i < badCatNum; i++)
 	{

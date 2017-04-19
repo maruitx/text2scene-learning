@@ -29,6 +29,7 @@ HEADERS += \
 	ModelDBViewer.h \
 	modelDatabase.h \ 
 	category.h \
+	GaussianMixtureModel.h \
 	RelationModel.h \
 	RelationExtractor.h \
 	RelationModelManager.h
@@ -40,6 +41,7 @@ SOURCES += \
 	ModelDBViewer.cpp \
 	modelDatabase.cpp \
 	category.cpp \
+	GaussianMixtureModel.cpp \
 	RelationModel.cpp \
 	RelationExtractor.cpp \
 	RelationModelManager.cpp

@@ -134,11 +134,6 @@ void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
 	}
 }
 
-void scene_lab::loadSceneNamesFrontList()
-{
-
-}
-
 // update cat name, front dir, up dir for model
 void scene_lab::updateModelMetaInfoForScene(CScene *s)
 {
@@ -455,19 +450,39 @@ void scene_lab::BuildRelativeRelationModels()
 	{
 		m_currScene = m_sceneList[i];
 		m_relationModelManager->updateCurrScene(m_currScene);
-
-		m_relationModelManager->addRelativePosFromCurrScene();
+		m_relationModelManager->loadRelativePosFromCurrScene();
 	}
 
 	m_relationModelManager->buildRelativeRelationModels();
-
 	m_relationModelManager->saveRelativeRelationModels(sceneDBPath);
-
 }
 
 void scene_lab::BuildPairwiseRelationModels()
 {
+	LoadSceneList(1);
 
+	if (m_relationModelManager != NULL)
+	{
+		delete m_relationModelManager;
+	}
+
+	m_relationModelManager = new RelationModelManager(m_relationExtractor);
+
+	for (int i = 0; i < m_sceneList.size(); i++)
+	{
+		m_currScene = m_sceneList[i];
+		m_currScene->loadSSG();
+
+		m_relationModelManager->updateCurrScene(m_currScene);
+		m_relationModelManager->loadRelativePosFromCurrScene();
+		m_relationModelManager->collectPairwiseInstanceFromCurrScene();
+	}
+
+	m_relationModelManager->buildPairwiseRelationModels();
+	m_relationModelManager->computeSimForPairwiseModels(m_relationModelManager->m_pairwiseRelModels, m_relationModelManager->m_pairRelModelKeys, m_sceneList, sceneDBPath);
+
+	m_relationModelManager->savePairwiseRelationModels(sceneDBPath);
+	m_relationModelManager->savePairwiseModelSim(sceneDBPath);
 }
 
 void scene_lab::BuildGroupRelationModels()
@@ -487,12 +502,15 @@ void scene_lab::BuildGroupRelationModels()
 		m_currScene->loadSSG();
 
 		m_relationModelManager->updateCurrScene(m_currScene);
-		m_relationModelManager->addRelativePosFromCurrScene();
+		m_relationModelManager->loadRelativePosFromCurrScene();
 		m_relationModelManager->collectGroupInstanceFromCurrScene();
 	}
 
 	m_relationModelManager->buildGroupRelationModels();
+	m_relationModelManager->computeSimForPairModelInGroup(m_sceneList);
+
 	m_relationModelManager->saveGroupRelationModels(sceneDBPath);
+	m_relationModelManager->saveGroupModelSim(sceneDBPath);
 }
 
 void scene_lab::ComputeBBAlignMatForSceneList()

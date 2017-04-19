@@ -44,7 +44,7 @@ int RelationGraph::buildSuppEdgesFromFile()
 		for (unsigned int j = 0; j < suppChildrenList.size(); j++) {
 			int childId = suppChildrenList[j];
 			CModel *pMJ = m_scene->getModel(childId);
-			if (pMJ->parentContactNormal == MathLib::Vector3(0,0,1))
+			if (pMJ->parentContactNormal.dot(MathLib::Vector3(0,0,1)) > 0.95)
 			{
 				this->InsertEdge(i, childId, CT_VERT_SUPPORT);	// upright support, i is the support parent of j
 			}

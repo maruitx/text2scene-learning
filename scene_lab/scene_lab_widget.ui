@@ -93,7 +93,7 @@
        </widget>
       </item>
       <item row="4" column="1">
-       <widget class="QPushButton" name="buildRelationModelsButton">
+       <widget class="QPushButton" name="buildRelativeRelationButton">
         <property name="text">
          <string>Build Relative Relations</string>
         </property>

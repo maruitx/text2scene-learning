@@ -8,7 +8,7 @@ class CModel;
 class SceneSemGraph;
 
 const QString ConditionName[] = {"parentchild", "sibling", "proximity"};
-const QString PairRelStrings[] = { "vert_support", "horizon_support", "contain", "above", "under", "leftside", "rightside", "front", "back", "near"};
+const QString PairRelStrings[] = { "vertsupport", "horizonsupport", "contain", "above", "under", "leftside", "rightside", "front", "back", "near"};
 const QString GroupRelStrings[] = { "around", "aligned", "grouped", "stacked", "scattered" };
 
 class RelationExtractor

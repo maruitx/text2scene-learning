@@ -16,9 +16,8 @@ const int PairRelNum = 10;
 const int GroupRelNum = 5;
 const int GroupAttriNum = 8;
 
-const QString SSGNodeType[] = { "object", "per_obj_attribute", "pairwise_relationship", "group_relationship", "group_relationship_anno" };
+const QString SSGNodeType[] = { "object", "attribute", "pair_relation", "group_relation", "group_relation_anno" };
 const QString SingleAttriStrings[] = {"round", "rectangular", "office", "dining", "kitchen", "floor", "wall"};
-
 const QString GroupAttrStings[] = {"messy", "clean", "organized", "disorganized", "formal", "casual", "spacious", "crowded"};
 
 struct GroupAnnotation 

@@ -63,23 +63,15 @@ inline mappedmatd_t fromMATd(const mxArray * p)
   return mappedmatd_t(mxGetPr(p),xmrows,xncols);
 }
 
-inline std::vector<mappedmatd_t> from3DimMATd(const mxArray *p)
+inline std::vector<mappedmatd_t> from3DMATd(const mxArray *p, int depth)
 {
-	mwSize numDim = mxGetNumberOfDimensions(p);
-
-	if (numDim != 3)
-	{
-		return std::vector<mappedmatd_t>(1, mappedmatd_t(0, 0, 0));
-	}
-
 	const mwSize *dims = mxGetDimensions(p);
 	mwSize xmrows = dims[0];
 	mwSize xncols = dims[1];
-	mwSize xdepths = dims[2];
 
 	std::vector<mappedmatd_t> eignMat;
 
-	for (int i=0; i < xdepths; i++)
+	for (int i=0; i < depth; i++)
 	{
 		eignMat.push_back(mappedmatd_t(&mxGetPr(p)[i*xmrows*xncols], xmrows, xncols));
 	}

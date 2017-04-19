@@ -26,7 +26,6 @@ public:
 public slots:
 	void LoadScene();
 	void LoadSceneList(int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0);
-	void loadSceneNamesFrontList();
 
 	void updateModelMetaInfoForScene(CScene *s);
 

@@ -359,6 +359,11 @@ static QString GetTransformationString(const Eigen::MatrixXd &transMat)
 
 	int numRow = transMat.rows();
 	int numCol = transMat.cols();
+
+	if (numRow == 0)
+	{
+		qDebug() << "";
+	}
 	
 	for (int j = 0; j < numCol; j++)
 	{
@@ -606,6 +611,19 @@ static MathLib::Matrix4d GetRotMat(const MathLib::Vector3 &fromVec, const MathLi
 	}
 
 	return rotMat;
+}
+
+static double GetRotAngleR(MathLib::Vector3 beforeDir, MathLib::Vector3 afterDir, MathLib::Vector3 zDir)
+{
+	double angle = MathLib::AcosR(beforeDir.dot(afterDir));
+	MathLib::Vector3 crossDir = beforeDir.cross(afterDir);
+
+	if (crossDir.dot(zDir) < 0)
+	{
+		angle = -angle;
+	}
+
+	return angle;
 }
 
 static MathLib::Vector3 PermuteVectorInXY(MathLib::Vector3 inputVec, double permuRange)

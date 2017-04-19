@@ -149,7 +149,16 @@ void SceneSemGraph::addRelationsFromRelationGraph()
 			// in RG, an edge is (desk, monitor), in SSG will be (monitor, support), (support, desk)
 			addEdge(relEdge->v2, m_nodeNum - 1);
 			addEdge(m_nodeNum - 1, relEdge->v1);
+			break;
 			
+		case RelationGraph::CT_HORIZON_SUPPORT:
+			addNode(SSGNodeType[2], PairRelStrings[1]);
+
+			// in RG, an edge is (desk, monitor), in SSG will be (monitor, support), (support, desk)
+			addEdge(relEdge->v2, m_nodeNum - 1);
+			addEdge(m_nodeNum - 1, relEdge->v1);
+			break;
+
 		case RelationGraph::CT_CONTAIN:
 
 		default:
@@ -178,12 +187,12 @@ void SceneSemGraph::addSpatialSideRel()
 	{
 		CModel *m = m_scene->getModel(i);
 
-		if (m->supportLevel == 0 && m->parentContactNormal == MathLib::Vector3(0, 0, 1))
+		if (m->supportLevel == 0 && abs(m->parentContactNormal.dot(MathLib::Vector3(0, 0, 1))) > 0.95)
 		{
 			groundModelIds.push_back(i);
 		}
 
-		if (m->supportLevel == 0 && m->parentContactNormal.dot(MathLib::Vector3(0, 0, 1)) == 0)
+		if (m->supportLevel == 0 && abs(m->parentContactNormal.dot(MathLib::Vector3(0, 0, 1))) <0.05)
 		{
 			wallModelIds.push_back(i);
 		}
@@ -266,6 +275,16 @@ void SceneSemGraph::addGroupAttributeFromAnnotation()
 			&& !currLine.contains("model") && !currLine.contains("Model")
 			&& !currLine.contains("new") && !currLine.contains("transform"))
 		{
+			// filter noise in currLine
+
+			currLine = currLine.replace('.', ',');
+
+			int pos = currLine.indexOf(", ");
+			if (pos != -1)
+			{
+				currLine.replace(pos, 2, ',');
+			}
+
 			QStringList parts = currLine.split(",");
 
 			for (int i = 0; i < parts.size(); i++)
@@ -279,7 +298,7 @@ void SceneSemGraph::addGroupAttributeFromAnnotation()
 					for (int g = 0; g < groupNum; g++)
 					{
 						GroupAnnotation ann;
-						ann.name = parts[g];
+						ann.name = parts[g].remove(" ");
 						if (parts[groupNum]=="")
 						{
 							ann.anchorModelId = -1;
@@ -476,7 +495,6 @@ void SceneSemGraph::loadGraph(const QString &filename)
 	}
 
 	parseNodeNeighbors();
-
 	
 	inFile.close();
 }

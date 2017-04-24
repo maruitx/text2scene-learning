@@ -64,7 +64,7 @@ void SceneSemGraph::generateGraph()
 			m_metaModelList.push_back(newMetaModelInstance);
 
 			QString objectNodeName = metaModel->getProcessedCatName();
-			addNode(QString(SSGNodeType[0]), objectNodeName);
+			addNode(QString(SSGNodeTypeStrings[SSGNodeType::Object]), objectNodeName);
 		}
 		else
 		{
@@ -93,7 +93,7 @@ void SceneSemGraph::generateGraph()
 			m_metaModelList.push_back(newMetaModel);			
 
 			QString objectNodeName = "unknown";
-			addNode(QString(SSGNodeType[0]), objectNodeName);
+			addNode(QString(SSGNodeTypeStrings[SSGNodeType::Object]), objectNodeName);
 		}
 	}
 
@@ -120,7 +120,7 @@ void SceneSemGraph::addModelDBAnnotation()
 
 		for (int a = 0; a < currDBModel->m_attributes.size(); a++)
 		{
-			addNode(QString(SSGNodeType[1]), currDBModel->m_attributes[a]);
+			addNode(QString(SSGNodeTypeStrings[SSGNodeType::Attribute]), currDBModel->m_attributes[a]);
 			addEdge(m_nodeNum-1, i);
 		}
 	}
@@ -144,7 +144,7 @@ void SceneSemGraph::addRelationsFromRelationGraph()
 		{
 			// e.g. table --> support --> laptop
 		case RelationGraph::CT_VERT_SUPPORT:
-			addNode(SSGNodeType[2], PairRelStrings[0]);
+			addNode(SSGNodeTypeStrings[SSGNodeType::PairRel], PairRelStrings[0]);
 
 			// in RG, an edge is (desk, monitor), in SSG will be (monitor, support), (support, desk)
 			addEdge(relEdge->v2, m_nodeNum - 1);
@@ -152,7 +152,7 @@ void SceneSemGraph::addRelationsFromRelationGraph()
 			break;
 			
 		case RelationGraph::CT_HORIZON_SUPPORT:
-			addNode(SSGNodeType[2], PairRelStrings[1]);
+			addNode(SSGNodeTypeStrings[SSGNodeType::PairRel], PairRelStrings[1]);
 
 			// in RG, an edge is (desk, monitor), in SSG will be (monitor, support), (support, desk)
 			addEdge(relEdge->v2, m_nodeNum - 1);
@@ -224,7 +224,7 @@ void SceneSemGraph::addSpatialSideRelForModelPair(int refModelId, int testModelI
 	for (int r = 0; r < sideRels.size(); r++)
 	{
 		QString currRel = sideRels[r];
-		addNode(SSGNodeType[2], currRel);
+		addNode(SSGNodeTypeStrings[SSGNodeType::PairRel], currRel);
 
 		// SSG edge direction will be (testModel, relation), (relation, refModel)
 		addEdge(testModelId, m_nodeNum - 1);
@@ -241,7 +241,7 @@ void SceneSemGraph::addSpatialSideRelForModelPair(int refModelId, int testModelI
 	for (int r = 0; r < sideRels.size(); r++)
 	{
 		QString currRel = sideRels[r];
-		addNode(SSGNodeType[2], currRel);
+		addNode(SSGNodeTypeStrings[SSGNodeType::PairRel], currRel);
 
 		// SSG edge direction will be (testModel, relation), (relation, refModel)
 		addEdge(newTestNodeId, m_nodeNum - 1);
@@ -323,7 +323,7 @@ void SceneSemGraph::addGroupAttributeFromAnnotation()
 						}
 
 						// add to graph node
-						addNode(SSGNodeType[4], ann.name);
+						addNode(SSGNodeTypeStrings[SSGNodeType::GroupRelAnno], ann.name);
 						addEdge(m_nodeNum - 1, ann.anchorModelId); // messy --> table
 
 						for (int t = 0; t < actNodeNum; t++)

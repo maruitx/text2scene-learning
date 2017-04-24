@@ -19,6 +19,21 @@ RelationModelManager::~RelationModelManager()
 	{
 		delete it->second;
 	}
+
+	for (auto it = m_pairwiseRelModels.begin(); it != m_pairwiseRelModels.end(); it++)
+	{
+		delete it->second;
+	}
+
+	for (auto it = m_groupRelModels.begin(); it!=m_groupRelModels.end(); it++)
+	{
+		delete it->second;
+	}
+
+	for (auto it=m_supportRelations.begin(); it!= m_supportRelations.end(); it++)
+	{
+		delete it->second;
+	}
 }
 
 void RelationModelManager::updateCurrScene(CScene *s)
@@ -194,7 +209,7 @@ void RelationModelManager::collectPairwiseInstanceFromCurrScene()
 	{
 		SemNode &sgNode = currSSG->m_nodes[i];
 
-		if (sgNode.nodeType.contains(SSGNodeType[2]))
+		if (sgNode.nodeType.contains(SSGNodeTypeStrings[SSGNodeType::PairRel]))
 		{
 			int anchorNodeId = sgNode.anchorNodeList[0];
 			int actNodeId = sgNode.activeNodeList[0];
@@ -229,7 +244,7 @@ void RelationModelManager::collectPairwiseInstanceFromCurrScene()
 	}
 }
 
-void RelationModelManager::computeSimForPairwiseModels(std::map<QString, PairwiseRelationModel*> &pairModels, const std::vector<QString> &pairModelKeys, const std::vector<CScene*> &sceneList, const QString &filePath)
+void RelationModelManager::computeSimForPairwiseModels(std::map<QString, PairwiseRelationModel*> &pairModels, const std::vector<QString> &pairModelKeys, const std::vector<CScene*> &sceneList, bool isInGroup, const QString &filePath)
 {
 	int sceneNum = sceneList.size();
 	std::map<QString, int> sceneNameToIdMap;
@@ -240,7 +255,7 @@ void RelationModelManager::computeSimForPairwiseModels(std::map<QString, Pairwis
 	}
 
 	int relNum = 10;
-	if (filePath.isEmpty())
+	if (isInGroup)
 	{
 		relNum = 1;
 	}
@@ -316,6 +331,7 @@ void RelationModelManager::computeSimForPairwiseModels(std::map<QString, Pairwis
 			{
 				QString modelKeyA = pairModelKeys[pairModelIds[i]];
 				PairwiseRelationModel *relModelA = pairModels[modelKeyA];
+				relModelA->m_maxObjFeatures = maxFeatures;
 
 				for (int j = 0; j < pairModelIds.size(); j++)
 				{
@@ -409,8 +425,154 @@ void RelationModelManager::computeSimForPairModelInGroup(const std::vector<CScen
 	for (auto giter = m_groupRelModels.begin(); giter != m_groupRelModels.end(); giter++)
 	{
 		GroupRelationModel *groupModel = giter->second;
-		computeSimForPairwiseModels(groupModel->m_pairwiseModels, groupModel->m_pairModelKeys, sceneList);
+		computeSimForPairwiseModels(groupModel->m_pairwiseModels, groupModel->m_pairModelKeys, sceneList, true);
 	}
+}
+
+void RelationModelManager::collectSupportRelationInCurrentScene()
+{
+	SceneSemGraph *currSSG = m_currScene->m_ssg;
+
+	// count num of total object observation
+	for (int i = 0; i < currSSG->m_nodeNum; i++)
+	{
+		SemNode &sgNode = currSSG->m_nodes[i];
+		if (sgNode.nodeType == "object")
+		{
+			if (m_suppProbs.count(sgNode.nodeName))
+			{
+				m_suppProbs[sgNode.nodeName].totalNum++;
+			}
+			else
+			{
+				SupportProb newSupportProb;
+				newSupportProb.totalNum++;
+				m_suppProbs[sgNode.nodeName] = newSupportProb;
+			}
+		}
+	}
+
+	for (int i = 0; i < currSSG->m_nodeNum; i++)
+	{
+		SemNode &sgNode = currSSG->m_nodes[i];
+		if (sgNode.nodeType == "object")
+		{
+			bool isSupportParent = false;
+
+			// vertsupport and horizon support			
+			for (int rt = 0; rt < 2; rt++)
+			{
+				QString supportType = PairRelStrings[rt];
+
+				std::vector<int> actNodeList;
+				for (int r = 0; r < sgNode.inEdgeNodeList.size(); r++)
+				{
+					int relNodeId = sgNode.inEdgeNodeList[r];
+					SemNode &relNode = currSSG->m_nodes[relNodeId];
+
+					if (relNode.nodeName == supportType)
+					{
+						actNodeList.push_back(relNode.activeNodeList[0]);
+					}
+				}
+
+				std::vector<int> actNodeCountedIndicator(actNodeList.size(), 0); // whether the node has been counted
+				for (int t = 0; t < actNodeList.size(); t++)
+				{
+					int actNodeId = actNodeList[t];
+					SemNode &actNode = currSSG->m_nodes[actNodeId];
+					QString actObjName = actNode.nodeName;
+
+					// count obj num in current active list
+					int currActObjNum = 0;
+					for (int ai = 0; ai < actNodeList.size(); ai++)
+					{
+						int testNodeId = actNodeList[ai];
+						SemNode &testNode = currSSG->m_nodes[testNodeId];
+						if (actNodeCountedIndicator[ai] == 0 && actObjName == testNode.nodeName)
+						{
+							actNodeCountedIndicator[ai] = 1;
+							currActObjNum++;
+						}
+					}
+				
+					if (currActObjNum)
+					{
+						SemNode &actNode = currSSG->m_nodes[actNodeList[t]];
+						QString suppRelKey = sgNode.nodeName + "_" + actNode.nodeName + "_" + supportType;
+
+						// add instance for joint
+						if (!m_supportRelations.count(suppRelKey))
+						{
+							SupportRelation *newSuppRelation = new SupportRelation(sgNode.nodeName, actNode.nodeName, supportType);
+							newSuppRelation->m_jointInstanceNum++;
+							m_supportRelations[suppRelKey] = newSuppRelation;
+						}
+						else
+						{
+							m_supportRelations[suppRelKey]->m_jointInstanceNum++;
+						}
+
+						// add instance for support child
+						for (auto iter = m_supportRelations.begin(); iter != m_supportRelations.end(); iter++)
+						{
+							SupportRelation *suppRel = iter->second;
+							if (suppRel->m_childName == actNode.nodeName && suppRel->m_supportType == supportType)
+							{
+								suppRel->m_childInstanceNum++;
+							}
+						}
+					}
+
+					// count num of object being support child while the parent is not "room"
+					if (sgNode.nodeName !="room")
+					{
+						m_suppProbs[actNode.nodeName].beChildNum++;
+					}
+				}
+
+				if (!actNodeList.empty())
+				{
+					isSupportParent = true;
+
+					// add instance for support parent
+					for (auto iter = m_supportRelations.begin(); iter != m_supportRelations.end(); iter++)
+					{
+						SupportRelation *suppRel = iter->second;
+						if (suppRel->m_parentName == sgNode.nodeName && suppRel->m_supportType == supportType)
+						{
+							suppRel->m_parentInstanceNum++;
+						}
+					}
+				}
+			}
+
+			if (isSupportParent)
+			{
+				// count num of object being support parent
+				m_suppProbs[sgNode.nodeName].beParentNum++;
+			}
+		}
+	}
+}
+
+void RelationModelManager::buildSupportRelationModels()
+{
+	for (auto iter = m_supportRelations.begin(); iter != m_supportRelations.end(); iter++)
+	{
+		SupportRelation *suppRel = iter->second;
+		suppRel->m_childProbGivenParent = suppRel->m_jointInstanceNum / (double)suppRel->m_parentInstanceNum;
+		suppRel->m_parentProbGivenChild = suppRel->m_jointInstanceNum / (double)suppRel->m_childInstanceNum;
+	}
+
+	for (auto iter = m_suppProbs.begin(); iter!= m_suppProbs.end(); iter++)
+	{
+		SupportProb &suppParentProb = iter->second;
+		suppParentProb.beParentProb = suppParentProb.beParentNum / (double) suppParentProb.totalNum;
+		suppParentProb.beChildProb = suppParentProb.beChildNum / (double) suppParentProb.totalNum;
+	}
+
+	qDebug() << "Support relations extracted";
 }
 
 void RelationModelManager::buildGroupRelationModels()
@@ -476,7 +638,7 @@ void RelationModelManager::collectOccurrForGroupModel(GroupRelationModel *groupM
 {
 	SceneSemGraph *currSSG = m_currScene->m_ssg;
 
-	std::vector<int> actNodeIndicator(actNodeList.size(), 0); // whether the node has been counted
+	std::vector<int> actNodeCountedIndicator(actNodeList.size(), 0); // whether the node has been counted
 
 	for (int t=0; t < actNodeList.size(); t++)
 	{
@@ -490,9 +652,9 @@ void RelationModelManager::collectOccurrForGroupModel(GroupRelationModel *groupM
 		{
 			int testNodeId = actNodeList[i];
 			SemNode &testNode = currSSG->m_nodes[testNodeId];
-			if (actNodeIndicator[i] == 0 && actObjName == testNode.nodeName)
+			if (actNodeCountedIndicator[i] == 0 && actObjName == testNode.nodeName)
 			{
-				actNodeIndicator[i] = 1;
+				actNodeCountedIndicator[i] = 1;
 				currActObjNum++;
 			}
 		}
@@ -601,6 +763,38 @@ void RelationModelManager::saveGroupRelationModels(const QString &filePath)
 	}
 }
 
+void RelationModelManager::saveSupportRelationModels(const QString &filePath)
+{
+	QString filename = filePath + "/SupportRelation.model";
+
+	QFile outFile(filename);
+	QTextStream ofs(&outFile);
+
+	if (outFile.open(QIODevice::ReadWrite | QIODevice::Text | QIODevice::Truncate))
+	{
+		for (auto iter = m_supportRelations.begin(); iter != m_supportRelations.end(); iter++)
+		{
+			SupportRelation *suppRel = iter->second;
+			suppRel->output(ofs);
+		}
+
+		outFile.close();
+	}
+
+	filename = filePath + "/SupportParent.prob";
+	outFile.setFileName(filename);
+	if (outFile.open(QIODevice::ReadWrite | QIODevice::Text | QIODevice::Truncate))
+	{
+		for (auto iter = m_suppProbs.begin(); iter!= m_suppProbs.end(); iter++)
+		{
+			SupportProb &suppProb = iter->second;
+			ofs << iter->first << "," << suppProb.beParentProb << " " << suppProb.beChildProb << "\n";
+		}
+
+		outFile.close();
+	}
+}
+
 void RelationModelManager::savePairwiseModelSim(const QString &filePath)
 {
 	QString filename = filePath + "/Pairwise.sim";
@@ -630,6 +824,26 @@ void RelationModelManager::savePairwiseModelSim(const QString &filePath)
 			else
 			{
 				ofs << "-1\n";
+			}
+
+			// max features
+			for (int m=0; m <2 ; m++)
+			{
+				for (int i = 0; i < relModel->m_maxObjFeatures[m].size(); i++)
+				{
+					ofs << relModel->m_maxObjFeatures[m][i] <<" ";
+				}
+				ofs << "\n";
+			}
+
+			// avg features
+			for (int m = 0; m < 2; m++)
+			{
+				for (int i = 0; i < relModel->m_avgObjFeatures[m].size(); i++)
+				{
+					ofs << relModel->m_avgObjFeatures[m][i]<<" ";
+				}
+				ofs << "\n";
 			}
 		}
 
@@ -676,3 +890,4 @@ void RelationModelManager::saveGroupModelSim(const QString &filePath)
 		}
 	}
 }
+

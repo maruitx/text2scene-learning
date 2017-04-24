@@ -230,7 +230,15 @@ GroupRelationModel::GroupRelationModel(const QString &anchorObjName, const QStri
 
 GroupRelationModel::~GroupRelationModel()
 {
+	for (auto iter = m_occurModels.begin(); iter != m_occurModels.end(); iter++)
+	{
+		delete iter->second;
+	}
 
+	for (auto iter = m_pairwiseModels.begin(); iter != m_pairwiseModels.end(); iter++)
+	{
+		delete iter->second;
+	}
 }
 
 void GroupRelationModel::computeOccurrence()
@@ -275,4 +283,31 @@ void GroupRelationModel::output(QTextStream &ofs)
 		PairwiseRelationModel *relModel = iter->second;
 		relModel->output(ofs);
 	}
+}
+
+SupportRelation::SupportRelation(const QString &parentName, const QString &childName, const QString &supportType)
+	:m_parentName(parentName), m_childName(childName), m_supportType(supportType), m_parentProbGivenChild(0), m_childProbGivenParent(0)
+{
+	m_suppRelKey =	m_parentName + "_" + m_childName + "_" + m_supportType;
+
+	m_childInstanceNum = 0;
+	m_parentInstanceNum = 0;
+	m_jointInstanceNum = 0;
+}
+
+SupportRelation::~SupportRelation()
+{
+
+}
+
+void SupportRelation::computeSupportProb()
+{
+	m_childProbGivenParent = m_jointInstanceNum / m_parentInstanceNum;
+	m_parentProbGivenChild = m_jointInstanceNum / m_childInstanceNum;
+}
+
+void SupportRelation::output(QTextStream &ofs)
+{
+	ofs << m_suppRelKey << "\n";
+	ofs << m_childProbGivenParent << " " << m_parentProbGivenChild << "\n";
 }

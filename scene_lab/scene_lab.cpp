@@ -12,7 +12,7 @@
 
 Engine *matlabEngine;
 
-const QString sceneDBPath = "C:/Ruim/Graphics/T2S_MPC/SceneDB";
+const QString SceneDBPath = "C:/Ruim/Graphics/T2S_MPC/SceneDB";
 
 scene_lab::scene_lab(QObject *parent)
 	: QObject(parent)
@@ -103,7 +103,7 @@ void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
 	// load scene list file
 	QString currPath = QDir::currentPath();
 	QString sceneListFileName = currPath + "/scene_list.txt";
-	QString sceneFolder = sceneDBPath + "/StanfordSceneDB/scenes";
+	QString sceneFolder = SceneDBPath + "/StanfordSceneDB/scenes";
 
 	QFile inFile(sceneListFileName);
 	QTextStream ifs(&inFile);
@@ -454,7 +454,7 @@ void scene_lab::BuildRelativeRelationModels()
 	}
 
 	m_relationModelManager->buildRelativeRelationModels();
-	m_relationModelManager->saveRelativeRelationModels(sceneDBPath);
+	m_relationModelManager->saveRelativeRelationModels(SceneDBPath);
 }
 
 void scene_lab::BuildPairwiseRelationModels()
@@ -479,10 +479,10 @@ void scene_lab::BuildPairwiseRelationModels()
 	}
 
 	m_relationModelManager->buildPairwiseRelationModels();
-	m_relationModelManager->computeSimForPairwiseModels(m_relationModelManager->m_pairwiseRelModels, m_relationModelManager->m_pairRelModelKeys, m_sceneList, sceneDBPath);
+	m_relationModelManager->computeSimForPairwiseModels(m_relationModelManager->m_pairwiseRelModels, m_relationModelManager->m_pairRelModelKeys, m_sceneList, false, SceneDBPath);
 
-	m_relationModelManager->savePairwiseRelationModels(sceneDBPath);
-	m_relationModelManager->savePairwiseModelSim(sceneDBPath);
+	m_relationModelManager->savePairwiseRelationModels(SceneDBPath);
+	m_relationModelManager->savePairwiseModelSim(SceneDBPath);
 }
 
 void scene_lab::BuildGroupRelationModels()
@@ -509,8 +509,8 @@ void scene_lab::BuildGroupRelationModels()
 	m_relationModelManager->buildGroupRelationModels();
 	m_relationModelManager->computeSimForPairModelInGroup(m_sceneList);
 
-	m_relationModelManager->saveGroupRelationModels(sceneDBPath);
-	m_relationModelManager->saveGroupModelSim(sceneDBPath);
+	m_relationModelManager->saveGroupRelationModels(SceneDBPath);
+	m_relationModelManager->saveGroupModelSim(SceneDBPath);
 }
 
 void scene_lab::ComputeBBAlignMatForSceneList()
@@ -551,4 +551,27 @@ void scene_lab::ExtractRelPosForSceneList()
 	}
 }
 
+void scene_lab::ExtractSuppProbForSceneList()
+{
+	LoadSceneList(1);
+
+	if (m_relationModelManager != NULL)
+	{
+		delete m_relationModelManager;
+	}
+
+	m_relationModelManager = new RelationModelManager(m_relationExtractor);
+
+	for (int i = 0; i < m_sceneList.size(); i++)
+	{
+		m_currScene = m_sceneList[i];
+		m_currScene->loadSSG();
+
+		m_relationModelManager->updateCurrScene(m_currScene);
+		m_relationModelManager->collectSupportRelationInCurrentScene();
+	}
+
+	m_relationModelManager->buildSupportRelationModels();
+	m_relationModelManager->saveSupportRelationModels(SceneDBPath);
+}
 

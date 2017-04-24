@@ -57,14 +57,14 @@ std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(CModel
 
 	if (isInProximity(anchorModel, actModel))
 	{
-		relationStrings.push_back(PairRelStrings[9]);  // near
+		relationStrings.push_back(PairRelStrings[PairRelation::Near]);  // near
 	}
 
 	MathLib::Vector3 refFront = anchorModel->getHorizonFrontDir();
 	MathLib::Vector3 refUp = anchorModel->getVertUpDir();
 
-	MathLib::Vector3 refPos = anchorModel->getOBBInitPos();
-	MathLib::Vector3 testPos = actModel->getOBBInitPos();
+	MathLib::Vector3 refPos = anchorModel->m_currOBBPos;   // OBB bottom center
+	MathLib::Vector3 testPos = actModel->m_currOBBPos;
 
 	MathLib::Vector3 fromRefToTestVec = testPos - refPos;
 	fromRefToTestVec.normalize();
@@ -72,8 +72,7 @@ std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(CModel
 	// front or back side is not view dependent
 	double frontDirDot = fromRefToTestVec.dot(refFront);
 
-
-	double sideSectionVal = MathLib::Cos(30);
+	double sideSectionVal = MathLib::Cos(15);
 	if (frontDirDot > sideSectionVal)
 	{
 		QString refName = m_currSceneSemGraph->getCatName(anchorModel->getID());
@@ -82,17 +81,17 @@ std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(CModel
 			MathLib::Vector3 testFront = actModel->getFrontDir();
 			if (testFront.dot(refFront) < 0)  // test and ref should be opposite
 			{
-				relationStrings.push_back(PairRelStrings[7]); // front
+				relationStrings.push_back(PairRelStrings[PairRelation::Front]); // front
 			}
 		}
 		else
 		{
-			relationStrings.push_back(PairRelStrings[7]); // front
+			relationStrings.push_back(PairRelStrings[PairRelation::Front]); // front
 		}
 	}
 	else if (frontDirDot < -sideSectionVal && frontDirDot > -1)
 	{
-		relationStrings.push_back(PairRelStrings[8]); // back
+		relationStrings.push_back(PairRelStrings[PairRelation::Back]); // back
 	}
 
 	// left or right may be view dependent
@@ -119,23 +118,24 @@ std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(CModel
 	{
 		if (rightDirDot >= sideSectionVal) // right of obj
 		{
-			relationStrings.push_back(PairRelStrings[6]); // right
+			relationStrings.push_back(PairRelStrings[PairRelation::RightSide]); // right
 		}
 		else if (rightDirDot <= -sideSectionVal)  // left of obj
 		{
-			relationStrings.push_back(PairRelStrings[5]); // left
+			relationStrings.push_back(PairRelStrings[PairRelation::LeftSide]); // left
 		}
 	}
 
 	MathLib::Vector3 refOBBTopCenter = anchorModel->getModelTopCenter();
 	MathLib::Vector3 fromRefTopToTestTop = actModel->getModelTopCenter() - refOBBTopCenter;
+	fromRefTopToTestTop.normalize();
 
 	if (fromRefTopToTestTop.dot(refUp) < 0)
 	{
 		SuppPlane* p = anchorModel->getSuppPlane(0);
 		if (p->isCoverPos(testPos.x, testPos.y))
 		{
-			relationStrings.push_back(PairRelStrings[4]); // under
+			relationStrings.push_back(PairRelStrings[PairRelation::Under]); // under
 		}
 	}
 

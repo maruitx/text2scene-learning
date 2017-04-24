@@ -11,6 +11,29 @@ const QString ConditionName[] = {"parentchild", "sibling", "proximity"};
 const QString PairRelStrings[] = { "vertsupport", "horizonsupport", "contain", "above", "under", "leftside", "rightside", "front", "back", "near"};
 const QString GroupRelStrings[] = { "around", "aligned", "grouped", "stacked", "scattered" };
 
+enum PairRelation
+{
+	VertSupp = 0,
+	HorizonSupp,
+	Contain,
+	Above,
+	Under,
+	LeftSide,
+	RightSide,
+	Front,
+	Back,
+	Near	
+};
+
+enum GroupRelation
+{
+	Around = 0,
+	Aligned,
+	Grouped,
+	Stacked,
+	Scattered
+};
+
 class RelationExtractor
 {
 public:

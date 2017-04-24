@@ -31,12 +31,14 @@ scene_lab_widget::scene_lab_widget(scene_lab *s_lab, QWidget *parent/*=0*/)
 	// relation model
 	connect(ui->computeBBAlignMatForListButton, SIGNAL(clicked()), m_scene_lab, SLOT(ComputeBBAlignMatForSceneList()));
 	connect(ui->extractRelPosForList, SIGNAL(clicked()), m_scene_lab, SLOT(ExtractRelPosForSceneList()));
+	connect(ui->extractSuppProbButton, SIGNAL(clicked()), m_scene_lab, SLOT(ExtractSuppProbForSceneList()));
+	connect(ui->collectMetaInfoButton, SIGNAL(clicked()), m_scene_lab, SLOT(CollectModelInfoForSceneList()));
+
 
 	connect(ui->buildRelativeRelationButton, SIGNAL(clicked()), m_scene_lab, SLOT(BuildRelativeRelationModels()));
 	connect(ui->buildPairRelationButton, SIGNAL(clicked()), m_scene_lab, SLOT(BuildPairwiseRelationModels()));
 	connect(ui->buildGroupRelationButton, SIGNAL(clicked()), m_scene_lab, SLOT(BuildGroupRelationModels()));
 
-	connect(ui->collectMetaInfoButton, SIGNAL(clicked()), m_scene_lab, SLOT(CollectModelInfoForSceneList()));	
 }
 
 scene_lab_widget::~scene_lab_widget()

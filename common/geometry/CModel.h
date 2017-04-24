@@ -149,7 +149,7 @@ public:
 
 	MathLib::Matrix4d m_WorldBBToUnitBoxMat;  // matrix that aligns transformed BB in world frame to unit box (center at 0, and each side is 1)
 
-	
+	MathLib::Vector3 m_currOBBPos;  // OBB position in current scene
 
 private:
 	QString m_fileName;
@@ -166,13 +166,12 @@ private:
 	//std::vector<int> m_annoTriIds;
 
 	double m_initOBBDiagLen;
-	MathLib::Vector3 m_initOBBPos;
+	MathLib::Vector3 m_initOBBPos;  // OBB position when model is loaded
 
 	MathLib::Vector3 m_initFrontDir;
-	MathLib::Vector3 m_currFrontDir;
 	MathLib::Vector3 m_initUpDir;
+	MathLib::Vector3 m_currFrontDir;
 	MathLib::Vector3 m_currUpDir;
-
 
 	MathLib::Matrix4d m_lastTransMat;
 	MathLib::Matrix4d m_fullTransMat;

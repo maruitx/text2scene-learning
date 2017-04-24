@@ -57,6 +57,7 @@ public:
 	QString m_relationName;  // none, left, right, etc.
 
 	std::vector<std::vector<double>> m_avgObjFeatures;  // heightToFloor, modelHeight, modelVolume of anchor and act obj
+	std::vector<std::vector<double>> m_maxObjFeatures;
 
 	int m_modelId;
 	std::vector<int> m_simModelIds; // list of similar relation model ids, sorted from high sim to low
@@ -100,3 +101,28 @@ public:
 	int m_numInstance;
 };
 
+
+class SupportRelation
+{
+public:
+
+	SupportRelation(const QString &parentName, const QString &childName, const QString &supportType);
+	~SupportRelation();
+	void computeSupportProb();
+	void output(QTextStream &ofs);
+
+	double m_childProbGivenParent;
+	double m_parentProbGivenChild;
+
+	int m_jointInstanceNum;
+	int m_parentInstanceNum;
+	int m_childInstanceNum;
+
+	QString m_parentName;
+	QString m_childName;
+	QString m_supportType;  // vertsupport, horizonsupport
+
+	QString m_suppRelKey;
+
+
+};

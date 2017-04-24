@@ -40,6 +40,7 @@ public slots:
 	// relational model
 	void ComputeBBAlignMatForSceneList();
 	void ExtractRelPosForSceneList();
+	void ExtractSuppProbForSceneList();
 
 	void BuildRelativeRelationModels();
 	void BuildPairwiseRelationModels();

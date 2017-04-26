@@ -99,7 +99,6 @@ void ModelDBViewer_widget::update3DModel()
 	m_viewer->updateModel(m_displayedModel);
 }
 
-
 void ModelDBViewer_widget::buildSuppPlaneForCurrModel()
 {
 	if (m_displayedModel != NULL)

@@ -116,9 +116,9 @@ void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
 
 	QString currLine = ifs.readLine();
 
-	if (currLine.contains("StanfordSceneDatabase"))
+	if (currLine.contains("SceneNum"))
 	{
-		int sceneNum = StringToIntegerList(currLine.toStdString(), "StanfordSceneDatabase ")[0];
+		int sceneNum = StringToIntegerList(currLine.toStdString(), "SceneNum ")[0];
 
 		for (int i = 0; i < sceneNum; i++)
 		{
@@ -153,6 +153,16 @@ void scene_lab::updateModelMetaInfoForScene(CScene *s)
 
 				QString catName = m_modelDB->dbMetaModels[modelNameString]->getProcessedCatName();
 				s->updateModelCat(i, catName);
+			}
+
+			if (modelNameString.contains("room"))
+			{
+				s->updateModelCat(i, "room");
+			}
+
+			if (modelNameString == "416674f64be11975bc4f8438441dcb1d")
+			{
+				s->updateModelCat(i, "monitor");
 			}
 		}
 	}

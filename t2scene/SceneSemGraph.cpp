@@ -50,7 +50,8 @@ void SceneSemGraph::generateGraph()
 			DBMetaModel *newMetaModelInstance = new DBMetaModel(metaModel);
 
 			// add extra info to meta model
-			newMetaModelInstance->setTransMat(m_scene->getModelInitTransMat(i));
+			//newMetaModelInstance->setTransMat(m_scene->getModelInitTransMat(i));
+			newMetaModelInstance->setTransMat(m_scene->getModelInitTransMatWithSceneMetric(i));
 
 			if (m_scene->modelHasOBB(i))
 			{
@@ -59,7 +60,8 @@ void SceneSemGraph::generateGraph()
 			newMetaModelInstance->parentId = m_scene->getSuppParentId(i);
 			newMetaModelInstance->onSuppPlaneUV = m_scene->getUVonSuppPlaneForModel(i);
 			newMetaModelInstance->positionToSuppPlaneDist = m_scene->getHightToSuppPlaneForModel(i);
-			newMetaModelInstance->suppPlaneCorners = m_scene->getCurrModelSuppPlaneCorners(i);
+			//newMetaModelInstance->suppPlaneCorners = m_scene->getCurrModelSuppPlaneCorners(i);
+			newMetaModelInstance->suppPlaneCorners = m_scene->getCurrModelSuppPlaneCornersWithSceneMetric(i);
 
 			m_metaModelList.push_back(newMetaModelInstance);
 
@@ -73,27 +75,36 @@ void SceneSemGraph::generateGraph()
 			// add model to DB
 			DBMetaModel *newMetaModel = new DBMetaModel();
 			CModel *m = m_scene->getModel(i);
+			QString modelCatName = "unknown";
+
+			if (m->getNameStr().contains("room"))
+			{
+				modelCatName = "room";
+			}
 
 			newMetaModel->frontDir = m->getFrontDir() * m_scene->getSceneMetric();
 			newMetaModel->upDir = m->getUpDir()* m_scene->getSceneMetric();
 			newMetaModel->position = m->getOBBInitPos();
 
-			newMetaModel->setCatName("unknown");
+			newMetaModel->setCatName(modelCatName);
 			newMetaModel->setIdStr(modelNameStr);
-			newMetaModel->setTransMat(m_scene->getModelInitTransMat(i));
+			//newMetaModel->setTransMat(m_scene->getModelInitTransMat(i));
+			newMetaModel->setTransMat(m_scene->getModelInitTransMatWithSceneMetric(i));
+
 
 			newMetaModel->parentId = m->suppParentID;
 			newMetaModel->onSuppPlaneUV = m_scene->getUVonSuppPlaneForModel(i);
 			newMetaModel->positionToSuppPlaneDist = m_scene->getHightToSuppPlaneForModel(i);
-			newMetaModel->suppPlaneCorners = m_scene->getCurrModelSuppPlaneCorners(i);
+			//newMetaModel->suppPlaneCorners = m_scene->getCurrModelSuppPlaneCorners(i);
+			newMetaModel->suppPlaneCorners = m_scene->getCurrModelSuppPlaneCornersWithSceneMetric(i);
+
 
 			newMetaModel->dbID = m_modelDB->dbMetaModels.size();
 			//m_modelDB->dbMetaModels[modelNameStr] = newMetaModel;
 
 			m_metaModelList.push_back(newMetaModel);			
-
-			QString objectNodeName = "unknown";
-			addNode(QString(SSGNodeTypeStrings[SSGNodeType::Object]), objectNodeName);
+			
+			addNode(QString(SSGNodeTypeStrings[SSGNodeType::Object]), modelCatName);
 		}
 	}
 

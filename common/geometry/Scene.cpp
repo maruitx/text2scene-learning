@@ -13,6 +13,8 @@
 #include <QFileDialog>
 #include <QTextStream>
 
+const double InchToMeterFactor = 0.0254;
+
 CScene::CScene()
 {
 	m_modelNum = 0;
@@ -106,7 +108,7 @@ void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int ob
 
 	if (databaseType == QString("StanfordSceneDatabase") || databaseType == QString("SceneNNConversionOutput"))
 	{
-		m_metric = 0.0254; // convert from 1 inch to 1 meter
+		m_metric = InchToMeterFactor; // convert from 1 inch to 1 meter
 
 		if (databaseType == QString("SceneNNConversionOutput"))
 		{
@@ -335,6 +337,25 @@ double CScene::getFloorHeight()
 {
 	//return m_floor->GetZ();
 	return m_floorHeight;
+}
+
+MathLib::Matrix4d CScene::getModelInitTransMatWithSceneMetric(int modelID)
+{
+	MathLib::Matrix4d currTransMat = m_modelList[modelID]->getInitTransMat();
+	double scaleFactor = m_metric / InchToMeterFactor;
+	MathLib::Matrix4d scaledMat = currTransMat*scaleFactor;
+	scaledMat.M[15] = 1.0;
+
+	return scaledMat;
+}
+
+MathLib::Vector3 CScene::getOBBInitPostWithSceneMetric(int modelID)
+{
+	MathLib::Vector3 currInitPos = m_modelList[modelID]->getOBBInitPos();
+	double scaleFactor = m_metric / InchToMeterFactor;
+	MathLib::Vector3 scaledPos = currInitPos*scaleFactor;
+
+	return scaledPos;
 }
 
 std::vector<int> CScene::getModelIdWithCatName(QString s, bool usingSynset)
@@ -666,6 +687,9 @@ double CScene::getHightToSuppPlaneForModel(int modelId)
 
 		d = suppPlane->GetPointToPlaneDist(pos); // in real world unit
 
+		double scaleFactor = m_metric / InchToMeterFactor;
+		d = d*scaleFactor;
+
 		return d;
 	}
 	else
@@ -714,6 +738,29 @@ std::vector<MathLib::Vector3> CScene::getCurrModelSuppPlaneCorners(int modelId)
 		return std::vector<MathLib::Vector3>(4, MathLib::Vector3(0, 0, 0));
 	}
 
+}
+
+std::vector<MathLib::Vector3> CScene::getCurrModelSuppPlaneCornersWithSceneMetric(int modelId)
+{
+	CModel *currModel = m_modelList[modelId];
+
+	if (currModel->hasSuppPlane())
+	{
+		SuppPlane *suppPlane = currModel->getSuppPlane(0);
+		std::vector<MathLib::Vector3> corners = suppPlane->GetCorners();
+
+		double scaleFactor = m_metric / InchToMeterFactor;
+		for (int i=0;  i <corners.size(); i++)
+		{
+			corners[i] = corners[i] * scaleFactor;
+		}
+
+		return corners;
+	}
+	else
+	{
+		return std::vector<MathLib::Vector3>(4, MathLib::Vector3(0, 0, 0));
+	}
 }
 
 void CScene::computeModelBBAlignMat()

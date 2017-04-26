@@ -45,9 +45,11 @@ public:
 	QString getModelCatName(int modelID) { return m_modelList[modelID]->getCatName(); };
 	QString getModelNameString(int modelID) { return m_modelList[modelID]->getNameStr(); };
 	MathLib::Matrix4d getModelInitTransMat(int modelID) { return m_modelList[modelID]->getInitTransMat(); };
+	MathLib::Matrix4d getModelInitTransMatWithSceneMetric(int modelID);
 
 	bool modelHasOBB(int modelID) { return m_modelList[modelID]->hasOBB(); };
 	MathLib::Vector3 getOBBInitPos(int modelID) { return m_modelList[modelID]->getOBBInitPos(); };
+	MathLib::Vector3 getOBBInitPostWithSceneMetric(int modelID);
 
 	void updateModelCat(int i, const QString &s) { m_modelList[i]->setCatName(s); m_modelCatNameList[i] = s; };
 	void updateModelFrontDir(int i, const MathLib::Vector3 &d) { m_modelList[i]->updateFrontDir(d); };
@@ -74,6 +76,7 @@ public:
 	double getHightToSuppPlaneForModel(int modelId);
 	std::vector<MathLib::Vector3> getParentSuppPlaneCorners(int modelId);
 	std::vector<MathLib::Vector3> getCurrModelSuppPlaneCorners(int modelId);
+	std::vector<MathLib::Vector3> getCurrModelSuppPlaneCornersWithSceneMetric(int modelId);
 
 	void buildRelationGraph();
 	RelationGraph* getSceneGraph() { return m_relationGraph; };

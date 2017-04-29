@@ -94,7 +94,10 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 	//  try to load support plane
 	if (m_suppPlaneManager->loadSuppPlane())
 	{
-		m_hasSuppPlane = true;
+		if (m_suppPlaneManager->hasSuppPlane())
+		{
+			m_hasSuppPlane = true;
+		}
 	}
  
 	
@@ -365,8 +368,11 @@ void CModel::buildSuppPlane()
 	m_suppPlaneManager->saveSuppPlane();
 
 	m_showFaceClusters = true;
-	m_hasSuppPlane = true;
 
+	if (m_suppPlaneManager->hasSuppPlane())
+	{
+		m_hasSuppPlane = true;
+	}
 }
 
 void CModel::builSuppPlaneUsingBBTop()
@@ -447,7 +453,11 @@ void CModel::builSuppPlaneUsingBBTop()
 	m_suppPlaneManager->saveSuppPlane();
 
 	m_showFaceClusters = true;
-	m_hasSuppPlane = true;
+
+	if (m_suppPlaneManager->hasSuppPlane())
+	{
+		m_hasSuppPlane = true;
+	}
 }
 
 //
@@ -550,11 +560,16 @@ bool CModel::IsSupport(CModel *pOther, bool roughOBB, double dDistT, const MathL
 		return false;
 	}
 	double dAngleT = 5.0;
-	if (!m_AABB.IsIntersect(pOther->m_AABB, dDistT*4.0)) {	// if too distant
+	if (!m_AABB.IsIntersect(pOther->m_AABB, dDistT*2.0)) {	// if too distant
 		return false;
 	}
 
-	if (roughOBB && m_OBB.IsRoughSupport(pOther->m_OBB))
+	if (!m_OBB.IsCoverCenter(pOther->m_OBB) && !pOther->m_OBB.IsCoverCenter(m_OBB))
+	{
+		return false;
+	}
+
+	if (roughOBB && m_OBB.IsCoverCenter(pOther->m_OBB))
 	{
 		return true;
 	}

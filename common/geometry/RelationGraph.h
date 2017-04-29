@@ -29,7 +29,7 @@ public:
 	void updateGraph(int modelID); // update graph after add a new model
 	void updateGraph(int modelID, int suppModelID);  // update graph with known support model
 
-	void computeSupportParentForModels();
+	void collectSupportParentForModels();
 	std::vector<std::vector<int>> getSupportParentListForModels() { return m_supportParentListForModels; };
 
 	void drawGraph();
@@ -43,6 +43,7 @@ public:
 private:
 	int buildSuppEdgesFromFile(); // for StanfordSceneDatabase
 	int extractSupportRel(); //
+	void correctSupportEdgeDir(); // v1: parent, v2:child
 	int pruneSupportRel();
 	int updateSupportRel(int modelID); // update support relationship after insert a new model into the scene
 

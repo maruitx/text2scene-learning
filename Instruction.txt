@@ -1,0 +1,15 @@
+Build SSG
+1. Build RG for support edges
+	output: sceneName.sg
+2. Build SSG for scene list // SSG uses support relation in RG
+	output: sceneName.ssg
+	
+Build Relation models
+1. Compute BB AlignMat for computing Relative postions  // only need to compute once
+	output: sceneName.alignMat
+2. Extract Relative Positions for computing Relative and Pairwise relations  // will use support relation in RG
+	output: sceneName.relPos
+3. Build Relative, Pairwise, Group Relation Models and the corresoding similar model list  // need to re-compute if any new scene is added to the DB
+	output: *.model and *.sim
+4. Extract Support Probability for determining the probability of being support parent or child // need to re-compute if any new scene is added to the DB
+	output: SupportRelation.model and SuppParent.prob

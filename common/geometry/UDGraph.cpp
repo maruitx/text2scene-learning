@@ -35,9 +35,9 @@ int CUDGraph::InsertEdge(int ev1, int ev2)
 	if (ev1 == ev2) {
 		return -1;
 	}
-	else if (ev1 > ev2) {
-		std::swap(ev1, ev2);
-	}
+	//else if (ev1 > ev2) {
+	//	std::swap(ev1, ev2);
+	//}
 	Edge e(ev1, ev2);
 	if (std::find(m_E.begin(), m_E.end(), e) == m_E.end()) {
 		m_E.push_back(e);
@@ -55,9 +55,9 @@ int CUDGraph::InsertEdge(int ev1, int ev2, double ew)
 	if (ev1 == ev2) {
 		return -1;
 	}
-	else if (ev1 > ev2) {
-		std::swap(ev1, ev2);
-	}
+	//else if (ev1 > ev2) {
+	//	std::swap(ev1, ev2);
+	//}
 	Edge e(ev1, ev2, ew);
 	std::vector<Edge>::iterator it;
 	if ((it = std::find(m_E.begin(), m_E.end(), e)) == m_E.end()) { // if not found
@@ -74,9 +74,9 @@ int CUDGraph::InsertEdge(int ev1, int ev2, int tag, int dir)
 	if (ev1 == ev2) {
 		return -1;
 	}
-	else if (ev1 > ev2) {
-		std::swap(ev1, ev2);
-	}
+	//else if (ev1 > ev2) {
+	//	std::swap(ev1, ev2);
+	//}
 	Edge e(ev1, ev2, tag, dir);
 	std::vector<Edge>::iterator it;
 	if ((it = std::find(m_E.begin(), m_E.end(), e)) == m_E.end()) { // if not found
@@ -93,9 +93,9 @@ int CUDGraph::InsertEdge(int ev1, int ev2, int tag)
 	if (ev1 == ev2) {
 		return -1;
 	}
-	else if (ev1 > ev2) {
-		std::swap(ev1, ev2);
-	}
+	//else if (ev1 > ev2) {
+	//	std::swap(ev1, ev2);
+	//}
 	Edge e(ev1, ev2, tag);
 	std::vector<Edge>::iterator it;
 	if ((it = std::find(m_E.begin(), m_E.end(), e)) == m_E.end()) { // if not found
@@ -112,9 +112,9 @@ int CUDGraph::InsertEdge(int ev1, int ev2, int tag, double ew)
 	if (ev1 == ev2) {
 		return -1;
 	}
-	else if (ev1 > ev2) {
-		std::swap(ev1, ev2);
-	}
+	//else if (ev1 > ev2) {
+	//	std::swap(ev1, ev2);
+	//}
 	Edge e(ev1, ev2, tag, ew);
 	std::vector<Edge>::iterator it;
 	if ((it = std::find(m_E.begin(), m_E.end(), e)) == m_E.end()) { // if not found

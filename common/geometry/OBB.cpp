@@ -1285,11 +1285,13 @@ bool COBB::IsSupport(const COBB &obb, double ta, double td, const MathLib::Vecto
 
 			FNJ.set(AJ[currAxisId][0] * currAxisSign, AJ[currAxisId][1] * currAxisSign, AJ[currAxisId][2] * currAxisSign);
 
-			if (ContactTriTri(VI[boxTriFace[i][0]], VI[boxTriFace[i][1]], VI[boxTriFace[i][2]], FNI, VJ[boxTriFace[j][0]], VJ[boxTriFace[j][1]], VJ[boxTriFace[j][2]], FNJ, ta, td, true)) {
-				return true;
+			bool isOpposite = false;
+			if (FNI.dot(FNJ) < 0)
+			{
+				isOpposite = true;
 			}
 
-			if (ContactTriTri(VI[boxTriFace[j][0]], VI[boxTriFace[j][1]], VI[boxTriFace[j][2]], FNJ, VJ[boxTriFace[i][0]], VJ[boxTriFace[i][1]], VJ[boxTriFace[i][2]], FNI, ta, td, true)) {
+			if (ContactTriTri(VI[boxTriFace[i][0]], VI[boxTriFace[i][1]], VI[boxTriFace[i][2]], FNI, VJ[boxTriFace[j][0]], VJ[boxTriFace[j][1]], VJ[boxTriFace[j][2]], FNJ, ta, td, isOpposite)) {
 				return true;
 			}
 		}
@@ -1297,11 +1299,11 @@ bool COBB::IsSupport(const COBB &obb, double ta, double td, const MathLib::Vecto
 	return false;
 }
 
-bool COBB::IsRoughSupport(const COBB &obb)
+bool COBB::IsCoverCenter(const COBB &obb)
 {
 	// if the center falls into the bottom face of the ref obb, then treat the test obb is rough supported
 	MathLib::Vector2 testCenter = MathLib::Vector2(obb.cent[0], obb.cent[1]);
-	MathLib::Vector2 axisX(axis[0][0], axis[0][1]), axisY(axis[1][0], axis[1][0]);
+	MathLib::Vector2 axisX(axis[0][0], axis[0][1]), axisY(axis[1][0], axis[1][1]);
 
 	MathLib::Vector2 dv = testCenter - MathLib::Vector2(vp[6][0], vp[6][1]);
 

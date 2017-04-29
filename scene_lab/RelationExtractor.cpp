@@ -19,15 +19,20 @@ QString RelationExtractor::getRelationConditionType(CModel *anchorModel, CModel 
 	int actModelId = actModel->getID();
 
 	// test for support relation
-	if (actModel->suppParentID == anchorModelId || anchorModel->suppParentID == actModelId)
+	if (actModel->suppParentID == anchorModelId)
 	{
-		return ConditionName[0];
+		return ConditionName[ConditionType::Pc];
+	}
+
+	if (anchorModel->suppParentID == actModelId)
+	{
+		return ConditionName[ConditionType::Cp];
 	}
 	
 	// test for sibling relation
 	if (actModel->suppParentID == anchorModel->suppParentID)
 	{
-		return ConditionName[1];
+		return ConditionName[ConditionType::Sib];
 	}
 
 	QString anchorCatName = anchorModel->getCatName();
@@ -37,7 +42,7 @@ QString RelationExtractor::getRelationConditionType(CModel *anchorModel, CModel 
 	// do not consider proximity for "room"
 	if (anchorCatName != "room" && actCatName != "room" && isInProximity(anchorModel, actModel))
 	{
-		return ConditionName[2];
+		return ConditionName[ConditionType::Pro];
 	}
 
 	return QString("none");
@@ -53,13 +58,22 @@ std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(int an
 
 std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(CModel *anchorModel, CModel *actModel)
 {
+	double angleThreshold = 30;
+	double distThreshold = 0.1 / m_currScene->getSceneMetric();
+
 	std::vector<QString> relationStrings;
 
-	if (isInProximity(anchorModel, actModel))
+	QString conditionType = getRelationConditionType(anchorModel, actModel);
+
+	if (conditionType == "none") return relationStrings;
+
+	// add near to proximity objs
+	if (conditionType == ConditionName[ConditionType::Pro])
 	{
 		relationStrings.push_back(PairRelStrings[PairRelation::Near]);  // near
 	}
 
+	double sideSectionVal = MathLib::Cos(angleThreshold);
 	MathLib::Vector3 refFront = anchorModel->getHorizonFrontDir();
 	MathLib::Vector3 refUp = anchorModel->getVertUpDir();
 
@@ -67,60 +81,65 @@ std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(CModel
 	MathLib::Vector3 testPos = actModel->m_currOBBPos;
 
 	MathLib::Vector3 fromRefToTestVec = testPos - refPos;
+	fromRefToTestVec[2] = 0; // project to XY plane
 	fromRefToTestVec.normalize();
 
-	// front or back side is not view dependent
-	double frontDirDot = fromRefToTestVec.dot(refFront);
-
-	double sideSectionVal = MathLib::Cos(15);
-	if (frontDirDot > sideSectionVal)
+	// add front and back to sibling or near objs
+	if (conditionType == ConditionName[ConditionType::Sib] || conditionType == ConditionName[ConditionType::Pro])
 	{
-		QString refName = m_currSceneSemGraph->getCatName(anchorModel->getID());
-		if (refName == "tv" || refName == "monitor" || refName.contains("table") || refName == "desk")  //  object requires to face to
+		// front or back side is not view dependent
+		double frontDirDot = fromRefToTestVec.dot(refFront);
+		if (frontDirDot > sideSectionVal)
 		{
-			MathLib::Vector3 testFront = actModel->getFrontDir();
-			if (testFront.dot(refFront) < 0)  // test and ref should be opposite
-			{
-				relationStrings.push_back(PairRelStrings[PairRelation::Front]); // front
-			}
-		}
-		else
-		{
+			QString refName = m_currScene->getModelCatName(anchorModel->getID());
 			relationStrings.push_back(PairRelStrings[PairRelation::Front]); // front
 		}
-	}
-	else if (frontDirDot < -sideSectionVal && frontDirDot > -1)
-	{
-		relationStrings.push_back(PairRelStrings[PairRelation::Back]); // back
+		else if (frontDirDot < -sideSectionVal && frontDirDot > -1)
+		{
+			relationStrings.push_back(PairRelStrings[PairRelation::Back]); // back
+		}
 	}
 
-	// left or right may be view dependent
+	// TODO: add OnCenter
+	bool isOnCenter = false;
+	double toBottomHight = testPos.z - refPos.z;
+	double xyPlaneDist = std::sqrt(std::pow(testPos.x-refPos.x, 2) + std::pow(testPos.y-refPos.y, 2));
+
+	if (xyPlaneDist < distThreshold && toBottomHight > 5*distThreshold)
+	{
+		isOnCenter = true;
+	}
+
 	MathLib::Vector3 refRight = refFront.cross(refUp);
+
+	// adjust Right for certain models
+	QString refName = m_currScene->getModelCatName(anchorModel->getID());
+	if (refName == "desk" || refName == "bookcase" || refName.contains("cabinet") || refName == "dresser"
+		|| refName == "monitor"|| refName =="tv")
+	{
+		refRight = -refRight;
+	}
+
 	double rightDirDot = fromRefToTestVec.dot(refRight);
 
-	MathLib::Vector3 roomFront = m_currScene->getRoomFront();
-
-	// if ref front is same to th room front (e.g. view inside 0, -1, 0)
-	//bool useViewCentric = false;
-	//if (refFront.dot(roomFront) > sideSectionVal  && useViewCentric)
-	//{
-	//	// use view-centric
-	//	if (rightDirDot >= sideSectionVal) // right of obj
-	//	{
-	//		relationStrings.push_back(SSGPairRelStrings[5]); // left in view
-	//	}
-	//	else if (rightDirDot <= -sideSectionVal) // left of obj
-	//	{
-	//		relationStrings.push_back(SSGPairRelStrings[6]); // right in view
-	//	}
-	//}
-	//else
+	if (rightDirDot >= sideSectionVal) // right of obj
 	{
-		if (rightDirDot >= sideSectionVal) // right of obj
+		if (conditionType == ConditionName[ConditionType::Pc] && !isOnCenter)
+		{
+			relationStrings.push_back(PairRelStrings[PairRelation::OnRight]); // right
+		}
+		else if(conditionType == ConditionName[ConditionType::Sib] || conditionType == ConditionName[ConditionType::Pro])
 		{
 			relationStrings.push_back(PairRelStrings[PairRelation::RightSide]); // right
 		}
-		else if (rightDirDot <= -sideSectionVal)  // left of obj
+	}
+	else if (rightDirDot < -sideSectionVal)  // left of obj
+	{
+		if (conditionType == ConditionName[ConditionType::Pc] && !isOnCenter)
+		{
+			relationStrings.push_back(PairRelStrings[PairRelation::OnLeft]); // right
+		}
+		else if(conditionType == ConditionName[ConditionType::Sib] || conditionType == ConditionName[ConditionType::Pro])
 		{
 			relationStrings.push_back(PairRelStrings[PairRelation::LeftSide]); // left
 		}
@@ -132,13 +151,15 @@ std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(CModel
 
 	if (fromRefTopToTestTop.dot(refUp) < 0)
 	{
-		SuppPlane* p = anchorModel->getSuppPlane(0);
-		if (p->isCoverPos(testPos.x, testPos.y))
+		if (anchorModel->hasSuppPlane())
 		{
-			relationStrings.push_back(PairRelStrings[PairRelation::Under]); // under
+			SuppPlane* p = anchorModel->getSuppPlane(0);
+			if (p->isCoverPos(testPos.x, testPos.y) && conditionType != ConditionName[ConditionType::Pc])
+			{
+				relationStrings.push_back(PairRelStrings[PairRelation::Under]); // under
+			}
 		}
 	}
-
 
 	return relationStrings;
 }
@@ -189,7 +210,7 @@ void RelationExtractor::extractRelativePosForModelPair(CModel *anchorModel, CMod
 
 	MathLib::Vector3 anchorModelFrontDir = anchorModel->getFrontDir();
 	MathLib::Vector3 actModelFrontDir = actModel->getFrontDir();
-	relPos->theta = GetRotAngleR(anchorModelFrontDir, actModelFrontDir, m_currScene->getUprightVec());
+	relPos->theta = GetRotAngleR(anchorModelFrontDir, actModelFrontDir, m_currScene->getUprightVec())/MathLib::ML_PI;
 
 	relPos->isValid = true;
 }

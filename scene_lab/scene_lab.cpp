@@ -351,7 +351,7 @@ void scene_lab::BuildRelationGraphForCurrentScene()
 
 void scene_lab::BuildRelationGraphForSceneList()
 {
-	LoadSceneList(0,1);
+	LoadSceneList(0,0,1);
 
 	for (int i = 0; i < m_sceneList.size(); i++)
 	{

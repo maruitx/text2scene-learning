@@ -106,7 +106,7 @@ public:
 	bool IsContain(const COBB &obb) const;
 	bool IsContact(const COBB &obb, double ta, double td, MathLib::Vector3 &dir) const;
 	bool IsSupport(const COBB &obb, double ta, double td, const MathLib::Vector3 &upright) const;
-	bool IsRoughSupport(const COBB &obb);
+	bool IsCoverCenter(const COBB &obb);
 
 	bool IsIntersect(const COBB &obb) const;
 

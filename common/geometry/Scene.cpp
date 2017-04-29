@@ -451,7 +451,7 @@ void CScene::buildSupportHierarchy()
 	{
 		if (m_relationGraph->IsEmpty()) return;
 
-		m_relationGraph->computeSupportParentForModels();
+		m_relationGraph->collectSupportParentForModels();
 		std::vector<std::vector<int>> parentList = m_relationGraph->getSupportParentListForModels();
 
 		// init all support to be -1

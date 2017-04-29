@@ -744,7 +744,11 @@ bool ContactTriTri(const MathLib::Vector3 &v0, const MathLib::Vector3 &v1, const
 	tu[0] = ML_O;
 	tu[1] = tm.transform(u1);
 	tu[2] = tm.transform(u2);
-	return IntersectTriTri2D(tv, tu);
+
+	if (IntersectTriTri2D(tv, tu)) return true;
+	if (ContainTriTri2D(tv, tu)) return true;
+
+	return false;
 }
 
 bool ContactTriTri(const MathLib::Vector3 &v0, const MathLib::Vector3 &v1, const MathLib::Vector3 &v2, const MathLib::Vector3 &n,
@@ -766,7 +770,11 @@ bool ContactTriTri(const MathLib::Vector3 &v0, const MathLib::Vector3 &v1, const
 	tu[0] = ML_O;
 	tu[1] = tm.transform(u1);
 	tu[2] = tm.transform(u2);
-	return IntersectTriTri2D(tv, tu);
+
+	if (IntersectTriTri2D(tv, tu)) return true;
+	if (ContainTriTri2D(tv, tu)) return true;
+
+	return false;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -835,3 +843,44 @@ bool IntersectTriTri2D(const MathLib::Vector2 t0[3], const MathLib::Vector2 t1[3
 	return true;
 }
 
+bool isPointInsideTri(const MathLib::Vector2 &s, const MathLib::Vector2 &a, const MathLib::Vector2 &b, const MathLib::Vector2 &c)
+{
+	// ref: http://stackoverflow.com/questions/2049582/how-to-determine-if-a-point-is-in-a-2d-triangle
+
+	int as_x = s.x - a.x;
+	int as_y = s.y - a.y;
+
+	bool s_ab = (b.x - a.x)*as_y - (b.y - a.y)*as_x > 0;
+
+	if ((c.x - a.x)*as_y - (c.y - a.y)*as_x > 0 == s_ab) return false;
+
+	if ((c.x - b.x)*(s.y - b.y) - (c.y - b.y)*(s.x - b.x) > 0 != s_ab) return false;
+
+	return true;
+}
+
+bool ContainTriTri2D(const MathLib::Vector2 t0[3], const MathLib::Vector2 t1[3])
+{
+	bool b[3];
+	for (int i=0; i < 3; i++)
+	{
+		b[i] = isPointInsideTri(t0[i], t1[0], t1[1], t1[2]);
+	}
+
+	if (b[0]&& b[1]&& b[2])
+	{
+		return true;
+	}
+
+	for (int i = 0; i < 3; i++)
+	{
+		b[i] = isPointInsideTri(t1[i], t0[0], t0[1], t0[2]);
+	}
+
+	if (b[0] && b[1] && b[2])
+	{
+		return true;
+	}
+
+	return false;
+}

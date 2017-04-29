@@ -35,6 +35,8 @@ bool ContactTriTri(const MathLib::Vector3 &v0, const MathLib::Vector3 &v1, const
 				   const MathLib::Vector3 &u0, const MathLib::Vector3 &u1, const MathLib::Vector3 &u2, const MathLib::Vector3 &m,
 				   float de);
 
+bool ContainTriTri2D(const MathLib::Vector2 t0[3], const MathLib::Vector2 t1[3]);
+
 //int tri_tri_intersect(float V0[3],float V1[3],float V2[3], float U0[3],float U1[3],float U2[3]);
 //int NoDivTriTriIsect(float V0[3],float V1[3],float V2[3], float U0[3],float U1[3],float U2[3]);
 //int tri_tri_intersect_with_isectline(float V0[3],float V1[3],float V2[3], float U0[3],float U1[3],float U2[3],int *coplanar, float isectpt1[3],float isectpt2[3]);

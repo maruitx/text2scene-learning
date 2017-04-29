@@ -268,7 +268,7 @@ void RelationModelManager::computeSimForPairwiseModels(std::map<QString, Pairwis
 			relType = "general";
 		}
 
-		for (int c=0; c< 3; c++)
+		for (int c=0; c< 4; c++)
 		{
 			QString conditionType = ConditionName[c];
 
@@ -326,6 +326,7 @@ void RelationModelManager::computeSimForPairwiseModels(std::map<QString, Pairwis
 			// collect max value for normalization
 			Eigen::MatrixXd simMat(pairModelIds.size(), pairModelIds.size());
 			double featureWeights[] = { 1,1,1,0.5,0.5,0.5 };
+			double catWeight = 0.5;			
 
 			for (int i = 0; i < pairModelIds.size(); i++)
 			{
@@ -338,15 +339,24 @@ void RelationModelManager::computeSimForPairwiseModels(std::map<QString, Pairwis
 					if (i == j) continue;
 
 					std::vector<double> simVal(2, 0);
+					std::vector<double> geoSim(2, 0);
+					std::vector<double> catSim(2, 0);
+
+					QString modelKeyB = pairModelKeys[pairModelIds[j]];
+					PairwiseRelationModel *relModelB = pairModels[modelKeyB];
+
+					if (relModelA->m_anchorObjName == relModelB->m_anchorObjName) catSim[0] = 1;
+					if (relModelA->m_actObjName == relModelB->m_actObjName) catSim[1] = 1;
+
 					for (int m = 0; m < 2; m++)
 					{
-						QString modelKeyB = pairModelKeys[pairModelIds[j]];
-						PairwiseRelationModel *relModelB = pairModels[modelKeyB];
-
-						for (int d=0; d<featureDim; d++)
+						for (int d = 0; d < featureDim; d++)
 						{
-							simVal[m] += featureWeights[d]*exp(-pow((relModelA->m_avgObjFeatures[m][d] - relModelB->m_avgObjFeatures[m][d])/ (maxFeatures[m][d] + 1e-3), 2));
+							geoSim[m] += featureWeights[d] * exp(-pow((relModelA->m_avgObjFeatures[m][d] - relModelB->m_avgObjFeatures[m][d]) / (maxFeatures[m][d] + 1e-3), 2));
 						}
+
+						geoSim[m] /= featureDim;
+						simVal[m] = catWeight*catSim[m] + (1 - catWeight)*geoSim[m];
 					}
 					simMat(i, j) = simVal[0] * simVal[1];
 				}

@@ -7,7 +7,7 @@ RelationGraph::RelationGraph()
 }
 
 RelationGraph::RelationGraph(CScene *s):
-m_scene(s), m_SuppThresh(0.05)
+m_scene(s), m_SuppThresh(0.02)
 {
 	m_nodeNum = m_scene->getModelNum();
 	m_sceneMetric = m_scene->getSceneMetric();
@@ -34,6 +34,38 @@ int RelationGraph::extractSupportRel()
 	}
 
 	return 0;
+}
+
+void RelationGraph::correctSupportEdgeDir()
+{
+	// v1 should be support parent, v2 is support child
+	for (unsigned int ei = 0; ei < this->ESize(); ei++) {
+		Edge *currEdge = this->GetEdge(ei);
+		if (currEdge->t == CT_VERT_SUPPORT) {
+			CModel *pM1 = m_scene->getModel(currEdge->v1);
+			CModel *pM2 = m_scene->getModel(currEdge->v2);
+			double heightDiff = pM1->getOBB().BottomHeightDiff(pM2->getOBB(), m_scene->getUprightVec()); // M1_height - M2_height
+
+			//if pM1 is higher than pM2, then pM2 is support parent of PM1
+			if (heightDiff > m_SuppThresh/m_sceneMetric) {
+				int tempId = currEdge->v1;
+				currEdge->v1 = currEdge->v2;
+				currEdge->v2 = tempId;
+			}
+			else if (heightDiff > -m_SuppThresh / m_sceneMetric && heightDiff < m_SuppThresh / m_sceneMetric) {
+				// treat the large size object as parent
+				double pM1Vol = pM1->getOBBVolume();
+				double pM2Vol = pM2->getOBBVolume();
+
+				if (pM1Vol < pM2Vol)
+				{
+					int tempId = currEdge->v1;
+					currEdge->v1 = currEdge->v2;
+					currEdge->v2 = tempId;
+				}
+			}
+		}
+	}
 }
 
 int RelationGraph::buildSuppEdgesFromFile()
@@ -116,12 +148,16 @@ int RelationGraph::updateSupportRel(int modelID)
 
 void RelationGraph::buildGraph()
 {
+	m_supportParentListForModels.clear();
+	this->Initialize(m_nodeNum);
+
 	if (m_scene->getSceneFormat() == "StanfordSceneDatabase")
 	{
 		buildSuppEdgesFromFile();
 	}
 	else{
 		extractSupportRel();
+		correctSupportEdgeDir();
 		//pruneSupportRel();
 	}
 }
@@ -241,12 +277,20 @@ void RelationGraph::drawGraph()
 		glVertex3dv(center[0].v);
 		glVertex3dv(center[1].v);
 		glEnd();
+
+		// draw the end point of the edge
+		QColor green(0, 255, 0);
+		glPointSize(10);
+		glColor4d(green.redF(), green.greenF(), green.blueF(), green.alphaF());
+		glBegin(GL_POINTS);
+		glVertex3d(center[1][0], center[1][1], center[1][2]);
+		glEnd();
 	}
 
 	glPopAttrib();
 }
 
-void RelationGraph::computeSupportParentForModels()
+void RelationGraph::collectSupportParentForModels()
 {
 	// build support parent list from computed support info
 	// some model might be supported by multiple parents
@@ -254,17 +298,9 @@ void RelationGraph::computeSupportParentForModels()
 	m_supportParentListForModels.resize(this->Size());
 
 	for (unsigned int ei = 0; ei < this->ESize(); ei++) {
-		if (this->GetEdge(ei)->t == RelationGraph::CT_VERT_SUPPORT) {
-			CModel *pM1 = m_scene->getModel(this->GetEdge(ei)->v1);
-			CModel *pM2 = m_scene->getModel(this->GetEdge(ei)->v2);
-
-			//if pM1 is higher than pM2, then pM2 is in support parent list of pM1
-			if (pM1->getOBB().BottomHeightDiff(pM2->getOBB(), m_scene->getUprightVec()) > 0.0) {
-				m_supportParentListForModels[this->GetEdge(ei)->v1].push_back(this->GetEdge(ei)->v2);
-			}
-			else {
-				m_supportParentListForModels[this->GetEdge(ei)->v2].push_back(this->GetEdge(ei)->v1);
-			}
+		Edge *currEdge = this->GetEdge(ei);
+		if (currEdge->t == RelationGraph::CT_VERT_SUPPORT) {
+			m_supportParentListForModels[currEdge->v2].push_back(currEdge->v1);
 		}
 	}
 }
@@ -272,37 +308,23 @@ void RelationGraph::computeSupportParentForModels()
 int RelationGraph::pruneSupportRel()
 {
 	// collect direct support info.
-	std::vector<std::vector<int>> SuppList(this->Size());	// support giver list, models that are being supported
-	for (unsigned int ei = 0; ei < this->ESize(); ei++) {
-		if (this->GetEdge(ei)->t == CT_VERT_SUPPORT) {
-			CModel *pM1 = m_scene->getModel(this->GetEdge(ei)->v1);
-			CModel *pM2 = m_scene->getModel(this->GetEdge(ei)->v2);
-
-			//if pM1 is higher than pM2, then pM2 is in support list of pM1
-			if (pM1->getOBB().BottomHeightDiff(pM2->getOBB(), m_scene->getUprightVec()) > 0.0) {
-				SuppList[this->GetEdge(ei)->v1].push_back(this->GetEdge(ei)->v2);
-			}
-			else {
-				SuppList[this->GetEdge(ei)->v2].push_back(this->GetEdge(ei)->v1);
-			}
-		}
-	}
+	collectSupportParentForModels();
 
 	// check nodes with more than more supporters (if multiple nodes support this node)
 	// filter those who doesn't contact
-	for (unsigned int i = 0; i < SuppList.size(); i++)
+	for (unsigned int i = 0; i < m_supportParentListForModels.size(); i++)
 	{
-		if (SuppList[i].size() > 1)
+		if (m_supportParentListForModels[i].size() > 1)
 		{
 			CModel *pM1 = m_scene->getModel(i);
-			for (int j = 0; j < SuppList[i].size(); j++)
+			for (int j = 0; j < m_supportParentListForModels[i].size(); j++)
 			{
-				CModel *pM2 =  m_scene->getModel(SuppList[i][j]);
+				CModel *pM2 =  m_scene->getModel(m_supportParentListForModels[i][j]);
 
 				// use a relative large support threshold for conservative pruning
 				if (!pM1->IsSupport(pM2, true, 10 * m_SuppThresh / m_sceneMetric, m_scene->getUprightVec()))
 				{
-					this->DeleteEdge(i, SuppList[i][j]);
+					this->DeleteEdge(i, m_supportParentListForModels[i][j]);
 				}
 				else
 				{

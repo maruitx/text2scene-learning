@@ -37,9 +37,9 @@ SceneSemGraph::~SceneSemGraph()
 void SceneSemGraph::generateGraph()
 {
 	// extract model as object node
-	int modelNum = m_scene->getModelNum();
+	m_modelNum = m_scene->getModelNum();
 
-	for (int i = 0; i < modelNum;  i++)
+	for (int i = 0; i < m_modelNum;  i++)
 	{
 		QString modelNameStr = m_scene->getModelNameString(i);
 
@@ -188,42 +188,11 @@ void SceneSemGraph::addSpatialSideRel()
 		m_scene->buildSupportHierarchy();
 	}
 
-	// collect obj ids with support level 0
-	int roomId = m_scene->getRoomID();
-
-	std::vector<int> groundModelIds;
-	std::vector<int> wallModelIds;
-
-	for (int i = 0; i < m_scene->getModelNum(); i++)
+	for (int i=0; i < m_modelNum -1; i++)
 	{
-		CModel *m = m_scene->getModel(i);
-
-		if (m->supportLevel == 0 && abs(m->parentContactNormal.dot(MathLib::Vector3(0, 0, 1))) > 0.95)
+		for (int j=i+1; j<m_modelNum; j++)
 		{
-			groundModelIds.push_back(i);
-		}
-
-		if (m->supportLevel == 0 && abs(m->parentContactNormal.dot(MathLib::Vector3(0, 0, 1))) <0.05)
-		{
-			wallModelIds.push_back(i);
-		}
-	}
-
-	if (groundModelIds.empty())
-	{
-		qDebug() << "No models supported by the room to extract side relation\n";
-		return;
-	}
-
-	// between ground objects
-	for (int i = 0; i < groundModelIds.size()-1; i++)
-	{
-		int refModelId = groundModelIds[i];
-
-		for (int j = i + 1; j < groundModelIds.size(); j++)
-		{
-			int testModelId = groundModelIds[j];
-			addSpatialSideRelForModelPair(refModelId, testModelId);		
+			addSpatialSideRelForModelPair(i, j);
 		}
 	}
 }

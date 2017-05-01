@@ -643,6 +643,13 @@ QString DBMetaModel::getProcessedCatName()
 		return m_processedCatName;
 	}
 
+	if (m_idStr == "416674f64be11975bc4f8438441dcb1d")
+	{
+		m_isCatNameProcessed = true;
+		m_processedCatName = "monitor";
+		return m_processedCatName;
+	}
+
 	m_processedCatName = "";
 
 	if (m_shapeNetCategoryNames.empty() && m_wordNetLemmas.empty())
@@ -717,7 +724,6 @@ QString DBMetaModel::getProcessedCatName()
 			}
 		}
 	}
-
 
 	m_isCatNameProcessed = true;
 	return m_processedCatName;

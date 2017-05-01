@@ -39,6 +39,7 @@ scene_lab_widget::scene_lab_widget(scene_lab *s_lab, QWidget *parent/*=0*/)
 	connect(ui->buildPairRelationButton, SIGNAL(clicked()), m_scene_lab, SLOT(BuildPairwiseRelationModels()));
 	connect(ui->buildGroupRelationButton, SIGNAL(clicked()), m_scene_lab, SLOT(BuildGroupRelationModels()));
 
+	connect(ui->batchBuildModelsButton, SIGNAL(clicked()), m_scene_lab, SLOT(BatchBuildModelsForList()));
 }
 
 scene_lab_widget::~scene_lab_widget()

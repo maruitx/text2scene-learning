@@ -23,6 +23,8 @@ public:
 	void destroy_widget();
 	CScene *getScene() { return m_currScene; };
 
+	void loadParas();
+
 public slots:
 	void LoadScene();
 	void LoadSceneList(int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0);
@@ -45,6 +47,8 @@ public slots:
 	void BuildRelativeRelationModels();
 	void BuildPairwiseRelationModels();
 	void BuildGroupRelationModels();
+
+	void BatchBuildModelsForList();
 
 	void CollectModelInfoForSceneList();
 
@@ -72,6 +76,9 @@ private:
 
 	ModelDatabase *m_modelDB;
 	ModelDBViewer_widget *m_modelDBViewer_widget;
+
+	QString m_sceneDBType;
+	QString m_localSceneDBPath;
 };
 
 #endif // SCENE_LAB_H

@@ -1,3 +1,4 @@
-% update the following path to your local ShapeNetSem path and copy the this file to the Starlab folder
-C:\Users\ruim\Rui\Graphics\Text2Scene_PC\SceneDB\ShapeNetSem
-select
+% update the following path to your local modelDB path and copy the this file to the Starlab folder
+%C:\Ruim\Graphics\T2S_MPC\SceneDB\ShapeNetSem
+C:/Ruim\Graphics\T2S_MPC\SceneDB\StanfordSceneDB\models
+StanfordModelDB_MetaInfo_corrected

@@ -165,7 +165,7 @@ void RelationModelManager::buildRelativeRelationModels()
 		PairwiseRelationModel *relModel = iter->second;
 		relModel->fitGMM(15);
 
-		std::cout << "Relative model fitted " << QString("%1/%2\r\n").arg(id++).arg(totalNum).toStdString();
+		std::cout << "Relative model fitted " << QString("%1/%2\r").arg(++id).arg(totalNum).toStdString();
 	}
 
 	// 3. Close MATLAB engine
@@ -191,7 +191,7 @@ void RelationModelManager::buildPairwiseRelationModels()
 		relModel->m_modelId = id;
 		m_pairRelModelKeys[id] = relModel->m_relationKey;
 
-		std::cout << "Pairwise model fitted " << QString("%1/%2\r\n").arg(id++).arg(totalNum).toStdString();
+		std::cout << "Pairwise model fitted " << QString("%1/%2\r").arg(++id).arg(totalNum).toStdString();
 	}
 
 	// 3. Close MATLAB engine
@@ -246,6 +246,7 @@ void RelationModelManager::collectPairwiseInstanceFromCurrScene()
 
 void RelationModelManager::computeSimForPairwiseModels(std::map<QString, PairwiseRelationModel*> &pairModels, const std::vector<QString> &pairModelKeys, const std::vector<CScene*> &sceneList, bool isInGroup, const QString &filePath)
 {
+	qDebug() << "Computing similarity between pairwise models...";
 	int sceneNum = sceneList.size();
 	std::map<QString, int> sceneNameToIdMap;
 	for (int i=0; i <sceneNum; i++)
@@ -254,7 +255,7 @@ void RelationModelManager::computeSimForPairwiseModels(std::map<QString, Pairwis
 		sceneNameToIdMap[sceneName] = i;
 	}
 
-	int relNum = 10;
+	int relNum = PairRelNum;
 	if (isInGroup)
 	{
 		relNum = 1;
@@ -268,7 +269,7 @@ void RelationModelManager::computeSimForPairwiseModels(std::map<QString, Pairwis
 			relType = "general";
 		}
 
-		for (int c=0; c< 4; c++)
+		for (int c=0; c< ConditionNum; c++)
 		{
 			QString conditionType = ConditionName[c];
 
@@ -387,45 +388,45 @@ void RelationModelManager::computeSimForPairwiseModels(std::map<QString, Pairwis
 				}
 			}
 
-			// save sim Mat
-			if (!pairModelIds.empty() && !filePath.isEmpty())
-			{
-				QString filename = filePath + QString("/%1_%2.simMat").arg(relType).arg(conditionType);
-				std::ofstream ofs;
-				ofs.open(filename.toStdString(), std::ios::out | std::ios::trunc);
+			//// save sim Mat
+			//if (!pairModelIds.empty() && !filePath.isEmpty())
+			//{
+			//	QString filename = filePath + QString("/%1_%2.simMat").arg(relType).arg(conditionType);
+			//	std::ofstream ofs;
+			//	ofs.open(filename.toStdString(), std::ios::out | std::ios::trunc);
 
-				if (ofs.is_open())
-				{
-					for (int i = 0; i < pairModelIds.size(); i++)
-					{
-						QString modelKey = pairModelKeys[pairModelIds[i]];
-						PairwiseRelationModel *relModel = pairModels[modelKey];
+			//	if (ofs.is_open())
+			//	{
+			//		for (int i = 0; i < pairModelIds.size(); i++)
+			//		{
+			//			QString modelKey = pairModelKeys[pairModelIds[i]];
+			//			PairwiseRelationModel *relModel = pairModels[modelKey];
 
-						ofs << relModel->m_relationKey.toStdString() << ",R_" << relModel->m_modelId << "," << i << "\n";
-						int simModelNum = relModel->m_simModelIds.size();
-						ofs << simModelNum << ",";
+			//			ofs << relModel->m_relationKey.toStdString() << ",R_" << relModel->m_modelId << "," << i << "\n";
+			//			int simModelNum = relModel->m_simModelIds.size();
+			//			ofs << simModelNum << ",";
 
-						if (simModelNum > 0)
-						{
-							for (int k = 0; k < simModelNum - 1; k++)
-							{
-								ofs << relModel->m_simModelIds[k] << " ";
-							}
-							ofs << relModel->m_simModelIds[simModelNum - 1] << "\n";
-							for (int k = 0; k < simModelNum - 1; k++)
-							{
-								ofs << simMat(i, globalToLocalIdMap[relModel->m_simModelIds[k]]) << ",";
-							}
-							ofs << simMat(i, globalToLocalIdMap[relModel->m_simModelIds[simModelNum - 1]]) << "\n";
-						}
-						else
-						{
-							ofs << "-1\n";
-						}
-					}
-					ofs.close();
-				}
-			}
+			//			if (simModelNum > 0)
+			//			{
+			//				for (int k = 0; k < simModelNum - 1; k++)
+			//				{
+			//					ofs << relModel->m_simModelIds[k] << " ";
+			//				}
+			//				ofs << relModel->m_simModelIds[simModelNum - 1] << "\n";
+			//				for (int k = 0; k < simModelNum - 1; k++)
+			//				{
+			//					ofs << simMat(i, globalToLocalIdMap[relModel->m_simModelIds[k]]) << ",";
+			//				}
+			//				ofs << simMat(i, globalToLocalIdMap[relModel->m_simModelIds[simModelNum - 1]]) << "\n";
+			//			}
+			//			else
+			//			{
+			//				ofs << "-1\n";
+			//			}
+			//		}
+			//		ofs.close();
+			//	}
+			//}
 		}
 	}
 }
@@ -600,7 +601,7 @@ void RelationModelManager::buildGroupRelationModels()
 		groupModel->computeOccurrence();
 		groupModel->fitGMMs();
 
-		std::cout << "Group model fitted " << QString("%1/%2\r\n").arg(id++).arg(totalNum).toStdString();
+		std::cout << "Group model fitted " << QString("%1/%2\r").arg(++id).arg(totalNum).toStdString();
 	}
 
 	// 3. Close MATLAB engine
@@ -714,9 +715,9 @@ void RelationModelManager::collectRelPosForGroupModel(GroupRelationModel *groupM
 	}
 }
 
-void RelationModelManager::saveRelativeRelationModels(const QString &filePath)
+void RelationModelManager::saveRelativeRelationModels(const QString &filePath, const QString &dbType)
 {
-	QString filename = filePath + "/Relative.model";
+	QString filename = filePath + QString("/Relative_%1.model").arg(dbType);
 
 	QFile outFile(filename);
 	QTextStream ofs(&outFile);
@@ -731,12 +732,13 @@ void RelationModelManager::saveRelativeRelationModels(const QString &filePath)
 		}
 
 		outFile.close();
+		qDebug() << "model saved";
 	}
 }
 
-void RelationModelManager::savePairwiseRelationModels(const QString &filePath)
+void RelationModelManager::savePairwiseRelationModels(const QString &filePath, const QString &dbType)
 {
-	QString filename = filePath + "/Pairwise.model";
+	QString filename = filePath + QString("/Pairwise_%1.model").arg(dbType);
 
 	QFile outFile(filename);
 	QTextStream ofs(&outFile);
@@ -751,12 +753,13 @@ void RelationModelManager::savePairwiseRelationModels(const QString &filePath)
 		}
 
 		outFile.close();
+		qDebug() << "model saved";
 	}
 }
 
-void RelationModelManager::saveGroupRelationModels(const QString &filePath)
+void RelationModelManager::saveGroupRelationModels(const QString &filePath, const QString &dbType)
 {
-	QString filename = filePath + "/Group.model";
+	QString filename = filePath +  QString("/Group_%1.model").arg(dbType);
 
 	QFile outFile(filename);
 	QTextStream ofs(&outFile);
@@ -770,12 +773,13 @@ void RelationModelManager::saveGroupRelationModels(const QString &filePath)
 		}
 
 		outFile.close();
+		qDebug() << "model saved";
 	}
 }
 
-void RelationModelManager::saveSupportRelationModels(const QString &filePath)
+void RelationModelManager::saveSupportRelationModels(const QString &filePath, const QString &dbType)
 {
-	QString filename = filePath + "/SupportRelation.model";
+	QString filename = filePath + QString("/SupportRelation_%1.model").arg(dbType);
 
 	QFile outFile(filename);
 	QTextStream ofs(&outFile);
@@ -791,7 +795,7 @@ void RelationModelManager::saveSupportRelationModels(const QString &filePath)
 		outFile.close();
 	}
 
-	filename = filePath + "/SupportParent.prob";
+	filename = filePath + QString("/SupportParent_%1.prob").arg(dbType);
 	outFile.setFileName(filename);
 	if (outFile.open(QIODevice::ReadWrite | QIODevice::Text | QIODevice::Truncate))
 	{
@@ -802,12 +806,13 @@ void RelationModelManager::saveSupportRelationModels(const QString &filePath)
 		}
 
 		outFile.close();
+		qDebug() << "model saved";
 	}
 }
 
-void RelationModelManager::savePairwiseModelSim(const QString &filePath)
+void RelationModelManager::savePairwiseModelSim(const QString &filePath, const QString &dbType)
 {
-	QString filename = filePath + "/Pairwise.sim";
+	QString filename = filePath + QString("/Pairwise_%1.sim").arg(dbType);
 
 	QFile outFile(filename);
 	QTextStream ofs(&outFile);
@@ -861,9 +866,9 @@ void RelationModelManager::savePairwiseModelSim(const QString &filePath)
 	}
 }
 
-void RelationModelManager::saveGroupModelSim(const QString &filePath)
+void RelationModelManager::saveGroupModelSim(const QString &filePath, const QString &dbType)
 {
-	QString filename = filePath + "/Group.sim";
+	QString filename = filePath + QString("/Group_%1.sim").arg(dbType);
 
 	QFile outFile(filename);
 	QTextStream ofs(&outFile);

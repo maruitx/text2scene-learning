@@ -12,7 +12,7 @@
 
 Engine *matlabEngine;
 
-const QString SceneDBPath = "C:/Ruim/Graphics/T2S_MPC/SceneDB";
+//const QString SceneDBPath = "C:/Ruim/Graphics/T2S_MPC/SceneDB";
 
 scene_lab::scene_lab(QObject *parent)
 	: QObject(parent)
@@ -26,6 +26,8 @@ scene_lab::scene_lab(QObject *parent)
 
 	m_modelDB = NULL; 
 	m_modelDBViewer_widget = NULL;
+
+	loadParas();
 }
 
 scene_lab::~scene_lab()
@@ -102,8 +104,8 @@ void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
 
 	// load scene list file
 	QString currPath = QDir::currentPath();
-	QString sceneListFileName = currPath + "/scene_list.txt";
-	QString sceneFolder = SceneDBPath + "/StanfordSceneDB/scenes";
+	QString sceneListFileName = currPath + QString("/scene_list_%1.txt").arg(m_sceneDBType);
+	QString sceneFolder = m_localSceneDBPath + "/StanfordSceneDB/scenes";
 
 	QFile inFile(sceneListFileName);
 	QTextStream ifs(&inFile);
@@ -159,11 +161,6 @@ void scene_lab::updateModelMetaInfoForScene(CScene *s)
 			{
 				s->updateModelCat(i, "room");
 			}
-
-			if (modelNameString == "416674f64be11975bc4f8438441dcb1d")
-			{
-				s->updateModelCat(i, "monitor");
-			}
 		}
 	}
 }
@@ -173,6 +170,29 @@ void scene_lab::destroy_widget()
 	if (m_widget != NULL)
 	{
 		delete m_widget;
+	}
+}
+
+void scene_lab::loadParas()
+{
+	QString currPath = QDir::currentPath();
+	std::vector<std::string> paraLines = GetFileLines(currPath.toStdString() +"/paras.txt", 3);
+
+	for (int i=0;  i<paraLines.size(); i++)
+	{
+		if (paraLines[i][0]!='#')
+		{
+			if (paraLines[i].find("SceneDBType=") != std::string::npos)
+			{
+				m_sceneDBType = toQString(PartitionString(paraLines[i], "SceneDBType=")[0]);
+				continue;
+			}
+
+			if (paraLines[i].find("LocalSceneDBPath=") != std::string::npos)
+			{
+				m_localSceneDBPath = toQString(PartitionString(paraLines[i], "LocalSceneDBPath=")[0]);
+			}
+		}
 	}
 }
 
@@ -294,13 +314,13 @@ void scene_lab::BuildSemGraphForCurrentScene(int batchLoading)
 
 void scene_lab::BuildSemGraphForSceneList()
 {
+	loadParas();
 	LoadSceneList(1);
 
 	std::set<QString> allModelNameStrings;
 	for (int i = 0; i < m_sceneList.size(); i++)
 	{
 		m_currScene = m_sceneList[i];
-		updateModelMetaInfoForScene(m_currScene);
 		BuildSemGraphForCurrentScene(1);
 
 		for (int i = 0; i < m_currScene->getModelNum(); i++)
@@ -351,6 +371,7 @@ void scene_lab::BuildRelationGraphForCurrentScene()
 
 void scene_lab::BuildRelationGraphForSceneList()
 {
+	loadParas();
 	LoadSceneList(0,0,1);
 
 	for (int i = 0; i < m_sceneList.size(); i++)
@@ -385,7 +406,7 @@ void scene_lab::CollectModelInfoForSceneList()
 
 	QString currLine = ifs.readLine();
 
-	if (currLine.contains("StanfordSceneDatabase"))
+	if (currLine.contains("SceneNum"))
 	{
 		int sceneNum = StringToIntegerList(currLine.toStdString(), "StanfordSceneDatabase ")[0];
 
@@ -446,6 +467,7 @@ void scene_lab::BuildRelativeRelationModels()
 {
 	//testMatlab();
 
+	loadParas();
 	// load metadata
 	LoadSceneList(1);
 
@@ -464,11 +486,12 @@ void scene_lab::BuildRelativeRelationModels()
 	}
 
 	m_relationModelManager->buildRelativeRelationModels();
-	m_relationModelManager->saveRelativeRelationModels(SceneDBPath);
+	m_relationModelManager->saveRelativeRelationModels(m_localSceneDBPath, m_sceneDBType);
 }
 
 void scene_lab::BuildPairwiseRelationModels()
 {
+	loadParas();
 	LoadSceneList(1);
 
 	if (m_relationModelManager != NULL)
@@ -489,14 +512,15 @@ void scene_lab::BuildPairwiseRelationModels()
 	}
 
 	m_relationModelManager->buildPairwiseRelationModels();
-	m_relationModelManager->computeSimForPairwiseModels(m_relationModelManager->m_pairwiseRelModels, m_relationModelManager->m_pairRelModelKeys, m_sceneList, false, SceneDBPath);
+	m_relationModelManager->computeSimForPairwiseModels(m_relationModelManager->m_pairwiseRelModels, m_relationModelManager->m_pairRelModelKeys, m_sceneList, false, m_localSceneDBPath);
 
-	m_relationModelManager->savePairwiseRelationModels(SceneDBPath);
-	m_relationModelManager->savePairwiseModelSim(SceneDBPath);
+	m_relationModelManager->savePairwiseRelationModels(m_localSceneDBPath, m_sceneDBType);
+	m_relationModelManager->savePairwiseModelSim(m_localSceneDBPath, m_sceneDBType);
 }
 
 void scene_lab::BuildGroupRelationModels()
 {
+	loadParas();
 	LoadSceneList(1);
 
 	if (m_relationModelManager != NULL)
@@ -519,12 +543,63 @@ void scene_lab::BuildGroupRelationModels()
 	m_relationModelManager->buildGroupRelationModels();
 	m_relationModelManager->computeSimForPairModelInGroup(m_sceneList);
 
-	m_relationModelManager->saveGroupRelationModels(SceneDBPath);
-	m_relationModelManager->saveGroupModelSim(SceneDBPath);
+	m_relationModelManager->saveGroupRelationModels(m_localSceneDBPath, m_sceneDBType);
+	m_relationModelManager->saveGroupModelSim(m_localSceneDBPath, m_sceneDBType);
+}
+
+void scene_lab::BatchBuildModelsForList()
+{
+	loadParas();
+	// load metadata
+	LoadSceneList(1);
+
+	if (m_relationModelManager != NULL)
+	{
+		delete m_relationModelManager;
+	}
+
+	m_relationModelManager = new RelationModelManager(m_relationExtractor);
+
+	for (int i = 0; i < m_sceneList.size(); i++)
+	{
+		m_currScene = m_sceneList[i];
+		m_currScene->loadSSG();
+
+		m_relationModelManager->updateCurrScene(m_currScene);
+		m_relationModelManager->loadRelativePosFromCurrScene();
+
+		m_relationModelManager->collectPairwiseInstanceFromCurrScene();
+		m_relationModelManager->collectGroupInstanceFromCurrScene();
+		m_relationModelManager->collectSupportRelationInCurrentScene();
+	}
+
+	// relative
+	m_relationModelManager->buildRelativeRelationModels();
+	m_relationModelManager->saveRelativeRelationModels(m_localSceneDBPath, m_sceneDBType);
+
+	// pairwise
+	m_relationModelManager->buildPairwiseRelationModels();
+	m_relationModelManager->computeSimForPairwiseModels(m_relationModelManager->m_pairwiseRelModels, m_relationModelManager->m_pairRelModelKeys, m_sceneList, false, m_localSceneDBPath);
+
+	m_relationModelManager->savePairwiseRelationModels(m_localSceneDBPath, m_sceneDBType);
+	m_relationModelManager->savePairwiseModelSim(m_localSceneDBPath, m_sceneDBType);
+
+	// group
+	m_relationModelManager->buildGroupRelationModels();
+	m_relationModelManager->computeSimForPairModelInGroup(m_sceneList);
+
+	m_relationModelManager->saveGroupRelationModels(m_localSceneDBPath, m_sceneDBType);
+	m_relationModelManager->saveGroupModelSim(m_localSceneDBPath, m_sceneDBType);
+
+	// support
+	m_relationModelManager->buildSupportRelationModels();
+	m_relationModelManager->saveSupportRelationModels(m_localSceneDBPath, m_sceneDBType);
 }
 
 void scene_lab::ComputeBBAlignMatForSceneList()
 {
+	loadParas();
+
 	// load mesh without OBB
 	LoadSceneList(0, 0, 0);
 
@@ -540,6 +615,8 @@ void scene_lab::ComputeBBAlignMatForSceneList()
 
 void scene_lab::ExtractRelPosForSceneList()
 {
+	loadParas();
+
 	// load OBB only
 	LoadSceneList(0, 1);
 
@@ -563,6 +640,7 @@ void scene_lab::ExtractRelPosForSceneList()
 
 void scene_lab::ExtractSuppProbForSceneList()
 {
+	loadParas();
 	LoadSceneList(1);
 
 	if (m_relationModelManager != NULL)
@@ -582,6 +660,6 @@ void scene_lab::ExtractSuppProbForSceneList()
 	}
 
 	m_relationModelManager->buildSupportRelationModels();
-	m_relationModelManager->saveSupportRelationModels(SceneDBPath);
+	m_relationModelManager->saveSupportRelationModels(m_localSceneDBPath, m_sceneDBType);
 }
 

@@ -43,7 +43,42 @@
       <string>Scene Processing</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
-      <item row="2" column="2">
+      <item row="1" column="1">
+       <widget class="QPushButton" name="buildRGForListButton">
+        <property name="text">
+         <string>Build RGs for List</string>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="1">
+       <widget class="QPushButton" name="buildPairRelationButton">
+        <property name="text">
+         <string>Build Pair Relations</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="0" colspan="2">
+       <widget class="Line" name="line">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="0">
+       <widget class="QPushButton" name="computeBBAlignMatForListButton">
+        <property name="text">
+         <string>BB AlignMat for List</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QPushButton" name="buildRelationGraphButton">
+        <property name="text">
+         <string>Build Relation Graph</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
        <widget class="QPushButton" name="buildSSGForListButton">
         <property name="text">
          <string>Build SSGs for List</string>
@@ -57,80 +92,52 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="2">
-       <widget class="QPushButton" name="buildRGForListButton">
-        <property name="text">
-         <string>Build RGs for List</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QPushButton" name="buildRelationGraphButton">
-        <property name="text">
-         <string>Build Relation Graph</string>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="0">
-       <widget class="QPushButton" name="computeBBAlignMatForListButton">
-        <property name="text">
-         <string>BB AlignMat for List</string>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="2">
-       <widget class="QPushButton" name="buildPairRelationButton">
-        <property name="text">
-         <string>Build Pair Relations</string>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="2">
-       <widget class="QPushButton" name="buildRelativeRelationButton">
-        <property name="text">
-         <string>Build Relative Relations</string>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="0">
+      <item row="8" column="1">
        <widget class="QPushButton" name="extractRelPosForList">
         <property name="text">
          <string>Extract RelPos for List</string>
         </property>
        </widget>
       </item>
-      <item row="6" column="0" colspan="3">
-       <widget class="Line" name="line">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="1" rowspan="5">
-       <widget class="Line" name="line_2">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
+      <item row="10" column="0">
+       <widget class="QPushButton" name="buildRelativeRelationButton">
+        <property name="text">
+         <string>Build Relative Relations</string>
         </property>
        </widget>
       </item>
       <item row="11" column="0">
+       <widget class="QPushButton" name="buildGroupRelationButton">
+        <property name="text">
+         <string>Build Group Relaions</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
        <widget class="QPushButton" name="collectMetaInfoButton">
         <property name="text">
          <string>Collect MetaInfo for List</string>
         </property>
        </widget>
       </item>
-      <item row="9" column="0">
+      <item row="11" column="1">
        <widget class="QPushButton" name="extractSuppProbButton">
         <property name="text">
          <string>Extract SuppProb for List</string>
         </property>
        </widget>
       </item>
-      <item row="9" column="2">
-       <widget class="QPushButton" name="buildGroupRelationButton">
+      <item row="9" column="0" colspan="2">
+       <widget class="Line" name="line_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="12" column="0" colspan="2">
+       <widget class="QPushButton" name="batchBuildModelsButton">
         <property name="text">
-         <string>Build Group Relaions</string>
+         <string>Batch Build Models</string>
         </property>
        </widget>
       </item>

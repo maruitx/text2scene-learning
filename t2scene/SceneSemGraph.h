@@ -10,12 +10,6 @@ class DBMetaModel;
 class RelationExtractor;
 class CModel;
 
-const int NodeTypeNum = 5;
-const int SingleAttriNum = 7;
-const int PairRelNum = 10;
-const int GroupRelNum = 5;
-const int GroupAttriNum = 8;
-
 const QString SSGNodeTypeStrings[] = { "object", "attribute", "pair_relation", "group_relation", "group_relation_anno" };
 const QString SingleAttriStrings[] = {"round", "rectangular", "office", "dining", "kitchen", "floor", "wall"};
 const QString GroupAttrStings[] = {"messy", "clean", "organized", "disorganized", "formal", "casual", "spacious", "crowded"};
@@ -55,9 +49,6 @@ public:
 	void addSpatialSideRelForModelPair(int refModelId, int testModelId);
 
 	void addGroupAttributeFromAnnotation(); // high-level attribute node and edges to object node
-
-	void saveNodeStringToLabelIDMap(const QString &filename);
-	void saveGMTNodeAttributeFile(const QString &filename);
 
 	QString getCatName(int modelId);
 

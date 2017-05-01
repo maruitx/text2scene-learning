@@ -11,6 +11,9 @@ const QString ConditionName[] = {"parentchild", "childparent", "sibling", "proxi
 const QString PairRelStrings[] = { "vertsupport", "horizonsupport", "contain", "above", "under", "leftside", "rightside", "front", "back", "onleft", "onright", "oncenter","near"};
 const QString GroupRelStrings[] = { "around", "aligned", "grouped", "stacked", "scattered" };
 
+const int ConditionNum = 4;
+const int PairRelNum = 13;
+
 enum ConditionType
 {
 	Pc = 0,

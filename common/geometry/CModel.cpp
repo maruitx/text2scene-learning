@@ -992,6 +992,13 @@ void CModel::computeBBAlignMat()
 	double scaleX = maxVert.x - minVert.x;
 	double scaleY = maxVert.y - minVert.y;
 	double scaleZ = maxVert.z - minVert.z;
+	double sizeTh = 1e-3 / m_sceneMetric;
+
+	// for thin objects, e.g., paper, make sure the scale size is not zero
+	if (scaleX < sizeTh) scaleX += sizeTh;
+	if (scaleY < sizeTh) scaleY += sizeTh;
+	if (scaleZ < sizeTh) scaleZ += sizeTh;
+
 
 	MathLib::Matrix4d translateMat;
 	MathLib::Matrix4d rotMat;

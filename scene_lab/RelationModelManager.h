@@ -47,13 +47,13 @@ public:
 	void collectSupportRelationInCurrentScene();
 	void buildSupportRelationModels();
 
-	void saveRelativeRelationModels(const QString &filePath);
-	void savePairwiseRelationModels(const QString &filePath);
-	void saveGroupRelationModels(const QString &filePath);
-	void saveSupportRelationModels(const QString &filePath);
+	void saveRelativeRelationModels(const QString &filePath, const QString &dbType);
+	void savePairwiseRelationModels(const QString &filePath, const QString &dbType);
+	void saveGroupRelationModels(const QString &filePath, const QString &dbType);
+	void saveSupportRelationModels(const QString &filePath, const QString &dbType);
 
-	void savePairwiseModelSim(const QString &filePath);
-	void saveGroupModelSim(const QString &filePath);
+	void savePairwiseModelSim(const QString &filePath, const QString &dbType);
+	void saveGroupModelSim(const QString &filePath, const QString &dbType);
 
 public:
 	std::map<QString, PairwiseRelationModel*> m_relativeModels;  // relative models with general relations

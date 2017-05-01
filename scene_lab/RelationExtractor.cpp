@@ -105,9 +105,13 @@ std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(CModel
 	double toBottomHight = testPos.z - refPos.z;
 	double xyPlaneDist = std::sqrt(std::pow(testPos.x-refPos.x, 2) + std::pow(testPos.y-refPos.y, 2));
 
-	if (xyPlaneDist < distThreshold && toBottomHight > 5*distThreshold)
+	if (xyPlaneDist < distThreshold && toBottomHight > 2*distThreshold)
 	{
 		isOnCenter = true;
+		if (conditionType == ConditionName[ConditionType::Pc])
+		{
+			relationStrings.push_back(PairRelStrings[PairRelation::OnCenter]); // right
+		}
 	}
 
 	MathLib::Vector3 refRight = refFront.cross(refUp);

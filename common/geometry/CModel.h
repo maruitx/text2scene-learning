@@ -104,12 +104,13 @@ public:
 
 	//// support plane
 	void buildSuppPlane();
-	void builSuppPlaneUsingBBTop();
+	void builBBTopPlane();
 	bool hasSuppPlane() { return m_hasSuppPlane; };
 	//SuppPlane* getLargestSuppPlane();
 	//double getLargestSuppPlaneHeight();
 	SuppPlane* getSuppPlane(int i);
 	//int getSuppPlaneNum();
+	void loadBBTopPlane();
 
 	// transformation
 	void transformModel(const MathLib::Matrix4d &transMat);
@@ -137,6 +138,8 @@ public:
 	void setBusy(bool b) { m_isBusy = b; };
 	bool isBusy(){ return m_isBusy; };
 
+	bool isGroundObj();
+
 public:
 	int suppParentID;
 	int parentSuppPlaneID;   // on which support plane of the parent
@@ -144,6 +147,7 @@ public:
 	int supportLevel;  //  0 is support by floor
 	MathLib::Vector3 parentContactNormal;
 	MathLib::Vector3 parentContactPos;
+	SuppPlane *m_bbTopPlane;
 
 	std::vector<std::vector<int>> suppGridPos; // grid pos that is filled by current model
 

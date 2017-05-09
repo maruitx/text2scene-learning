@@ -68,7 +68,7 @@ void scene_lab::LoadScene()
 
 	if (m_relationExtractor == NULL)
 	{
-		m_relationExtractor = new RelationExtractor();
+		m_relationExtractor = new RelationExtractor(m_angleTh);
 	}
 
 	updateModelMetaInfoForScene(m_currScene);
@@ -86,7 +86,7 @@ void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
 
 	if (m_relationExtractor == NULL)
 	{
-		m_relationExtractor = new RelationExtractor();
+		m_relationExtractor = new RelationExtractor(m_angleTh);
 	}
 
 	if (!m_sceneList.empty())
@@ -191,6 +191,13 @@ void scene_lab::loadParas()
 			if (paraLines[i].find("LocalSceneDBPath=") != std::string::npos)
 			{
 				m_localSceneDBPath = toQString(PartitionString(paraLines[i], "LocalSceneDBPath=")[0]);
+				continue;
+			}
+
+			if (paraLines[i].find("AngleThreshold=") != std::string::npos)
+			{
+				m_angleTh = StringToFloatList(paraLines[i], "AngleThreshold=")[0];
+				continue;
 			}
 		}
 	}
@@ -372,7 +379,15 @@ void scene_lab::BuildRelationGraphForCurrentScene()
 void scene_lab::BuildRelationGraphForSceneList()
 {
 	loadParas();
-	LoadSceneList(0,0,1);
+
+	if (m_sceneDBType == "stanford")
+	{
+		LoadSceneList(0, 1);
+	}
+	else
+	{
+		LoadSceneList(0, 0, 1);
+	}
 
 	for (int i = 0; i < m_sceneList.size(); i++)
 	{

@@ -46,7 +46,7 @@ void SceneSemGraph::generateGraph()
 		if (m_modelDB->isModelInDB(modelNameStr))
 		{
 			DBMetaModel *metaModel = m_modelDB->getMetaModelByNameString(modelNameStr);
-
+			CModel *m = m_scene->getModel(i);
 			DBMetaModel *newMetaModelInstance = new DBMetaModel(metaModel);
 
 			// add extra info to meta model
@@ -55,13 +55,15 @@ void SceneSemGraph::generateGraph()
 
 			if (m_scene->modelHasOBB(i))
 			{
-				newMetaModelInstance->position = m_scene->getOBBInitPos(i);
+				newMetaModelInstance->position = m->getModelPosOBB();
 			}
 			newMetaModelInstance->parentId = m_scene->getSuppParentId(i);
-			newMetaModelInstance->onSuppPlaneUV = m_scene->getUVonSuppPlaneForModel(i);
-			newMetaModelInstance->positionToSuppPlaneDist = m_scene->getHightToSuppPlaneForModel(i);
-			//newMetaModelInstance->suppPlaneCorners = m_scene->getCurrModelSuppPlaneCorners(i);
-			newMetaModelInstance->suppPlaneCorners = m_scene->getCurrModelSuppPlaneCornersWithSceneMetric(i);
+			newMetaModelInstance->onSuppPlaneUV = m_scene->getUVonBBTopPlaneForModel(i);
+			newMetaModelInstance->positionToSuppPlaneDist = m_scene->getHightToBBTopPlaneForModel(i);
+			if (m->m_bbTopPlane != NULL)
+			{
+				newMetaModelInstance->suppPlaneCorners = m_scene->getCurrModelBBTopPlaneCornersWithSceneMetric(i);
+			}
 
 			m_metaModelList.push_back(newMetaModelInstance);
 
@@ -84,7 +86,8 @@ void SceneSemGraph::generateGraph()
 
 			newMetaModel->frontDir = m->getFrontDir() * m_scene->getSceneMetric();
 			newMetaModel->upDir = m->getUpDir()* m_scene->getSceneMetric();
-			newMetaModel->position = m->getOBBInitPos();
+			//newMetaModel->position = m->getOBBInitPos();
+			newMetaModel->position = m->getModelPosOBB();
 
 			newMetaModel->setCatName(modelCatName);
 			newMetaModel->setIdStr(modelNameStr);
@@ -93,11 +96,13 @@ void SceneSemGraph::generateGraph()
 
 
 			newMetaModel->parentId = m->suppParentID;
-			newMetaModel->onSuppPlaneUV = m_scene->getUVonSuppPlaneForModel(i);
-			newMetaModel->positionToSuppPlaneDist = m_scene->getHightToSuppPlaneForModel(i);
-			//newMetaModel->suppPlaneCorners = m_scene->getCurrModelSuppPlaneCorners(i);
-			newMetaModel->suppPlaneCorners = m_scene->getCurrModelSuppPlaneCornersWithSceneMetric(i);
+			newMetaModel->onSuppPlaneUV = m_scene->getUVonBBTopPlaneForModel(i);
+			newMetaModel->positionToSuppPlaneDist = m_scene->getHightToBBTopPlaneForModel(i);
 
+			if (m->m_bbTopPlane!=NULL)
+			{
+				newMetaModel->suppPlaneCorners = m_scene->getCurrModelBBTopPlaneCornersWithSceneMetric(i);
+			}
 
 			newMetaModel->dbID = m_modelDB->dbMetaModels.size();
 			//m_modelDB->dbMetaModels[modelNameStr] = newMetaModel;
@@ -352,11 +357,14 @@ void SceneSemGraph::saveGraph()
 			ofs << "frontDir " << m_metaModelList[i]->frontDir[0] << " " << m_metaModelList[i]->frontDir[1] << " " << m_metaModelList[i]->frontDir[2] << "\n";
 			ofs << "upDir " << m_metaModelList[i]->upDir[0] << " " << m_metaModelList[i]->upDir[1] << " " << m_metaModelList[i]->upDir[2] << "\n";
 
-
-			ofs << "suppPlane " << m_metaModelList[i]->suppPlaneCorners[0][0] << " " << m_metaModelList[i]->suppPlaneCorners[0][1] << " " << m_metaModelList[i]->suppPlaneCorners[0][2] << " "
+			if (!m_metaModelList[i]->suppPlaneCorners.empty())
+			{
+				ofs << "bbTopPlane " << m_metaModelList[i]->suppPlaneCorners[0][0] << " " << m_metaModelList[i]->suppPlaneCorners[0][1] << " " << m_metaModelList[i]->suppPlaneCorners[0][2] << " "
 					<< m_metaModelList[i]->suppPlaneCorners[1][0] << " " << m_metaModelList[i]->suppPlaneCorners[1][1] << " " << m_metaModelList[i]->suppPlaneCorners[1][2] << " "
 					<< m_metaModelList[i]->suppPlaneCorners[2][0] << " " << m_metaModelList[i]->suppPlaneCorners[2][1] << " " << m_metaModelList[i]->suppPlaneCorners[2][2] << " "
 					<< m_metaModelList[i]->suppPlaneCorners[3][0] << " " << m_metaModelList[i]->suppPlaneCorners[3][1] << " " << m_metaModelList[i]->suppPlaneCorners[3][2] << "\n";
+			}
+
 			ofs << "parentId " << m_metaModelList[i]->parentId << "\n";
 			ofs << "parentPlaneUVH " << m_metaModelList[i]->onSuppPlaneUV[0] << " " << m_metaModelList[i]->onSuppPlaneUV[1] << " " << m_metaModelList[i]->positionToSuppPlaneDist << "\n";
 		}

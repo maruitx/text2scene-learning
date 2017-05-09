@@ -104,7 +104,7 @@ void ModelDBViewer_widget::buildSuppPlaneForCurrModel()
 	if (m_displayedModel != NULL)
 	{
 		//m_displayedModel->buildSuppPlane();
-		m_displayedModel->builSuppPlaneUsingBBTop();
+		m_displayedModel->builBBTopPlane();
 	}
 }
 
@@ -126,7 +126,7 @@ void ModelDBViewer_widget::builSuppPlaceForModelList()
 		m->updateFrontDir(dbModel->frontDir);
 		m->updateUpDir(dbModel->upDir);
 
-		m->builSuppPlaneUsingBBTop();
+		m->builBBTopPlane();
 
 		delete m;
 	}

@@ -72,11 +72,12 @@ public:
 	double getSceneMetric() { return m_metric; };
 
 	int getSuppParentId(int modelId) { return m_modelList[modelId]->suppParentID; };
-	std::vector<double> getUVonSuppPlaneForModel(int modelId);
-	double getHightToSuppPlaneForModel(int modelId);
+	std::vector<double> getUVonBBTopPlaneForModel(int modelId);
+	double getHightToBBTopPlaneForModel(int modelId);
 	std::vector<MathLib::Vector3> getParentSuppPlaneCorners(int modelId);
-	std::vector<MathLib::Vector3> getCurrModelSuppPlaneCorners(int modelId);
 	std::vector<MathLib::Vector3> getCurrModelSuppPlaneCornersWithSceneMetric(int modelId);
+	std::vector<MathLib::Vector3> getCurrModelBBTopPlaneCornersWithSceneMetric(int modelId);
+
 
 	void buildRelationGraph();
 	RelationGraph* getSceneGraph() { return m_relationGraph; };

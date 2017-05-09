@@ -713,6 +713,44 @@ QString DBMetaModel::getProcessedCatName()
 		}
 	}
 
+	// book
+	if (m_shapeNetCategoryNames[0] == "book")
+	{
+		for (int i = 1; i < m_shapeNetCategoryNames.size(); i++)
+		{
+			if (m_shapeNetCategoryNames[i] == "openbook")
+			{
+				m_processedCatName = "openbook";
+				break;
+			}
+
+			if (m_shapeNetCategoryNames[i] == "standbook")
+			{
+				m_processedCatName = "standbook";
+				break;
+			}
+		}
+	}
+
+	// books
+	if (m_shapeNetCategoryNames[0] == "books")
+	{
+		for (int i = 1; i < m_shapeNetCategoryNames.size(); i++)
+		{
+			if (m_shapeNetCategoryNames[i] == "standbooks")
+			{
+				m_processedCatName = "standbooks";
+				break;
+			}
+
+			if (m_shapeNetCategoryNames[i] == "stackbooks")
+			{
+				m_processedCatName = "stackbooks";
+				break;
+			}
+		}
+	}
+
 	if (m_shapeNetCategoryNames[0] == "computer")
 	{
 		for (int i = 1; i < m_shapeNetCategoryNames.size(); i++)

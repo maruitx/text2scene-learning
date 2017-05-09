@@ -37,6 +37,8 @@ public:
 	MathLib::Vector3 position;
 
 	std::vector<MathLib::Vector3> suppPlaneCorners;
+	std::vector<MathLib::Vector3> bbTopPlaneCorners;
+
 	int parentId;
 	std::vector<double> onSuppPlaneUV;
 	double positionToSuppPlaneDist; // distance after the transformation (in the real world unit, inch for StanfordSceneDataBase)

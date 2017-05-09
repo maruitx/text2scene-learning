@@ -4,7 +4,8 @@
 #include "../t2scene/SceneSemGraph.h"
 #include "../common/geometry/SuppPlane.h"
 
-RelationExtractor::RelationExtractor()
+RelationExtractor::RelationExtractor(double angleTh)
+	:m_angleThreshold(angleTh)
 {
 }
 
@@ -42,7 +43,7 @@ QString RelationExtractor::getRelationConditionType(CModel *anchorModel, CModel 
 	// do not consider proximity for "room"
 	if (anchorCatName != "room" && actCatName != "room" && isInProximity(anchorModel, actModel))
 	{
-		return ConditionName[ConditionType::Pro];
+		return ConditionName[ConditionType::Prox];
 	}
 
 	return QString("none");
@@ -58,7 +59,6 @@ std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(int an
 
 std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(CModel *anchorModel, CModel *actModel)
 {
-	double angleThreshold = 30;
 	double distThreshold = 0.1 / m_currScene->getSceneMetric();
 
 	std::vector<QString> relationStrings;
@@ -67,13 +67,20 @@ std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(CModel
 
 	if (conditionType == "none") return relationStrings;
 
+	bool isGroundSib = false;  // both models are ground
+	if (anchorModel->isGroundObj() && actModel->isGroundObj())
+	{
+		isGroundSib = true;
+	}
+
 	// add near to proximity objs
-	if (conditionType == ConditionName[ConditionType::Pro])
+	bool isNear = isInProximity(anchorModel, actModel);
+	if (isNear && isGroundSib)
 	{
 		relationStrings.push_back(PairRelStrings[PairRelation::Near]);  // near
 	}
 
-	double sideSectionVal = MathLib::Cos(angleThreshold);
+	double sideSectionVal = MathLib::Cos(m_angleThreshold);
 	MathLib::Vector3 refFront = anchorModel->getHorizonFrontDir();
 	MathLib::Vector3 refUp = anchorModel->getVertUpDir();
 
@@ -85,7 +92,7 @@ std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(CModel
 	fromRefToTestVec.normalize();
 
 	// add front and back to sibling or near objs
-	if (conditionType == ConditionName[ConditionType::Sib] || conditionType == ConditionName[ConditionType::Pro])
+	if (conditionType == ConditionName[ConditionType::Sib]&&isGroundSib || conditionType == ConditionName[ConditionType::Prox])
 	{
 		// front or back side is not view dependent
 		double frontDirDot = fromRefToTestVec.dot(refFront);
@@ -100,7 +107,6 @@ std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(CModel
 		}
 	}
 
-	// TODO: add OnCenter
 	bool isOnCenter = false;
 	double toBottomHight = testPos.z - refPos.z;
 	double xyPlaneDist = std::sqrt(std::pow(testPos.x-refPos.x, 2) + std::pow(testPos.y-refPos.y, 2));
@@ -132,7 +138,7 @@ std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(CModel
 		{
 			relationStrings.push_back(PairRelStrings[PairRelation::OnRight]); // right
 		}
-		else if(conditionType == ConditionName[ConditionType::Sib] || conditionType == ConditionName[ConditionType::Pro])
+		else if(conditionType == ConditionName[ConditionType::Sib]&&isNear || conditionType == ConditionName[ConditionType::Prox])
 		{
 			relationStrings.push_back(PairRelStrings[PairRelation::RightSide]); // right
 		}
@@ -143,7 +149,7 @@ std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(CModel
 		{
 			relationStrings.push_back(PairRelStrings[PairRelation::OnLeft]); // right
 		}
-		else if(conditionType == ConditionName[ConditionType::Sib] || conditionType == ConditionName[ConditionType::Pro])
+		else if(conditionType == ConditionName[ConditionType::Sib] && isNear || conditionType == ConditionName[ConditionType::Prox])
 		{
 			relationStrings.push_back(PairRelStrings[PairRelation::LeftSide]); // left
 		}

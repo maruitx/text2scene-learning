@@ -637,7 +637,7 @@ MathLib::Vector3 CScene::getRoomFront()
 	}
 }
 
-std::vector<double> CScene::getUVonSuppPlaneForModel(int modelId)
+std::vector<double> CScene::getUVonBBTopPlaneForModel(int modelId)
 {
 	CModel *currModel = m_modelList[modelId];
 	int parentId = currModel->suppParentID;
@@ -651,23 +651,29 @@ std::vector<double> CScene::getUVonSuppPlaneForModel(int modelId)
 
 	std::vector<double> uv;
 
-	if (parentModel->hasSuppPlane())
-	{
-		SuppPlane *suppPlane = parentModel->getSuppPlane(0);	
-		MathLib::Vector3 pos = currModel->getModelPosOBB();  // in real world pos
-		//MathLib::Vector3 pos = currModel->parentContactPos;
-		
-		uv = suppPlane->GetUVForPoint(pos);
+	//if (parentModel->hasSuppPlane())
+	//{
+	//	SuppPlane *suppPlane = parentModel->getSuppPlane(0);	
+	//	MathLib::Vector3 pos = currModel->getModelPosOBB();  // in real world pos
+	//	//MathLib::Vector3 pos = currModel->parentContactPos;
+	//	
+	//	uv = suppPlane->GetUVForPoint(pos);
 
-		return uv;
-	}
-	else
-	{
-		return std::vector<double>(2, 0.5);
-	}
+	//	return uv;
+	//}
+	//else
+	//{
+	//	return std::vector<double>(2, 0.5);
+	//}
+
+	MathLib::Vector3 pos = currModel->getModelPosOBB();  // in real world pos
+	uv = parentModel->m_bbTopPlane->GetUVForPoint(pos);
+
+	return uv;
+
 }
 
-double CScene::getHightToSuppPlaneForModel(int modelId)
+double CScene::getHightToBBTopPlaneForModel(int modelId)
 {
 	CModel *currModel = m_modelList[modelId];
 	int parentId = currModel->suppParentID;
@@ -679,23 +685,33 @@ double CScene::getHightToSuppPlaneForModel(int modelId)
 
 	CModel *parentModel = m_modelList[parentId];
 	double d;
-	
-	if (parentModel->hasSuppPlane())
-	{
-		SuppPlane *suppPlane = parentModel->getSuppPlane(0);
-		MathLib::Vector3 pos = currModel->getModelPosOBB();
 
-		d = suppPlane->GetPointToPlaneDist(pos); // in real world unit
+	SuppPlane *suppPlane = parentModel->m_bbTopPlane;
+	MathLib::Vector3 pos = currModel->getModelPosOBB();
 
-		double scaleFactor = m_metric / InchToMeterFactor;
-		d = d*scaleFactor;
+	d = suppPlane->GetPointToPlaneDist(pos); // in real world unit
 
-		return d;
-	}
-	else
-	{
-		return 0;
-	}
+	double scaleFactor = m_metric / InchToMeterFactor;
+	d = d*scaleFactor;
+
+	return d;
+
+	//if (parentModel->hasSuppPlane())
+	//{
+	//	SuppPlane *suppPlane = parentModel->getSuppPlane(0);
+	//	MathLib::Vector3 pos = currModel->getModelPosOBB();
+
+	//	d = suppPlane->GetPointToPlaneDist(pos); // in real world unit
+
+	//	double scaleFactor = m_metric / InchToMeterFactor;
+	//	d = d*scaleFactor;
+
+	//	return d;
+	//}
+	//else
+	//{
+	//	return 0;
+	//}
 }
 
 std::vector<MathLib::Vector3> CScene::getParentSuppPlaneCorners(int modelId)
@@ -722,23 +738,6 @@ std::vector<MathLib::Vector3> CScene::getParentSuppPlaneCorners(int modelId)
 	}
 }
 
-std::vector<MathLib::Vector3> CScene::getCurrModelSuppPlaneCorners(int modelId)
-{
-	CModel *currModel = m_modelList[modelId];
-
-	if (currModel->hasSuppPlane())
-	{
-		SuppPlane *suppPlane = currModel->getSuppPlane(0);
-		std::vector<MathLib::Vector3> corners = suppPlane->GetCorners();
-
-		return corners;
-	}
-	else
-	{
-		return std::vector<MathLib::Vector3>(4, MathLib::Vector3(0, 0, 0));
-	}
-
-}
 
 std::vector<MathLib::Vector3> CScene::getCurrModelSuppPlaneCornersWithSceneMetric(int modelId)
 {
@@ -761,6 +760,19 @@ std::vector<MathLib::Vector3> CScene::getCurrModelSuppPlaneCornersWithSceneMetri
 	{
 		return std::vector<MathLib::Vector3>(4, MathLib::Vector3(0, 0, 0));
 	}
+}
+
+std::vector<MathLib::Vector3> CScene::getCurrModelBBTopPlaneCornersWithSceneMetric(int modelId)
+{
+	std::vector<MathLib::Vector3> corners = m_modelList[modelId]->m_bbTopPlane->GetCorners();
+
+	double scaleFactor = m_metric / InchToMeterFactor;
+	for (int i = 0; i < corners.size(); i++)
+	{
+		corners[i] = corners[i] * scaleFactor;
+	}
+
+	return corners;
 }
 
 void CScene::computeModelBBAlignMat()

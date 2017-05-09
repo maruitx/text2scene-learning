@@ -15,6 +15,7 @@ CModel::CModel()
 
 	m_suppPlaneManager = new SuppPlaneManager(this);
 	m_hasOBB = false;
+	m_bbTopPlane = NULL;
 
 	m_fullTransMat.setidentity();
 	m_lastTransMat.setidentity();
@@ -58,6 +59,11 @@ CModel::~CModel()
 		delete m_suppPlaneManager;
 		m_suppPlaneManager = NULL;
 	}
+
+	if (m_bbTopPlane)
+	{
+		delete m_bbTopPlane;
+	}
 }
 
 bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int obbOnly, int meshAndOBB, QString sceneDbType)
@@ -90,6 +96,7 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 
 	// still try to load obb, because we want to save the center of the model
 	loadOBB();
+	loadBBTopPlane();
 
 	//  try to load support plane
 	if (m_suppPlaneManager->loadSuppPlane())
@@ -99,8 +106,7 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 			m_hasSuppPlane = true;
 		}
 	}
- 
-	
+ 	
 	if (metaDataOnly)
 	{
 		// return before loading obj data
@@ -275,6 +281,11 @@ void CModel::transformModel(const MathLib::Matrix4d &transMat)
 		m_suppPlaneManager->transformSuppPlanes(transMat);
 	}
 
+	if (m_bbTopPlane!=NULL)
+	{
+		m_bbTopPlane->transformPlane(transMat);
+	}
+
 	// transform obb
 	if (m_hasOBB)
 	{
@@ -375,7 +386,7 @@ void CModel::buildSuppPlane()
 	}
 }
 
-void CModel::builSuppPlaneUsingBBTop()
+void CModel::builBBTopPlane()
 {
 	// support plane should have consistent vertex order, w.r.t to the model front
 	std::vector<MathLib::Vector3> corners(4); // need to delete after use to release memory
@@ -449,15 +460,17 @@ void CModel::builSuppPlaneUsingBBTop()
 	p->setModelID(m_id);
 	p->setSuppPlaneID(0);
 
-	m_suppPlaneManager->addSupportPlane(p);
-	m_suppPlaneManager->saveSuppPlane();
+	m_bbTopPlane = p;
 
-	m_showFaceClusters = true;
+	//m_suppPlaneManager->addSupportPlane(p);
+	//m_suppPlaneManager->saveSuppPlane();
 
-	if (m_suppPlaneManager->hasSuppPlane())
-	{
-		m_hasSuppPlane = true;
-	}
+	//m_showFaceClusters = true;
+
+	//if (m_suppPlaneManager->hasSuppPlane())
+	//{
+	//	m_hasSuppPlane = true;
+	//}
 }
 
 //
@@ -917,6 +930,21 @@ bool CModel::isSupportChild(int id)
 	}
 }
 
+bool CModel::isGroundObj()
+{
+	bool flag = false;
+
+	if (supportLevel == 0)
+	{
+		flag = true;
+	}
+
+	double toFloorHeight = getModelPosOBB().z;
+	flag = flag&&(toFloorHeight < 0.1 / m_sceneMetric);
+
+	return flag;
+}
+
 void CModel::updateFrontDir(const MathLib::Vector3 &loadedDir)
 {
 	m_initFrontDir = loadedDir;
@@ -980,6 +1008,60 @@ MathLib::Vector3 CModel::getRightDir()
 SuppPlane* CModel::getSuppPlane(int i)
 {
 	return m_suppPlaneManager->getSuppPlane(i);
+}
+
+void CModel::loadBBTopPlane()
+{
+	QString filename;
+	filename = m_filePath + "/" + m_nameStr + ".bbtop";
+
+	QFile bbTopFile(filename);
+
+	QTextStream ifs(&bbTopFile);
+
+	if (!bbTopFile.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+
+	std::vector<MathLib::Vector3> suppCorners;
+
+	while (!ifs.atEnd())
+	{
+		suppCorners.clear();
+		for (int i = 0; i < 4; i++)
+		{
+			MathLib::Vector3 corner;
+			QString buff;
+			ifs >> buff;
+			if (buff[0].isDigit() || buff[0] == '-')
+			{
+				corner[0] = buff.toDouble();
+				ifs >> corner[1] >> corner[2];
+				//ifs >> buff;  // read rest of line "\n"
+			}
+			else
+				break;
+
+			suppCorners.push_back(corner);
+		}
+
+		if (!suppCorners.empty())
+		{
+			//SuppPlane *p = new SuppPlane(suppCorners, obbAxis);
+			SuppPlane *p = new SuppPlane(suppCorners, 1);
+
+			p->m_sceneMetric = m_sceneMetric;
+			p->setModelID(m_id);
+			p->setColor(GetColorFromSet(0));
+			p->setSuppPlaneID(0);
+			m_bbTopPlane = p;
+		}
+		else
+		{
+			break;
+		}
+
+	}
+
+	bbTopFile.close();
 }
 
 void CModel::computeBBAlignMat()

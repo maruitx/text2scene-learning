@@ -19,7 +19,7 @@ enum ConditionType
 	Pc = 0,
 	Cp,
 	Sib,
-	Pro
+	Prox
 };
 
 enum PairRelation
@@ -51,7 +51,7 @@ enum GroupRelation
 class RelationExtractor
 {
 public:
-	RelationExtractor();
+	RelationExtractor(double angleTh);
 	~RelationExtractor();
 
 	void updateCurrScene(CScene *s) { m_currScene = s; };
@@ -69,6 +69,7 @@ private:
 	CScene *m_currScene;
 	SceneSemGraph *m_currSceneSemGraph;
 
+	double m_angleThreshold;
 
 };
 

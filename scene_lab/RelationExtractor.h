@@ -70,6 +70,7 @@ private:
 	SceneSemGraph *m_currSceneSemGraph;
 
 	double m_angleThreshold;
+	std::vector<QString> m_rightAdjustObjNames;
 
 };
 

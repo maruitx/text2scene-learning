@@ -139,6 +139,11 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 		computeAABB();
 		m_initAABB = m_AABB;
 
+		if (!loadBBTopPlane())
+		{
+			builBBTopPlane();
+		}
+
 		buildDisplayList(0, 0);
 
 		if (meshAndOBB)  // load both obb and mesh, if obb not exist, compute obb
@@ -462,15 +467,21 @@ void CModel::builBBTopPlane()
 
 	m_bbTopPlane = p;
 
-	//m_suppPlaneManager->addSupportPlane(p);
-	//m_suppPlaneManager->saveSuppPlane();
+	QString suppPlaneFilename = m_filePath + "/" + m_nameStr + ".bbtop";
+	QFile suppFile(suppPlaneFilename);
 
-	//m_showFaceClusters = true;
-
-	//if (m_suppPlaneManager->hasSuppPlane())
-	//{
-	//	m_hasSuppPlane = true;
-	//}
+	QTextStream ofs(&suppFile);
+	if (suppFile.open(QIODevice::ReadWrite | QIODevice::Text | QIODevice::Truncate))
+	{
+		std::vector<MathLib::Vector3> corners = m_bbTopPlane->GetCorners();
+		for (int c = 0; c < 4; c++)
+		{
+			ofs << corners[c][0] << " " << corners[c][1] << " " << corners[c][2] << "\n";
+		}
+		suppFile.close();
+		std::cout << "\t bb top plane saved to " << suppPlaneFilename.toStdString() << "\n";
+		suppFile.close();
+	}
 }
 
 //
@@ -668,6 +679,8 @@ MathLib::Vector3 CModel::getOBBFrontFaceCenter()
 		return m_OBB.GetFaceCent(3);  // (0,-1,0)
 }
 
+
+
 void CModel::drawFrontDir()
 {
 	MathLib::Vector3 startPt, endPt;
@@ -835,6 +848,26 @@ MathLib::Vector3 CModel::getModelRightCenter()
 MathLib::Vector3 CModel::getModeLeftCenter()
 {
 	return m_OBB.cent - m_OBB.axis[0] * m_OBB.hsize[0];
+}
+
+MathLib::Vector3 CModel::getOBBBackCenter()
+{
+	MathLib::Vector3 backCent;
+	double maxDot = 0;
+	int frontAxisId = 1; // default
+
+	for (int i = 0; i < 3; i++)
+	{
+		double currDot = std::abs(m_OBB.axis[i].dot(m_currFrontDir));
+		if (currDot > maxDot)
+		{
+			maxDot = currDot;
+			frontAxisId = i;
+		}
+	}
+
+	m_currFrontDir.normalize();
+	return m_OBB.cent - m_currFrontDir*m_OBB.hsize[frontAxisId];
 }
 
 double CModel::getOBBHeight()
@@ -1010,7 +1043,7 @@ SuppPlane* CModel::getSuppPlane(int i)
 	return m_suppPlaneManager->getSuppPlane(i);
 }
 
-void CModel::loadBBTopPlane()
+bool CModel::loadBBTopPlane()
 {
 	QString filename;
 	filename = m_filePath + "/" + m_nameStr + ".bbtop";
@@ -1019,7 +1052,7 @@ void CModel::loadBBTopPlane()
 
 	QTextStream ifs(&bbTopFile);
 
-	if (!bbTopFile.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+	if (!bbTopFile.open(QIODevice::ReadOnly | QIODevice::Text)) return false;
 
 	std::vector<MathLib::Vector3> suppCorners;
 
@@ -1062,6 +1095,7 @@ void CModel::loadBBTopPlane()
 	}
 
 	bbTopFile.close();
+	return true;
 }
 
 void CModel::computeBBAlignMat()

@@ -10,7 +10,13 @@ extern Engine *matlabEngine;
 RelationModelManager::RelationModelManager(RelationExtractor *mExtractor)
 	:m_relationExtractor(mExtractor)
 {
-
+	m_adjustFrontObjs.push_back("desk");
+	m_adjustFrontObjs.push_back("bookcase");
+	m_adjustFrontObjs.push_back("cabinet");
+	m_adjustFrontObjs.push_back("dresser");
+	m_adjustFrontObjs.push_back("monitor");
+	m_adjustFrontObjs.push_back("tv");
+	m_adjustFrontObjs.push_back("bed");
 }
 
 RelationModelManager::~RelationModelManager()
@@ -324,10 +330,9 @@ void RelationModelManager::computeSimForPairwiseModels(std::map<QString, Pairwis
 			}
 
 			// compute similarity
-			// collect max value for normalization
 			Eigen::MatrixXd simMat(pairModelIds.size(), pairModelIds.size());
 			double featureWeights[] = { 1,1,1,0.5,0.5,0.5 };
-			double catWeight = 0.5;			
+			double catWeight = 0.3;			
 
 			for (int i = 0; i < pairModelIds.size(); i++)
 			{
@@ -339,27 +344,34 @@ void RelationModelManager::computeSimForPairwiseModels(std::map<QString, Pairwis
 				{
 					if (i == j) continue;
 
-					std::vector<double> simVal(2, 0);
-					std::vector<double> geoSim(2, 0);
-					std::vector<double> catSim(2, 0);
-
 					QString modelKeyB = pairModelKeys[pairModelIds[j]];
 					PairwiseRelationModel *relModelB = pairModels[modelKeyB];
 
-					if (relModelA->m_anchorObjName == relModelB->m_anchorObjName) catSim[0] = 1;
-					if (relModelA->m_actObjName == relModelB->m_actObjName) catSim[1] = 1;
-
-					for (int m = 0; m < 2; m++)
+					if (isAnchorFrontDirConsistent(relModelA->m_anchorObjName, relModelB->m_anchorObjName))
 					{
-						for (int d = 0; d < featureDim; d++)
-						{
-							geoSim[m] += featureWeights[d] * exp(-pow((relModelA->m_avgObjFeatures[m][d] - relModelB->m_avgObjFeatures[m][d]) / (maxFeatures[m][d] + 1e-3), 2));
-						}
+						std::vector<double> simVal(2, 0);
+						std::vector<double> geoSim(2, 0);
+						std::vector<double> catSim(2, 0);
 
-						geoSim[m] /= featureDim;
-						simVal[m] = catWeight*catSim[m] + (1 - catWeight)*geoSim[m];
+						if (relModelA->m_anchorObjName == relModelB->m_anchorObjName) catSim[0] = 1;
+						if (relModelA->m_actObjName == relModelB->m_actObjName) catSim[1] = 1;
+
+						for (int m = 0; m < 2; m++)
+						{
+							for (int d = 0; d < featureDim; d++)
+							{
+								geoSim[m] += featureWeights[d] * exp(-pow((relModelA->m_avgObjFeatures[m][d] - relModelB->m_avgObjFeatures[m][d]) / (maxFeatures[m][d] + 1e-3), 2));
+							}
+
+							geoSim[m] /= featureDim;
+							simVal[m] = catWeight*catSim[m] + (1 - catWeight)*geoSim[m];
+						}
+						simMat(i, j) = simVal[0] * simVal[1];
 					}
-					simMat(i, j) = simVal[0] * simVal[1];
+					else
+					{
+						simMat(i, j) = 0;
+					}
 				}
 			}
 
@@ -438,6 +450,23 @@ void RelationModelManager::computeSimForPairModelInGroup(const std::vector<CScen
 		GroupRelationModel *groupModel = giter->second;
 		computeSimForPairwiseModels(groupModel->m_pairwiseModels, groupModel->m_pairModelKeys, sceneList, true);
 	}
+}
+
+bool RelationModelManager::isAnchorFrontDirConsistent(const QString &currAnchorName, const QString &dbAnchorName)
+{
+	if (std::find(m_adjustFrontObjs.begin(), m_adjustFrontObjs.end(), dbAnchorName) != m_adjustFrontObjs.end()
+		&& std::find(m_adjustFrontObjs.begin(), m_adjustFrontObjs.end(), currAnchorName) == m_adjustFrontObjs.end())
+	{
+		return false;
+	}
+
+	if (std::find(m_adjustFrontObjs.begin(), m_adjustFrontObjs.end(), dbAnchorName) == m_adjustFrontObjs.end()
+		&& std::find(m_adjustFrontObjs.begin(), m_adjustFrontObjs.end(), currAnchorName) != m_adjustFrontObjs.end())
+	{
+		return false;
+	}
+
+	return true;
 }
 
 void RelationModelManager::collectSupportRelationInCurrentScene()

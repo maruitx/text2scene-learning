@@ -564,6 +564,8 @@ void scene_lab::BuildGroupRelationModels()
 
 void scene_lab::BatchBuildModelsForList()
 {
+	uint64 startTime = GetTimeMs64();
+
 	loadParas();
 	// load metadata
 	LoadSceneList(1);
@@ -609,6 +611,9 @@ void scene_lab::BatchBuildModelsForList()
 	// support
 	m_relationModelManager->buildSupportRelationModels();
 	m_relationModelManager->saveSupportRelationModels(m_localSceneDBPath, m_sceneDBType);
+
+	uint64 endTime = GetTimeMs64();
+	qDebug() << QString("Done in %1 seconds").arg((endTime-startTime)/1000);
 }
 
 void scene_lab::ComputeBBAlignMatForSceneList()

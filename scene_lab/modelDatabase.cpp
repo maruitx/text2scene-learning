@@ -801,9 +801,20 @@ void DBMetaModel::extractAttributeFromShapeNetCatNames()
 		//	m_attributes.push_back("file");
 		//}
 
+		if (m_shapeNetCategoryNames[i].contains("queen"))
+		{
+			m_attributes.push_back("queen");
+		}
+
 		if (m_shapeNetCategoryNames[i].contains("round"))
 		{
 			m_attributes.push_back("round");
+		}
+
+		if (std::find(m_attributes.begin(), m_attributes.end(), QString("dining")) != m_attributes.end()
+			&& std::find(m_attributes.begin(), m_attributes.end(), QString("round")) == m_attributes.end())
+		{
+			m_attributes.push_back("rectangular");
 		}
 
 		if (m_shapeNetCategoryNames[i].contains("sauce"))
@@ -812,17 +823,14 @@ void DBMetaModel::extractAttributeFromShapeNetCatNames()
 			m_shapeNetCategoryNames[i] = "bottle";
 		}
 
-		if (m_shapeNetCategoryNames[i].contains("recliner") || m_shapeNetCategoryNames[i].contains("accentchair")) // sofa chair
+		if (m_shapeNetCategoryNames[i].contains("recliner") || m_shapeNetCategoryNames[i].contains("accentchair")
+			|| m_shapeNetCategoryNames[i].contains("beanbag")) // sofa chair
 		{
 			m_attributes.push_back("sofa");  
 		}
 
 	}
 
-	if (std::find(m_attributes.begin(), m_attributes.end(), QString("dining")) != m_attributes.end() 
-		&& std::find(m_attributes.begin(), m_attributes.end(), QString("round")) == m_attributes.end())
-	{
-		m_attributes.push_back("rectangular");
-	}
+
 
 }

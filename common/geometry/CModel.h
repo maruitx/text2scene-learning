@@ -75,13 +75,16 @@ public:
 	MathLib::Vector3 getModelTopCenter();
 	MathLib::Vector3 getModelRightCenter();
 	MathLib::Vector3 getModeLeftCenter();
+	MathLib::Vector3 getOBBBackCenter();
+	MathLib::Vector3 getOBBFrontFaceCenter();
+
 	MathLib::Vector3 getModelAlongDirOBBFaceCenter();
 	MathLib::Vector3 getModelNormalDirOBBFaceCenter();
 	MathLib::Vector3 getAlongDirOBBAxis();
 	double getOBBVolume() { return m_OBB.Vol(); };
 
 	void selectOBBFace(const MathLib::Vector3 &origin, const MathLib::Vector3 &dir);
-	MathLib::Vector3 getOBBFrontFaceCenter();
+
 
 	MathLib::Vector3 getFrontDir() { return m_currFrontDir; };
 	MathLib::Vector3 getUpDir(){ return m_currUpDir; };
@@ -110,7 +113,7 @@ public:
 	//double getLargestSuppPlaneHeight();
 	SuppPlane* getSuppPlane(int i);
 	//int getSuppPlaneNum();
-	void loadBBTopPlane();
+	bool loadBBTopPlane();
 
 	// transformation
 	void transformModel(const MathLib::Matrix4d &transMat);

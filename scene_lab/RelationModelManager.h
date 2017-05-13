@@ -44,6 +44,9 @@ public:
 	void computeSimForPairwiseModels(std::map<QString, PairwiseRelationModel*> &pairModels, const std::vector<QString> &pairModelKeys, const std::vector<CScene*> &sceneList, bool isInGroup = false, const QString &filePath = "");
 	void computeSimForPairModelInGroup(const std::vector<CScene*> &sceneList);
 
+	bool isAnchorFrontDirConsistent(const QString &currAnchorName, const QString &dbAnchorName);
+
+
 	void collectSupportRelationInCurrentScene();
 	void buildSupportRelationModels();
 
@@ -69,5 +72,7 @@ private:
 
 	RelationExtractor *m_relationExtractor;
 	CScene *m_currScene;
+
+	std::vector<QString> m_adjustFrontObjs;
 };
 

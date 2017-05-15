@@ -94,6 +94,8 @@ std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(CModel
 	MathLib::Vector3 refPos = anchorModel->m_currOBBPos;   // OBB bottom center
 	MathLib::Vector3 testPos = actModel->m_currOBBPos;
 
+	MathLib::Vector3 actFront = actModel->getHorizonFrontDir();
+
 	MathLib::Vector3 fromRefPosToTestPosVec = testPos - refPos;
 	fromRefPosToTestPosVec[2] = 0; // project to XY plane
 	fromRefPosToTestPosVec.normalize();
@@ -150,8 +152,9 @@ std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(CModel
 	SuppPlane *anchorBBTopPlane = anchorModel->m_bbTopPlane;
 	SuppPlane *actBBTopPlane = actModel->m_bbTopPlane;
 	
-	MathLib::Vector3 actFront = actModel->getHorizonFrontDir();
-	double rightAngleTh = MathLib::ML_PI / 3;
+	double rightAngleTh = MathLib::ML_PI / 3;  // 3
+	double zeroAngleTh = MathLib::ML_PI / 12;  // 6
+
 	if (posRightDirDot >= sideSectionVal || backRightDirDot >= sideSectionVal) // right of obj
 	{
 		if (conditionType == ConditionName[ConditionType::Pc] && !isOnCenter)
@@ -162,23 +165,19 @@ std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(CModel
 			&& actBBTopPlane != NULL&&!actBBTopPlane->isCoverPos(refPos.x, refPos.y)
 			&&(conditionType == ConditionName[ConditionType::Sib]&&isNear || conditionType == ConditionName[ConditionType::Prox]))
 		{
-			if (isGroundSib) // ensure the front dir is consistent for ground obj
+			//if (isGroundSib) 
 			{
 				double angle = GetRotAngleR(refFront, actFront, MathLib::Vector3(0,0,1));
-				if (isAnchorRightAdjust && angle <= 0 && angle >= -rightAngleTh)
+				if (isAnchorRightAdjust && angle <= zeroAngleTh && angle >= -rightAngleTh)  
 				{
 					relationStrings.push_back(PairRelStrings[PairRelation::RightSide]); // ensure the front dir is consistent for ground obj
 				}
-				else if(!isAnchorRightAdjust && angle >= 0 && angle <= rightAngleTh)
+				else if(!isAnchorRightAdjust && angle >= -zeroAngleTh && angle <= rightAngleTh)
 				{
 					relationStrings.push_back(PairRelStrings[PairRelation::RightSide]); // ensure the front dir is consistent for ground obj
 
 				}
 			}
-			//else
-			//{
-			//	relationStrings.push_back(PairRelStrings[PairRelation::RightSide]); // right
-			//}
 		}
 	}
 	else if (posRightDirDot < -sideSectionVal || backRightDirDot < -sideSectionVal)  // left of obj
@@ -191,14 +190,14 @@ std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(CModel
 			&& actBBTopPlane != NULL && !actBBTopPlane->isCoverPos(refPos.x, refPos.y)
 			&& (conditionType == ConditionName[ConditionType::Sib] && isNear || conditionType == ConditionName[ConditionType::Prox]))
 		{
-			if (isGroundSib)
+			//if (isGroundSib)
 			{
 				double angle = GetRotAngleR(refFront, actFront, MathLib::Vector3(0, 0, 1));
-				if (isAnchorRightAdjust && angle >= 0 && angle <= rightAngleTh)
+				if (isAnchorRightAdjust && angle >= -zeroAngleTh && angle <= rightAngleTh)
 				{
 					relationStrings.push_back(PairRelStrings[PairRelation::LeftSide]); // ensure the front dir is consistent for ground obj
 				}
-				else if (!isAnchorRightAdjust && angle <= 0 && angle >= -rightAngleTh)
+				else if (!isAnchorRightAdjust && angle <= zeroAngleTh && angle >= -rightAngleTh)
 				{
 					relationStrings.push_back(PairRelStrings[PairRelation::LeftSide]); // ensure the front dir is consistent for ground obj
 				}
@@ -212,7 +211,7 @@ std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(CModel
 
 	if (fromRefTopToTestTop.dot(refUp) < 0)
 	{
-		if (anchorBBTopPlane != NULL&&anchorBBTopPlane->isCoverPos(testPos.x, testPos.y) && conditionType != ConditionName[ConditionType::Pc])
+		if ( anchorBBTopPlane != NULL&&anchorBBTopPlane->isCoverPos(testPos.x, testPos.y) && conditionType != ConditionName[ConditionType::Pc])
 		{
 			relationStrings.push_back(PairRelStrings[PairRelation::Under]); // under
 		}
@@ -231,7 +230,7 @@ bool RelationExtractor::isInProximity(CModel *anchorModel, CModel *actModel)
 
 	double closestBBDist = refOBB.ClosestDist_Approx(testOBB);
 
-	if (closestBBDist < 0.5 / sceneMetric)
+	if (closestBBDist < 0.8 / sceneMetric)
 	{
 		return true;
 	}

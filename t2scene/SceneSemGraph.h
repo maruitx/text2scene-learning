@@ -10,7 +10,7 @@ class DBMetaModel;
 class RelationExtractor;
 class CModel;
 
-const QString SSGNodeTypeStrings[] = { "object", "attribute", "pair_relation", "group_relation", "group_relation_anno" };
+const QString SSGNodeTypeStrings[] = { "object", "attribute", "pair_relation", "group_relation", "group_relation_anno"};
 const QString SingleAttriStrings[] = {"round", "rectangular", "office", "dining", "kitchen", "floor", "wall"};
 const QString GroupAttrStings[] = {"messy", "clean", "organized", "disorganized", "formal", "casual", "spacious", "crowded"};
 
@@ -49,6 +49,7 @@ public:
 	void addSpatialSideRelForModelPair(int refModelId, int testModelId);
 
 	void addGroupAttributeFromAnnotation(); // high-level attribute node and edges to object node
+	void splitSpecialGroupRelationToPairRelations();
 
 	QString getCatName(int modelId);
 

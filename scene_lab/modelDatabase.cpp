@@ -791,11 +791,6 @@ void DBMetaModel::extractAttributeFromShapeNetCatNames()
 			m_attributes.push_back("coffee");
 		}
 
-		if (m_shapeNetCategoryNames[i].contains("dining"))
-		{
-			m_attributes.push_back("dining");
-		}
-
 		//if (m_shapeNetCategoryNames[i].contains("file"))
 		//{
 		//	m_attributes.push_back("file");
@@ -806,15 +801,14 @@ void DBMetaModel::extractAttributeFromShapeNetCatNames()
 			m_attributes.push_back("queen");
 		}
 
+		if (m_shapeNetCategoryNames[i].contains("dining"))
+		{
+			m_attributes.push_back("dining");
+		}
+
 		if (m_shapeNetCategoryNames[i].contains("round"))
 		{
 			m_attributes.push_back("round");
-		}
-
-		if (std::find(m_attributes.begin(), m_attributes.end(), QString("dining")) != m_attributes.end()
-			&& std::find(m_attributes.begin(), m_attributes.end(), QString("round")) == m_attributes.end())
-		{
-			m_attributes.push_back("rectangular");
 		}
 
 		if (m_shapeNetCategoryNames[i].contains("sauce"))
@@ -828,9 +822,18 @@ void DBMetaModel::extractAttributeFromShapeNetCatNames()
 		{
 			m_attributes.push_back("sofa");  
 		}
-
 	}
 
-
-
+	// for table, if it is not round, then it is rectangular
+	for (int i = 0; i < m_shapeNetCategoryNames.size(); i++)
+	{
+		if (m_shapeNetCategoryNames[i].contains("table")
+			&& std::find(m_attributes.begin(), m_attributes.end(), QString("dining")) != m_attributes.end()
+			&& std::find(m_attributes.begin(), m_attributes.end(), QString("round")) == m_attributes.end()
+			&& std::find(m_attributes.begin(), m_attributes.end(), QString("rectangular")) == m_attributes.end())
+		{
+			m_attributes.push_back("rectangular");
+			break;
+		}
+	}
 }

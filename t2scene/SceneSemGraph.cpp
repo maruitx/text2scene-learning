@@ -122,6 +122,7 @@ void SceneSemGraph::generateGraph()
 
 	// add attributes
 	addGroupAttributeFromAnnotation();
+	splitSpecialGroupRelationToPairRelations();
 
 	parseNodeNeighbors();
 
@@ -307,7 +308,6 @@ void SceneSemGraph::addGroupAttributeFromAnnotation()
 							}							
 						}
 
-						// add to graph node
 						addNode(SSGNodeTypeStrings[SSGNodeType::GroupRelAnno], ann.name);
 						addEdge(m_nodeNum - 1, ann.anchorModelId); // messy --> table
 
@@ -329,6 +329,61 @@ void SceneSemGraph::addGroupAttributeFromAnnotation()
 	inFile.close();
 
 	qDebug() << QString("Annotation for scene %1 is loaded\n").arg(sceneName);
+}
+
+void SceneSemGraph::splitSpecialGroupRelationToPairRelations()
+{
+	for (int i=0; i < m_nodeNum; i++)
+	{
+		SemNode &currNode = m_nodes[i];
+		if (currNode.nodeType == SSGNodeTypeStrings[SSGNodeType::GroupRelAnno])
+		{
+			if (currNode.nodeName == "surround")
+			{
+				if (!currNode.outEdgeNodeList.empty())
+				{
+					int anchorNodeId = currNode.outEdgeNodeList[0];
+
+					// add pairwise node to each act obj
+					for (int j=0; j < currNode.inEdgeNodeList.size(); j++)
+					{
+						int actNodeId = currNode.inEdgeNodeList[j];
+						addNode(SSGNodeTypeStrings[SSGNodeType::PairRel], PairRelStrings[PairRelation::PairAround]);
+
+						addEdge(actNodeId, m_nodeNum - 1);
+						addEdge(m_nodeNum - 1, anchorNodeId);
+					}
+				}
+			}
+
+			if (currNode.nodeName == "aligned")
+			{
+				// find same obj in same cats and use the first one as anchor
+				std::map<QString, std::vector<int>> objIds;
+				for (int j=0; j < currNode.inEdgeNodeList.size(); j++)
+				{
+					int actNodeId = currNode.inEdgeNodeList[j];
+					SemNode& actNode = m_nodes[actNodeId];
+
+					objIds[actNode.nodeName].push_back(actNodeId);
+				}
+
+				for (auto it=objIds.begin(); it!=objIds.end(); it++)
+				{
+					int anchorNodeId = it->second[0];
+					for (int k=1;k<it->second.size(); k++)
+					{
+						int actNodeId = it->second[k];
+
+						addNode(SSGNodeTypeStrings[SSGNodeType::PairRel], PairRelStrings[PairRelation::PairAligned]);
+
+						addEdge(actNodeId, m_nodeNum - 1);
+						addEdge(m_nodeNum - 1, anchorNodeId);
+					}
+				}
+			}
+		}
+	}
 }
 
 void SceneSemGraph::saveGraph()

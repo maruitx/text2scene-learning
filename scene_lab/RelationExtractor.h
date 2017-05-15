@@ -8,11 +8,11 @@ class CModel;
 class SceneSemGraph;
 
 const QString ConditionName[] = {"parentchild", "childparent", "sibling", "proximity"};
-const QString PairRelStrings[] = { "vertsupport", "horizonsupport", "contain", "above", "under", "leftside", "rightside", "front", "back", "onleft", "onright", "oncenter","near"};
+const QString PairRelStrings[] = { "vertsupport", "horizonsupport", "contain", "above", "under", "leftside", "rightside", "front", "back", "onleft", "onright", "oncenter","near", "pairaround", "pairaligned"};
 const QString GroupRelStrings[] = { "around", "aligned", "grouped", "stacked", "scattered" };
 
 const int ConditionNum = 4;
-const int PairRelNum = 13;
+const int PairRelNum = 15;
 
 enum ConditionType
 {
@@ -36,7 +36,9 @@ enum PairRelation
 	OnLeft,
 	OnRight,
 	OnCenter,
-	Near	
+	Near,
+	PairAround,
+	PairAligned
 };
 
 enum GroupRelation

@@ -221,6 +221,24 @@ OccurrenceModel::OccurrenceModel(const QString &objName, int objNum)
 	m_occurProb = 0;
 }
 
+
+CoOccurrenceModel::CoOccurrenceModel(const QString &firstObjName, const QString &secondObjName, const QString &conditionName, const QString &anchorObjName)
+	:m_firstObjName(firstObjName), m_secondObjName(secondObjName), m_conditionName(conditionName), m_anchorObjName(anchorObjName)
+{
+	m_coOccurKey = m_firstObjName + "_"+  m_secondObjName + "_" + m_conditionName + "_" + m_anchorObjName;
+
+	m_firstObjNum = 0;
+	m_secondObjNum = 0;
+	m_coOccNum = 0; 
+	m_prob = 0; 
+}
+
+
+void CoOccurrenceModel::computCoOccProb()
+{
+	m_prob = m_coOccNum / (double) std::max(m_firstObjNum, m_secondObjNum);
+}
+
 GroupRelationModel::GroupRelationModel(const QString &anchorObjName, const QString &relationName)
 	:m_anchorObjName(anchorObjName), m_relationName(relationName)
 {

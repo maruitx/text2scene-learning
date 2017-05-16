@@ -469,6 +469,201 @@ bool RelationModelManager::isAnchorFrontDirConsistent(const QString &currAnchorN
 	return true;
 }
 
+void RelationModelManager::collectCoOccInCurrentScene()
+{
+	SceneSemGraph *currSSG = m_currScene->m_ssg;
+
+	int modeNum = m_currScene->getModelNum();
+	for (int i = 0; i < modeNum; i++)
+	{
+		CModel *currModel = m_currScene->getModel(i);
+
+		if (!currModel->suppChindrenList.empty())
+		{
+			// collect unique support children list
+			std::vector<int> uniqueIds;
+			std::vector<QString> childCats;
+			for (int j = 0; j < currModel->suppChindrenList.size(); j++)
+			{
+				int childModelId = currModel->suppChindrenList[j];
+				CModel *childModel = m_currScene->getModel(childModelId);
+				QString currChildCat = childModel->getCatName();
+
+				if (std::find(childCats.begin(), childCats.end(), currChildCat) == childCats.end())
+				{
+					childCats.push_back(currChildCat);
+					uniqueIds.push_back(childModelId);
+				}
+			}
+
+			for (int j=0; j < uniqueIds.size(); j++)
+			{
+				CModel *firstModel = m_currScene->getModel(uniqueIds[j]);
+				int firstParentModelId = firstModel->suppParentID;
+				QString firstModelCatName = firstModel->getCatName();
+
+				if (firstParentModelId == -1) continue;
+				if (firstModelCatName == "room") continue;
+
+				CModel *parentModel = m_currScene->getModel(firstParentModelId);
+				QString parentCatName = parentModel->getCatName();
+
+				for (int k = 0; k < uniqueIds.size(); k++)
+				{
+					if (k == j) continue;
+
+					CModel *secondModel = m_currScene->getModel(uniqueIds[k]);
+					int secondParentModelId = secondModel->suppParentID;
+					QString secondModelCatName = secondModel->getCatName();
+
+					if (firstParentModelId == secondParentModelId)
+					{
+						QString conditionType = "sibling";
+						QString coOccKey = QString("%1_%2_%3_%4").arg(firstModelCatName).arg(secondModelCatName).arg(conditionType).arg(parentCatName);
+
+						if (m_coOccModelsOnSameParent.count(coOccKey))
+						{
+							m_coOccModelsOnSameParent[coOccKey]->m_coOccNum++;
+						}
+						else
+						{
+							CoOccurrenceModel *newModel = new CoOccurrenceModel(firstModelCatName, secondModelCatName, conditionType, parentCatName);
+							newModel->m_coOccNum++;
+							m_coOccModelsOnSameParent[coOccKey] = newModel;
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+	//for (int i = 0; i < modeNum; i++)
+	//{
+	//	CModel *firstModel = m_currScene->getModel(i);
+	//	int firstParentModelId = firstModel->suppParentID;
+	//	QString firstModelCatName = firstModel->getCatName();
+
+	//	if (firstParentModelId == -1) continue;
+	//	if (firstModelCatName == "room") continue;
+
+	//	CModel *parentModel = m_currScene->getModel(firstParentModelId);
+	//	QString parentCatName = parentModel->getCatName();
+
+	//	for (int j = 0; j < m_currScene->getModelNum(); j++)
+	//	{
+	//		if (i == j) continue;
+
+	//		CModel *secondModel = m_currScene->getModel(j);
+	//		int secondParentModelId = secondModel->suppParentID;
+	//		QString secondModelCatName = secondModel->getCatName();
+
+	//		if (firstParentModelId == secondParentModelId)
+	//		{
+	//			QString conditionType = "sibling";
+	//			QString coOccKey = QString("%1_%2_%3_%4").arg(firstModelCatName).arg(secondModelCatName).arg(conditionType).arg(parentCatName);
+
+	//			if (m_coOccModelsOnSameParent.count(coOccKey))
+	//			{
+	//				m_coOccModelsOnSameParent[coOccKey]->m_coOccNum++;
+	//			}
+	//			else
+	//			{
+	//				CoOccurrenceModel *newModel = new CoOccurrenceModel(firstModelCatName, secondModelCatName, conditionType, parentCatName);
+	//				newModel->m_coOccNum++;
+	//				m_coOccModelsOnSameParent[coOccKey] = newModel;
+	//			}
+	//		}
+	//	}
+	//}
+
+	//std::vector<int> nodeCountedIndicator(modeNum, 0);
+	//for (int i = 0; i < modeNum; i++)
+	//{
+	//	CModel *firstModel = m_currScene->getModel(i);
+	//	int firstParentModelId = firstModel->suppParentID;
+	//	QString firstModelCatName = firstModel->getCatName();
+	//	CModel *parentModel = m_currScene->getModel(firstParentModelId);
+	//	QString parentCatName = parentModel->getCatName();
+
+	//	if (firstModelCatName == "room") continue;
+
+	//	// add instance for first obj
+	//	for (auto iter = m_coOccModelsOnSameParent.begin(); iter != m_coOccModelsOnSameParent.end(); iter++)
+	//	{
+	//		QString coOccKey = iter->first;
+	//		if (coOccKey.left(firstModelCatName.length()) == firstModelCatName && coOccKey.right(parentCatName.length()) == parentCatName)
+	//		{
+	//			CoOccurrenceModel *currModel = iter->second;
+	//			currModel->m_firstObjNum++;
+	//		}
+	//	}
+
+	//	for (int j = 0; j < m_currScene->getModelNum(); j++)
+	//	{
+	//		if (i == j) continue;
+
+	//		CModel *secondModel = m_currScene->getModel(j);
+	//		int secondParentModelId = secondModel->suppParentID;
+	//		QString secondModelCatName = secondModel->getCatName();
+
+	//		if (nodeCountedIndicator[j] == 0)
+	//		{
+	//			// add instance for second obj
+	//			for (auto iter = m_coOccModelsOnSameParent.begin(); iter != m_coOccModelsOnSameParent.end(); iter++)
+	//			{
+	//				QString coOccKey = iter->first;
+	//				QString matchKey = secondModelCatName + "_sibling_" + parentCatName;
+	//				if (coOccKey.right(matchKey.length()) == matchKey)
+	//				{
+	//					CoOccurrenceModel *currModel = iter->second;
+	//					currModel->m_secondObjNum++;
+	//				}
+	//			}
+	//			nodeCountedIndicator[j] = 1;
+	//		}
+	//	}
+	//}
+}
+
+void RelationModelManager::addOccToCoOccFromSupportRelation()
+{
+	for (auto spIter = m_supportRelations.begin(); spIter!=m_supportRelations.end(); spIter++)
+	{
+		SupportRelation *currSuppRelation = spIter->second;
+		QString childObjName = currSuppRelation->m_childName;
+		QString parentObjName = currSuppRelation->m_parentName;
+
+		for (auto iter = m_coOccModelsOnSameParent.begin(); iter!= m_coOccModelsOnSameParent.end(); iter++)
+		{
+			QString coOccKey = iter->first;
+			if (coOccKey.left(childObjName.length()) == childObjName && coOccKey.right(parentObjName.length()) == parentObjName)
+			{
+				CoOccurrenceModel *currModel = iter->second;
+				currModel->m_firstObjNum = currSuppRelation->m_childInstanceNum;
+			}
+
+			QString matchKey = childObjName + "_sibling_" + parentObjName;
+			if (coOccKey.right(matchKey.length()) == matchKey)
+			{
+				CoOccurrenceModel *currModel = iter->second;
+				currModel->m_secondObjNum = currSuppRelation->m_childInstanceNum;
+			}
+		}
+	}
+}
+
+void RelationModelManager::computeOccToCoccOnSameParent()
+{
+	addOccToCoOccFromSupportRelation();
+
+	for (auto iter = m_coOccModelsOnSameParent.begin(); iter != m_coOccModelsOnSameParent.end(); iter++)
+	{
+		CoOccurrenceModel *currModel = iter->second;
+		currModel->computCoOccProb();
+	}
+}
+
 void RelationModelManager::collectSupportRelationInCurrentScene()
 {
 	SceneSemGraph *currSSG = m_currScene->m_ssg;
@@ -631,6 +826,14 @@ void RelationModelManager::buildGroupRelationModels()
 		groupModel->fitGMMs();
 
 		std::cout << "Group model fitted " << QString("%1/%2\r").arg(++id).arg(totalNum).toStdString();
+
+		addOccToCoOccForGroupModel(groupModel);
+	}
+
+	for (auto iter = m_coOccModelsInSameGroup.begin(); iter!=m_coOccModelsInSameGroup.end(); iter++)
+	{
+		CoOccurrenceModel *currModel = iter->second;
+		currModel->computCoOccProb();
 	}
 
 	// 3. Close MATLAB engine
@@ -660,13 +863,15 @@ void RelationModelManager::collectGroupInstanceFromCurrScene()
 				GroupRelationModel *newGroupModel = new GroupRelationModel(anchorObjName, sgNode.nodeName);
 				collectRelPosForGroupModel(newGroupModel, sceneName, anchoNodeId, sgNode.activeNodeList);
 				collectOccurrForGroupModel(newGroupModel, sgNode.activeNodeList);
+				collectCoOccForGroupModel(newGroupModel, sgNode.activeNodeList);
 
 				m_groupRelModels[groupKey] = newGroupModel;
 			}
 			else
 			{
 				collectRelPosForGroupModel(m_groupRelModels[groupKey], sceneName, anchoNodeId, sgNode.activeNodeList);
-				collectOccurrForGroupModel(m_groupRelModels[groupKey], sgNode.activeNodeList);				
+				collectOccurrForGroupModel(m_groupRelModels[groupKey], sgNode.activeNodeList);
+				collectCoOccForGroupModel(m_groupRelModels[groupKey], sgNode.activeNodeList);
 			}
 
 			m_groupRelModels[groupKey]->m_numInstance++;
@@ -701,7 +906,7 @@ void RelationModelManager::collectOccurrForGroupModel(GroupRelationModel *groupM
 
 		if (currActObjNum)
 		{
-			QString occurKey = QString("%1_%2").arg(actObjName).arg(currActObjNum);
+			QString occurKey = QString("%1_%2").arg(actObjName).arg(currActObjNum); // e.g., two monitors
 
 			if (!groupModel->m_occurModels[occurKey])
 			{
@@ -715,6 +920,100 @@ void RelationModelManager::collectOccurrForGroupModel(GroupRelationModel *groupM
 			}
 		}	
 	}
+}
+
+void RelationModelManager::collectCoOccForGroupModel(GroupRelationModel *groupModel, const std::vector<int> &actNodeList)
+{
+	SceneSemGraph *currSSG = m_currScene->m_ssg;
+
+	std::vector<int> actNodeCountedIndicator(actNodeList.size(), 0); // whether the node has been counted
+	std::vector<int> uniqueActNodeIds;
+
+	for (int t = 0; t < actNodeList.size(); t++)
+	{
+		int actNodeId = actNodeList[t];
+		SemNode &actNode = currSSG->m_nodes[actNodeId];
+		QString actObjName = actNode.nodeName;
+
+		int currActObjNum = 0;
+		// count obj num in current annotation
+		for (int i = 0; i < actNodeList.size(); i++)
+		{
+			int testNodeId = actNodeList[i];
+			SemNode &testNode = currSSG->m_nodes[testNodeId];
+			if (actNodeCountedIndicator[i] == 0 && actObjName == testNode.nodeName)
+			{
+				actNodeCountedIndicator[i] = 1;
+				currActObjNum++;
+			}
+		}
+
+		if (currActObjNum)
+		{
+			uniqueActNodeIds.push_back(actNodeId);
+		}
+	}
+
+	for (int i = 0; i < uniqueActNodeIds.size(); i++)
+	{
+		SemNode &firstActNode = currSSG->m_nodes[uniqueActNodeIds[i]];
+		for (int j = 0; j < uniqueActNodeIds.size(); j++)
+		{
+			if (i == j) continue;
+			SemNode &secondActNode = currSSG->m_nodes[uniqueActNodeIds[j]];
+			QString coOccKey = QString("%1_%2_%3_%4").arg(firstActNode.nodeName).arg(secondActNode.nodeName).arg(groupModel->m_relationName).arg(groupModel->m_anchorObjName);
+
+			if (m_coOccModelsInSameGroup.count(coOccKey))
+			{
+				m_coOccModelsInSameGroup[coOccKey]->m_coOccNum++;
+			}
+			else
+			{
+				CoOccurrenceModel *newModel = new CoOccurrenceModel(firstActNode.nodeName, secondActNode.nodeName, groupModel->m_relationName, groupModel->m_anchorObjName);
+				newModel->m_coOccNum++;
+				m_coOccModelsInSameGroup[coOccKey] = newModel;
+			}
+		}
+	}
+
+	//std::vector<int> nodeCountedIndicator(uniqueActNodeIds.size(), 0);
+	//for (int i = 0; i < uniqueActNodeIds.size(); i++)
+	//{
+	//	SemNode &firstActNode = currSSG->m_nodes[uniqueActNodeIds[i]];
+
+	//	// add instance for first obj
+	//	for (auto iter = m_coOccModelsInSameGroup.begin(); iter != m_coOccModelsInSameGroup.end(); iter++)
+	//	{
+	//		QString coOccKey = iter->first;
+	//		QString matchKey = groupModel->m_relationName + "_" + groupModel->m_anchorObjName;
+	//		if (coOccKey.left(firstActNode.nodeName.length()) == firstActNode.nodeName && coOccKey.right(matchKey.length()) == matchKey)
+	//		{
+	//			CoOccurrenceModel *currModel = iter->second;
+	//			currModel->m_firstObjNum++;
+	//		}
+	//	}
+
+	//	for (int j = 0; j < uniqueActNodeIds.size(); j++)
+	//	{
+	//		if (i == j) continue;
+	//		SemNode &secondActNode = currSSG->m_nodes[uniqueActNodeIds[j]];
+	//		if (nodeCountedIndicator[j] == 0)
+	//		{
+	//			// add instance for second obj
+	//			for (auto iter = m_coOccModelsInSameGroup.begin(); iter != m_coOccModelsInSameGroup.end(); iter++)
+	//			{
+	//				QString coOccKey = iter->first;
+	//				QString matchKey = secondActNode.nodeName + "_" + groupModel->m_relationName + "_" + groupModel->m_anchorObjName;
+	//				if (coOccKey.right(matchKey.length()) == matchKey)
+	//				{
+	//					CoOccurrenceModel *currModel = iter->second;
+	//					currModel->m_secondObjNum++;
+	//				}
+	//			}
+	//			nodeCountedIndicator[j] = 1;
+	//		}
+	//	}
+	//}
 }
 
 void RelationModelManager::collectRelPosForGroupModel(GroupRelationModel *groupModel, const QString &sceneName, int anchorNodeId, const std::vector<int> &actNodeList)
@@ -740,6 +1039,33 @@ void RelationModelManager::collectRelPosForGroupModel(GroupRelationModel *groupM
 				groupModel->m_pairwiseModels[relationKey]->m_instances.push_back(relPos);
 
 			groupModel->m_pairwiseModels[relationKey]->m_numInstance = groupModel->m_pairwiseModels[relationKey]->m_instances.size();
+		}
+	}
+}
+
+void RelationModelManager::addOccToCoOccForGroupModel(GroupRelationModel *groupModel)
+{
+	for (auto oiter = groupModel->m_occurModels.begin(); oiter!= groupModel->m_occurModels.end(); oiter++)
+	{
+		OccurrenceModel *currOccModel = oiter->second;
+		QString currModelName = toQString(PartitionString(currOccModel->m_objName.toStdString(), "_")[0]);
+
+		for (auto iter = m_coOccModelsInSameGroup.begin(); iter != m_coOccModelsInSameGroup.end(); iter++)
+		{
+			QString coOccKey = iter->first;
+			QString matchKey = groupModel->m_relationName + "_" + groupModel->m_anchorObjName;
+			if (coOccKey.left(currModelName.length()) == currModelName && coOccKey.right(matchKey.length()) == matchKey)
+			{
+				CoOccurrenceModel *currModel = iter->second;
+				currModel->m_firstObjNum += currOccModel->m_numInstance;
+			}
+
+			matchKey = currModelName + "_" + groupModel->m_relationName + "_" + groupModel->m_anchorObjName;
+			if (coOccKey.right(matchKey.length()) == matchKey)
+			{
+				CoOccurrenceModel *currModel = iter->second;
+				currModel->m_secondObjNum += currOccModel->m_numInstance;
+			}
 		}
 	}
 }
@@ -932,6 +1258,40 @@ void RelationModelManager::saveGroupModelSim(const QString &filePath, const QStr
 				}
 			}
 		}
+	}
+}
+
+void RelationModelManager::saveCoOccurInGroupModels(const QString &filePath, const QString &dbType)
+{
+	QString filename = filePath + QString("/CoOccInGroup_%1.model").arg(dbType);
+	saveCoOccurModels(filename, m_coOccModelsInSameGroup);
+
+	qDebug() << "Co-Occurrence in group models saved.";
+}
+
+void RelationModelManager::saveCoOccurOnParentModels(const QString &filePath, const QString &dbType)
+{
+	QString filename = filePath + QString("/CoOccOnParent_%1.model").arg(dbType);
+	saveCoOccurModels(filename, m_coOccModelsOnSameParent);
+
+	qDebug() << "Co-Occurrence of sibling objects saved.";
+}
+
+void RelationModelManager::saveCoOccurModels(const QString &filename, std::map<QString, CoOccurrenceModel*> &models)
+{
+	QFile outFile(filename);
+	QTextStream ofs(&outFile);
+
+	if (outFile.open(QIODevice::ReadWrite | QIODevice::Text | QIODevice::Truncate))
+	{
+		for (auto iter = models.begin(); iter!=models.end(); iter++)
+		{
+			CoOccurrenceModel *currModel = iter->second;
+			ofs << currModel->m_coOccurKey << "," << currModel->m_prob << "\n";
+			ofs << currModel->m_coOccNum << "," << currModel->m_firstObjNum << ","  << currModel->m_secondObjNum<<"\n";
+		}
+
+		outFile.close();
 	}
 }
 

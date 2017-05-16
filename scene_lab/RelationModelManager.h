@@ -39,16 +39,20 @@ public:
 	void buildGroupRelationModels();
 	void collectGroupInstanceFromCurrScene();
 	void collectOccurrForGroupModel(GroupRelationModel *groupModel, const std::vector<int> &actNodeList);
+	void collectCoOccForGroupModel(GroupRelationModel *groupModel, const std::vector<int> &actNodeList);
 	void collectRelPosForGroupModel(GroupRelationModel *groupModel, const QString &sceneName, int anchorNodeId, const std::vector<int> &actNodeList);
+	void addOccToCoOccForGroupModel(GroupRelationModel *groupModel);
 
 	void computeSimForPairwiseModels(std::map<QString, PairwiseRelationModel*> &pairModels, const std::vector<QString> &pairModelKeys, const std::vector<CScene*> &sceneList, bool isInGroup = false, const QString &filePath = "");
 	void computeSimForPairModelInGroup(const std::vector<CScene*> &sceneList);
 
 	bool isAnchorFrontDirConsistent(const QString &currAnchorName, const QString &dbAnchorName);
 
-
 	void collectSupportRelationInCurrentScene();
 	void buildSupportRelationModels();
+	void collectCoOccInCurrentScene();
+	void addOccToCoOccFromSupportRelation();
+	void computeOccToCoccOnSameParent();
 
 	void saveRelativeRelationModels(const QString &filePath, const QString &dbType);
 	void savePairwiseRelationModels(const QString &filePath, const QString &dbType);
@@ -58,6 +62,10 @@ public:
 	void savePairwiseModelSim(const QString &filePath, const QString &dbType);
 	void saveGroupModelSim(const QString &filePath, const QString &dbType);
 
+	void saveCoOccurInGroupModels(const QString &filePath, const QString &dbType);
+	void saveCoOccurOnParentModels(const QString &filePath, const QString &dbType);
+	void saveCoOccurModels(const QString &filename, std::map<QString, CoOccurrenceModel*> &models);
+
 public:
 	std::map<QString, PairwiseRelationModel*> m_relativeModels;  // relative models with general relations
 	std::map<QString, PairwiseRelationModel*> m_pairwiseRelModels;  // pairwise relation models
@@ -66,6 +74,9 @@ public:
 	std::map<QString, SupportProb> m_suppProbs; //
 
 	std::vector<QString> m_pairRelModelKeys;
+
+	std::map<QString, CoOccurrenceModel*> m_coOccModelsOnSameParent;
+	std::map<QString, CoOccurrenceModel*> m_coOccModelsInSameGroup;
 
 private:
 	std::map<QString, RelativePos*> m_relativePostions;  // load from saved file for per scene

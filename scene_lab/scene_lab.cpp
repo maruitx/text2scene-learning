@@ -560,6 +560,8 @@ void scene_lab::BuildGroupRelationModels()
 
 	m_relationModelManager->saveGroupRelationModels(m_localSceneDBPath, m_sceneDBType);
 	m_relationModelManager->saveGroupModelSim(m_localSceneDBPath, m_sceneDBType);
+
+	m_relationModelManager->saveCoOccurInGroupModels(m_localSceneDBPath, m_sceneDBType);
 }
 
 void scene_lab::BatchBuildModelsForList()
@@ -677,9 +679,14 @@ void scene_lab::ExtractSuppProbForSceneList()
 
 		m_relationModelManager->updateCurrScene(m_currScene);
 		m_relationModelManager->collectSupportRelationInCurrentScene();
+
+		m_relationModelManager->collectCoOccInCurrentScene();
 	}
 
 	m_relationModelManager->buildSupportRelationModels();
+	m_relationModelManager->computeOccToCoccOnSameParent();
 	m_relationModelManager->saveSupportRelationModels(m_localSceneDBPath, m_sceneDBType);
+
+	m_relationModelManager->saveCoOccurOnParentModels(m_localSceneDBPath, m_sceneDBType);
 }
 

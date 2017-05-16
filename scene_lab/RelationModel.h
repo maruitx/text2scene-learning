@@ -78,6 +78,26 @@ public:
 	QString m_occurKey; // objName_objNum
 };
 
+class CoOccurrenceModel
+{
+public:
+	CoOccurrenceModel(const QString &firstObjName, const QString &secondObjName, const QString &anchorObjName, const QString &conditionName);
+	void computCoOccProb();
+
+	int m_firstObjNum;  // observation of first Obj in a group or on an anchorObj
+	int m_secondObjNum; // 
+	int m_coOccNum;
+
+	double m_prob;
+
+	QString m_firstObjName;
+	QString m_secondObjName;
+	QString m_anchorObjName;
+
+	QString m_conditionName;  // sibling, or groupName, e.g., messy
+	QString m_coOccurKey; // firstObjName_secondObjName_conditionName_anchorName
+};
+
 class GroupRelationModel
 {
 public: 

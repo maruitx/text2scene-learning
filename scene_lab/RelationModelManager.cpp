@@ -275,7 +275,8 @@ void RelationModelManager::computeSimForPairwiseModels(std::map<QString, Pairwis
 			relType = "general";
 		}
 
-		for (int c=0; c< ConditionNum; c++)
+		// do not compute rel sim among specified relations for now
+		for (int c=0; c< ConditionNum-1; c++)
 		{
 			QString conditionType = ConditionName[c];
 
@@ -287,8 +288,14 @@ void RelationModelManager::computeSimForPairwiseModels(std::map<QString, Pairwis
 			for (auto iter = pairModels.begin(); iter != pairModels.end(); iter++)
 			{
 				PairwiseRelationModel *relModel = iter->second;
+				QString currConditionName = relModel->m_conditionName;
 
-				if (relModel->m_relationName == relType && relModel->m_conditionName == conditionType)
+				if (currConditionName == ConditionName[ConditionType::Spec])
+				{
+					currConditionName = ConditionName[ConditionType::Sib];  // map specified condition to sibling for now
+				}
+
+				if (relModel->m_relationName == relType && currConditionName == conditionType)
 				{
 					relModel->computeObjNodeFeatures(sceneList, sceneNameToIdMap);
 					pairModelIds.push_back(relModel->m_modelId);
@@ -640,14 +647,74 @@ void RelationModelManager::addOccToCoOccFromSupportRelation()
 			if (coOccKey.left(childObjName.length()) == childObjName && coOccKey.right(parentObjName.length()) == parentObjName)
 			{
 				CoOccurrenceModel *currModel = iter->second;
-				currModel->m_firstObjNum = currSuppRelation->m_childInstanceNum;
+				currModel->m_firstObjNum += currSuppRelation->m_childInstanceNum;
 			}
 
 			QString matchKey = childObjName + "_sibling_" + parentObjName;
 			if (coOccKey.right(matchKey.length()) == matchKey)
 			{
 				CoOccurrenceModel *currModel = iter->second;
-				currModel->m_secondObjNum = currSuppRelation->m_childInstanceNum;
+				currModel->m_secondObjNum += currSuppRelation->m_childInstanceNum;
+			}
+		}
+	}
+}
+
+void RelationModelManager::addOccToCoOccFromCurrentScene()
+{
+	SceneSemGraph *currSSG = m_currScene->m_ssg;
+
+	int modeNum = m_currScene->getModelNum();
+	for (int i = 0; i < modeNum; i++)
+	{
+		CModel *currModel = m_currScene->getModel(i);
+
+		if (!currModel->suppChindrenList.empty())
+		{
+			// collect unique support children list
+			std::vector<int> uniqueIds;
+			std::vector<QString> childCats;
+			for (int j = 0; j < currModel->suppChindrenList.size(); j++)
+			{
+				int childModelId = currModel->suppChindrenList[j];
+				CModel *childModel = m_currScene->getModel(childModelId);
+				QString currChildCat = childModel->getCatName();
+
+				if (std::find(childCats.begin(), childCats.end(), currChildCat) == childCats.end())
+				{
+					childCats.push_back(currChildCat);
+					uniqueIds.push_back(childModelId);
+				}
+			}
+
+			for (int j = 0; j < uniqueIds.size(); j++)
+			{
+				CModel *firstModel = m_currScene->getModel(uniqueIds[j]);
+				int firstParentModelId = firstModel->suppParentID;
+				QString firstModelCatName = firstModel->getCatName();
+
+				if (firstParentModelId == -1) continue;
+				if (firstModelCatName == "room") continue;
+
+				CModel *parentModel = m_currScene->getModel(firstParentModelId);
+				QString parentCatName = parentModel->getCatName();
+
+				for (auto iter = m_coOccModelsOnSameParent.begin(); iter != m_coOccModelsOnSameParent.end(); iter++)
+				{
+					QString coOccKey = iter->first;
+					if (coOccKey.left(firstModelCatName.length()) == firstModelCatName && coOccKey.right(parentCatName.length()) == parentCatName)
+					{
+						CoOccurrenceModel *currCoModel = iter->second;
+						currCoModel->m_firstObjNum += 1;
+					}
+
+					QString matchKey = firstModelCatName + "_sibling_" + parentCatName;
+					if (coOccKey.right(matchKey.length()) == matchKey)
+					{
+						CoOccurrenceModel *currCoModel = iter->second;
+						currCoModel->m_secondObjNum += 1;
+					}
+				}
 			}
 		}
 	}
@@ -655,8 +722,6 @@ void RelationModelManager::addOccToCoOccFromSupportRelation()
 
 void RelationModelManager::computeOccToCoccOnSameParent()
 {
-	addOccToCoOccFromSupportRelation();
-
 	for (auto iter = m_coOccModelsOnSameParent.begin(); iter != m_coOccModelsOnSameParent.end(); iter++)
 	{
 		CoOccurrenceModel *currModel = iter->second;

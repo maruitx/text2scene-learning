@@ -27,6 +27,11 @@ PairwiseRelationModel::~PairwiseRelationModel()
 
 void PairwiseRelationModel::fitGMM(int instanceTh)
 {
+	if (m_anchorObjName == "couch" && m_actObjName =="tv")
+	{
+		instanceTh = 8;
+	}
+
 	// prepare data points
 	if (m_numInstance < instanceTh)
 	{

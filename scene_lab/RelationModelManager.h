@@ -52,6 +52,7 @@ public:
 	void buildSupportRelationModels();
 	void collectCoOccInCurrentScene();
 	void addOccToCoOccFromSupportRelation();
+	void addOccToCoOccFromCurrentScene();
 	void computeOccToCoccOnSameParent();
 
 	void saveRelativeRelationModels(const QString &filePath, const QString &dbType);

@@ -684,9 +684,18 @@ void scene_lab::ExtractSuppProbForSceneList()
 	}
 
 	m_relationModelManager->buildSupportRelationModels();
-	m_relationModelManager->computeOccToCoccOnSameParent();
 	m_relationModelManager->saveSupportRelationModels(m_localSceneDBPath, m_sceneDBType);
 
+	for (int i = 0; i < m_sceneList.size(); i++)
+	{
+		m_currScene = m_sceneList[i];
+		m_relationModelManager->updateCurrScene(m_currScene);
+		m_relationModelManager->collectSupportRelationInCurrentScene();
+
+		m_relationModelManager->addOccToCoOccFromCurrentScene();
+	}
+
+	m_relationModelManager->computeOccToCoccOnSameParent();
 	m_relationModelManager->saveCoOccurOnParentModels(m_localSceneDBPath, m_sceneDBType);
 }
 

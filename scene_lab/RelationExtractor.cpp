@@ -53,6 +53,11 @@ QString RelationExtractor::getRelationConditionType(CModel *anchorModel, CModel 
 		return ConditionName[ConditionType::Prox];
 	}
 
+	if (anchorCatName == "couch" && actCatName =="tv")
+	{
+		return ConditionName[ConditionType::Spec];
+	}
+
 	return QString("none");
 }
 
@@ -101,7 +106,8 @@ std::vector<QString> RelationExtractor::extractSpatialSideRelForModelPair(CModel
 	fromRefPosToTestPosVec.normalize();
 
 	// add front and back to sibling or near objs
-	if (conditionType == ConditionName[ConditionType::Sib]&&isGroundSib || conditionType == ConditionName[ConditionType::Prox])
+	if (conditionType == ConditionName[ConditionType::Sib]&&isGroundSib || conditionType == ConditionName[ConditionType::Prox]
+		|| conditionType == ConditionName[ConditionType::Spec])
 	{
 		double posFrontDot = fromRefPosToTestPosVec.dot(refFront); // diff to ref's front dir using the posVec
 		if (posFrontDot > sideSectionVal)

@@ -57,7 +57,7 @@ CScene::~CScene()
 	m_showSuppPlane = false;
 }
 
-void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int obbOnly, int meshAndOBB)
+void CScene::loadStanfordScene(const QString &filename, int metaDataOnly, int obbOnly, int meshAndOBB)
 {
 
 	QFile inFile(filename);
@@ -106,11 +106,11 @@ void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int ob
 		std::cout << "\tloading objects with obb only...\n";
 	}
 
-	if (databaseType == QString("StanfordSceneDatabase") || databaseType == QString("SceneNNConversionOutput"))
+	if (m_sceneFormat == QString("StanfordSceneDatabase") || m_sceneFormat == QString("SceneNNConversionOutput"))
 	{
 		m_metric = InchToMeterFactor; // convert from 1 inch to 1 meter
 
-		if (databaseType == QString("SceneNNConversionOutput"))
+		if (m_sceneFormat == QString("SceneNNConversionOutput"))
 		{
 			m_metric = 1.0;
 		}
@@ -138,7 +138,7 @@ void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int ob
 				newModel->setSceneUpRightVec(m_uprightVec);
 
 				QString modelNameString = parts[2].c_str();
-				newModel->loadModel(m_modelDBPath + "/" + modelNameString + ".obj", 1.0, metaDataOnly, obbOnly, meshAndOBB, databaseType);
+				newModel->loadModel(m_modelDBPath + "/" + modelNameString + ".obj", 1.0, metaDataOnly, obbOnly, meshAndOBB, m_sceneFormat);
 				
 				currModelID += 1;
 				newModel->setID(currModelID);
@@ -152,7 +152,7 @@ void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int ob
 				}
 			}
 
-			if (databaseType == QString("StanfordSceneDatabase"))
+			if (m_sceneFormat == QString("StanfordSceneDatabase"))
 			{
 				if (currLine.contains("parentIndex "))
 				{
@@ -228,6 +228,55 @@ void CScene::loadSceneFromFile(const QString &filename, int metaDataOnly, int ob
 	buildModelDislayList();
 
 	std::cout << "Scene loaded\n";
+}
+
+void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/)
+{
+	QFile inFile(filename);
+	QTextStream ifs(&inFile);
+
+	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+
+	QFileInfo sceneFileInfo(inFile.fileName());
+	m_sceneFileName = sceneFileInfo.baseName();   // Bedroom_0.th
+	m_sceneFilePath = sceneFileInfo.absolutePath();
+
+	int cutPos = sceneFileInfo.absolutePath().lastIndexOf("/");
+	m_sceneDBPath = sceneFileInfo.absolutePath().left(cutPos);
+
+	m_metric = 1.0;
+	m_uprightVec = MathLib::Vector3(0, 0, 1);
+
+	int currModelID = 0;
+
+	while (!ifs.atEnd())
+		//for (int i = 0; i < 8; i++)
+		{
+
+			{
+				QString modelName;
+				ifs >> modelName;
+				if (!modelName.isEmpty())
+				{
+					QString modelFullName = m_sceneDBPath + "/" + m_sceneFileName + "/" + modelName;
+
+					CModel *newModel = new CModel();
+					newModel->setSceneMetric(m_metric);
+					newModel->setSceneUpRightVec(m_uprightVec);
+
+					newModel->loadModel(modelFullName);
+					newModel->setID(currModelID++);
+
+					m_modelList.push_back(newModel);
+				}
+			}
+		}
+
+	computeAABB();
+	buildModelDislayList();
+
+	std::cout << "Scene loaded\n";
+
 }
 
 void CScene::buildRelationGraph()

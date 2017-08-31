@@ -62,7 +62,7 @@ QString scene_lab_widget::loadSceneName()
 
 	QString filename = QFileDialog::getOpenFileName(0, tr("Load scene"),
 		m_lastUsedDirectory,
-		tr("Scene File (*.txt)"));
+		tr("Scene File (*.txt *.th)"));
 
 	if (filename.isEmpty()) return "";
 

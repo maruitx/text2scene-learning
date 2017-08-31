@@ -17,7 +17,9 @@ public:
 	CScene();
 	~CScene();
 
-	void loadSceneFromFile(const QString &filename, int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0);  // default load mesh only
+	void loadStanfordScene(const QString &filename, int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0);  // default load mesh only
+	void loadTsinghuaScene(const QString &filename, const int obbOnly = 0);
+
 
 	void computeAABB();
 	void updateSeneAABB(CAABB addedBox) { m_AABB.Merge(addedBox); };

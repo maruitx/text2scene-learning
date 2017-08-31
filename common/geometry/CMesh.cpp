@@ -2,6 +2,7 @@
 #include "../utilities/utility.h"
 #include <qgl.h>
 #include <QFile>
+#include "IO_3DS.h"
 
 CMesh::CMesh(QString path, QString name)
 {
@@ -147,6 +148,19 @@ bool CMesh::readObjFile(const std::string &filename, const double metric /*= 1.0
 	return true;
 }
 
+bool CMesh::read3DSFile(const std::string &filename, const double metric /*= 1.0*/, QString sceneDbType /*= QString()*/)
+{
+	CIO_3DS* io_3DS = new CIO_3DS(this);
+
+	io_3DS->read3DS(toQString(filename));
+	
+	computeMinMaxVerts();
+	computeFaceNormal();
+
+	delete io_3DS;
+	return true;
+}
+
 void CMesh::draw(QColor c)
 {
 	Eigen::Matrix4d displayTransMat = Eigen::Matrix4d::Identity();
@@ -182,7 +196,7 @@ void CMesh::draw(QColor c)
 
 
 		// draw back face
-		glCullFace(GL_FRONT);
+		//glCullFace(GL_FRONT);
 		glBegin(GL_TRIANGLES);
 		for (unsigned int f_id = 0; f_id < m_faces.size(); f_id++)
 		{
@@ -190,7 +204,8 @@ void CMesh::draw(QColor c)
 			glNormal3d(-faceNormal[0], -faceNormal[1], -faceNormal[2]);
 
 			std::vector<int> vert_ids = m_faces[f_id];
-			for (int i = 0; i < 3; i++)
+			//for (int i = 3; i < 3; i++)
+			for (int i = 2; i >=0; i--)
 			{
 				int v_id = vert_ids[i];
 				glVertex3dv(m_vertices[v_id].v);
@@ -517,6 +532,8 @@ void CMesh::saveObjFile(const std::string &filename)
 
 	outFile.close();
 }
+
+
 
 MathLib::Vector3 CMesh::getFaceCenter(int fid)
 {

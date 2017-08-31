@@ -56,22 +56,38 @@ void scene_lab::LoadScene()
 
 	CScene *scene = new CScene();
 
-	// only load scene mesh
-	scene->loadSceneFromFile(m_widget->loadSceneName(), 0, 0, 1);
-	m_currScene = scene;
+	QString sceneFullName = m_widget->loadSceneName();
 
-	if (m_modelDB == NULL)
+	QFile sceneFile(sceneFullName);
+	QFileInfo sceneFileInfo(sceneFile.fileName());
+
+	QString sceneFormat = sceneFileInfo.suffix();
+
+	if (sceneFormat == "txt")
 	{
-		m_modelDB = new ModelDatabase();
-		m_modelDB->loadShapeNetSemTxt();
+		// only load scene mesh
+		scene->loadStanfordScene(sceneFullName, 0, 0, 1);
+		m_currScene = scene;
+
+		if (m_modelDB == NULL)
+		{
+			m_modelDB = new ModelDatabase();
+			m_modelDB->loadShapeNetSemTxt();
+		}
+
+		updateModelMetaInfoForScene(m_currScene);
+	}
+	else if (sceneFormat == "th")
+	{
+		scene->loadTsinghuaScene(sceneFullName, 1);
+		m_currScene = scene;
+
 	}
 
 	if (m_relationExtractor == NULL)
 	{
 		m_relationExtractor = new RelationExtractor(m_angleTh);
 	}
-
-	updateModelMetaInfoForScene(m_currScene);
 
 	emit sceneLoaded();
 }
@@ -128,7 +144,7 @@ void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
 
 			CScene *scene = new CScene();
 			QString filename = sceneFolder + "/" + sceneName + ".txt";
-			scene->loadSceneFromFile(filename, metaDataOnly, obbOnly, meshAndOBB);
+			scene->loadStanfordScene(filename, metaDataOnly, obbOnly, meshAndOBB);
 			
 			updateModelMetaInfoForScene(scene);
 			m_sceneList.push_back(scene);
@@ -436,7 +452,7 @@ void scene_lab::CollectModelInfoForSceneList()
 
 			CScene *scene = new CScene();
 			QString filename = sceneDBPath + "/" + sceneName + ".txt";
-			scene->loadSceneFromFile(filename, 1, 0, 0);
+			scene->loadStanfordScene(filename, 1, 0, 0);
 			m_currScene = scene;
 			
 			for (int mi = 0; mi < m_currScene->getModelNum(); mi++)

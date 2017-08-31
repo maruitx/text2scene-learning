@@ -30,6 +30,7 @@ HEADERS += \
 	geometry/Scene.h \
 	geometry/CModel.h \
 	geometry/CMesh.h \
+	geometry/IO_3DS.h \
 	geometry/AABB.h \
 	geometry/OBB.h \
 	geometry/OBBEstimator.h \
@@ -38,7 +39,7 @@ HEADERS += \
 	geometry/RelationGraph.h \
 	geometry/UDGraph.h \
 	geometry/SuppPlane.h \
-	geometry/SuppPlaneManager.h \
+	geometry/SuppPlaneManager.h \	
 	third_party/clustering/Kmeans.h \
 	utilities/utility.h \
 	utilities/mathlib.h \
@@ -50,6 +51,7 @@ SOURCES += \
 	geometry/Scene.cpp \
 	geometry/CModel.cpp \
 	geometry/CMesh.cpp \
+	geometry/IO_3DS.cpp \
 	geometry/AABB.cpp \
 	geometry/OBB.cpp \
 	geometry/OBBEstimator.cpp \
@@ -70,12 +72,34 @@ win32 {
     !contains(QMAKE_TARGET.arch, x86_64) {
 		Debug: LIBS += -L$$PWD/third_party/opcode/lib/win32 -lOPCODE_D
 		Release: LIBS += -L$$PWD/third_party/opcode/lib/win32 -lOPCODE
+		LIBS += -L$$PWD/third_party/Lib3DS/lib/win32 -llib3ds-2_0
 
     } else {
 		Debug: LIBS += -L$$PWD/third_party/opcode/lib/x64 -lOPCODE_D
 		Release: LIBS += -L$$PWD/third_party/opcode/lib/x64 -lOPCODE
+		LIBS += -L$$PWD/third_party/Lib3DS/lib/x64 -llib3ds-2_0
     }
 }
+
+# Copy dll for lib3DS
+CONFIG(debug, debug|release){
+	EXTRA_BINFILES += $$PWD/third_party/Lib3DS/lib/x64/lib3ds-2_0.dll
+} else {
+	EXTRA_BINFILES += $$PWD/third_party/Lib3DS/lib/x64/lib3ds-2_0.dll
+}		
+        
+		EXTRA_BINFILES_WIN = $${EXTRA_BINFILES}
+        EXTRA_BINFILES_WIN ~= s,/,\\,g
+        DESTDIR_WIN = $${EXECUTABLEPATH}
+        DESTDIR_WIN ~= s,/,\\,g
+        for(FILE,EXTRA_BINFILES_WIN){
+            # message("Will copy file" $$FILE "to" $$DESTDIR_WIN)
+            QMAKE_POST_LINK += $$quote(cmd /c copy /y $${FILE} $${DESTDIR_WIN}$$escape_expand(\n\t))
+        }
+
+
+
+
 
 {# Prevent rebuild and Enable debuging in release mode
 	QMAKE_CXXFLAGS_RELEASE += /Zi

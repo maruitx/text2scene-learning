@@ -74,8 +74,11 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 	m_filePath = filename.left(cutPos);
 	m_fileName = filename.right(filename.size() - cutPos -1);   // contain .obj
 
-	cutPos = m_fileName.lastIndexOf("."); 
-	m_fileName = m_fileName.left(cutPos); // get rig of .obj
+	cutPos = m_fileName.lastIndexOf(".");
+
+	QString modelFormat = m_fileName.right(m_fileName.length() - cutPos);
+
+	m_fileName = m_fileName.left(cutPos); // get rid of .obj
 
 	m_nameStr = m_fileName;;
 
@@ -129,7 +132,17 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 		std::cout << "\t \t loading mesh for " << m_nameStr.toStdString() << "\n";
 
 		bool isLoaded;
-		isLoaded = m_mesh->readObjFile(qPrintable(filename), metric, sceneDbType);
+
+		if (modelFormat == ".obj")
+		{
+			isLoaded = m_mesh->readObjFile(qPrintable(filename), metric, sceneDbType);
+		}
+		else if (modelFormat == ".3ds")
+		{
+			isLoaded = m_mesh->read3DSFile(filename.toStdString(), metric);
+		}
+
+
 
 		if (!isLoaded)
 		{
@@ -144,7 +157,7 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 			builBBTopPlane();
 		}
 
-		buildDisplayList(0, 0);
+		buildDisplayList(1, 0);
 
 		if (meshAndOBB)  // load both obb and mesh, if obb not exist, compute obb
 		{

@@ -8,16 +8,20 @@
 
 // simple triangle mesh structure
 
+class CIO_3DS;
+
 class CMesh
 {
 
 public:
-
+	CMesh() {};
 	CMesh(QString path, QString name); 
 	~CMesh();
 
 	bool readObjFile(const std::string &filename, const double metric = 1.0, QString sceneDbType = QString());
 	void saveObjFile(const std::string &filename);
+
+	bool read3DSFile(const std::string &filename, const double metric = 1.0, QString sceneDbType = QString());
 
 	void draw(QColor c);
 	void draw(const std::vector<int> &faceIndicators);
@@ -47,6 +51,7 @@ public:
 	void buildOpcodeModel();
 	void updateOpcodeModel();
 
+	friend CIO_3DS;
 
 private:
 	QString m_name;

@@ -23,6 +23,8 @@ public:
 	QString getModelFilePath() { return m_filePath; };
 	QString getNameStr() { return m_nameStr; };
 
+	void load3dsInfo();
+
 	MathLib::Vector3 getFaceCenter(int fid);
 	MathLib::Vector3 getFaceNormal(int fid);
 

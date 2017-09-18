@@ -227,7 +227,7 @@ void CScene::loadStanfordScene(const QString &filename, int metaDataOnly, int ob
 	computeAABB();
 	buildModelDislayList();
 
-	std::cout << "Scene loaded\n";
+	std::cout << "Scene " << m_sceneFileName.toStdString() <<" loaded\n";
 }
 
 void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/)
@@ -244,7 +244,7 @@ void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/)
 	int cutPos = sceneFileInfo.absolutePath().lastIndexOf("/");
 	m_sceneDBPath = sceneFileInfo.absolutePath().left(cutPos);
 
-	m_metric = 1.0;
+	m_metric = 0.0254;
 	m_uprightVec = MathLib::Vector3(0, 0, 1);
 
 	int currModelID = 0;
@@ -252,7 +252,6 @@ void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/)
 	while (!ifs.atEnd())
 		//for (int i = 0; i < 8; i++)
 		{
-
 			{
 				QString modelName;
 				ifs >> modelName;
@@ -264,7 +263,7 @@ void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/)
 					newModel->setSceneMetric(m_metric);
 					newModel->setSceneUpRightVec(m_uprightVec);
 
-					newModel->loadModel(modelFullName);
+					newModel->loadModel(modelFullName, m_metric, 0, obbOnly, 1);
 					newModel->setID(currModelID++);
 
 					m_modelList.push_back(newModel);
@@ -275,8 +274,7 @@ void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/)
 	computeAABB();
 	buildModelDislayList();
 
-	std::cout << "Scene loaded\n";
-
+	std::cout << "Scene " << m_sceneFileName.toStdString() << " loaded\n";
 }
 
 void CScene::buildRelationGraph()

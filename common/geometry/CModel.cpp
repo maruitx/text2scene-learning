@@ -72,7 +72,7 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 
 	int cutPos = filename.lastIndexOf("/");
 	m_filePath = filename.left(cutPos);
-	m_fileName = filename.right(filename.size() - cutPos -1);   // contain .obj
+	m_fileName = filename.right(filename.size() - cutPos -1);   // contain .obj or .3ds
 
 	cutPos = m_fileName.lastIndexOf(".");
 
@@ -135,14 +135,14 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 
 		if (modelFormat == ".obj")
 		{
-			isLoaded = m_mesh->readObjFile(qPrintable(filename), metric, sceneDbType);
+			isLoaded = m_mesh->readObjFile(qPrintable(filename), metric);
 		}
 		else if (modelFormat == ".3ds")
 		{
 			isLoaded = m_mesh->read3DSFile(filename.toStdString(), metric);
+
+			load3dsInfo();
 		}
-
-
 
 		if (!isLoaded)
 		{
@@ -186,6 +186,39 @@ void CModel::saveModel(QString filename)
 {
 	m_mesh->saveObjFile(filename.toStdString());
 }
+
+void CModel::load3dsInfo()
+{
+	QString infoFilename = m_filePath + "/" + m_nameStr + ".3ds.info";
+
+	QFile infoFile(infoFilename);
+	
+	if (!infoFile.open(QIODevice::ReadOnly | QIODevice::Text))
+	{
+		return;
+	}
+
+	QTextStream ifs(&infoFile);
+	while (!ifs.atEnd())
+	{
+		QString currLine;
+		currLine = ifs.readLine();
+
+		int cutPos = currLine.lastIndexOf("(");
+		m_catName = currLine.left(cutPos);
+
+		currLine = ifs.readLine();
+		QStringList floatList = currLine.split(" ");
+		m_initFrontDir = MathLib::Vector3(floatList[0].toDouble(),
+			floatList[1].toDouble(),
+			floatList[2].toDouble());
+		
+		m_initFrontDir.normalize();
+		m_currFrontDir = m_initFrontDir;
+	}
+}
+
+
 
 void CModel::computeAABB()
 { 
@@ -540,6 +573,10 @@ void CModel::computeOBB(int fixAxis /*= -1*/)
 	OBBE.ComputeOBB_Min(fixAxis);
 
 	m_hasOBB = true;
+	std::cout << "\t\tModel " << m_nameStr.toStdString() << " OBB computed\n";
+
+	m_initOBBDiagLen = m_OBB.GetDiagLength();
+	m_initOBBPos = getModelPosOBB();
 }
 
 int CModel::loadOBB(const QString &sPathName /*= QString()*/)
@@ -563,6 +600,8 @@ int CModel::loadOBB(const QString &sPathName /*= QString()*/)
 	}
 
 	m_hasOBB = true;
+
+	std::cout << "\t\tModel " << m_nameStr.toStdString() << " OBB loaded\n";
 
 	// save the init info from file
 	m_initOBBDiagLen = m_OBB.GetDiagLength();
@@ -691,7 +730,6 @@ MathLib::Vector3 CModel::getOBBFrontFaceCenter()
 	else
 		return m_OBB.GetFaceCent(3);  // (0,-1,0)
 }
-
 
 
 void CModel::drawFrontDir()

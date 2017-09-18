@@ -17,20 +17,27 @@
    <item>
     <widget class="QGroupBox" name="groupBox_2">
      <property name="title">
-      <string>Scene IO</string>
+      <string>Scene Processing</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="0">
-       <widget class="QPushButton" name="loadSceneButton">
+      <item row="1" column="0">
+       <widget class="QPushButton" name="buildRelationGraphButton">
         <property name="text">
-         <string>Load Scene</string>
+         <string>Build Relation Graph</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="QPushButton" name="pushButton_3">
+      <item row="1" column="1">
+       <widget class="QPushButton" name="buildSemGraphButton">
         <property name="text">
-         <string>Load Scene List</string>
+         <string>Build Semantic Graph</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="2">
+       <widget class="QPushButton" name="loadSceneButton">
+        <property name="text">
+         <string>Load Scene</string>
         </property>
        </widget>
       </item>
@@ -40,101 +47,96 @@
    <item>
     <widget class="QGroupBox" name="groupBox_3">
      <property name="title">
-      <string>Scene Processing</string>
+      <string>Scene List Processing</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
-      <item row="1" column="1">
+      <item row="2" column="0">
+       <widget class="QPushButton" name="buildOBBForListButton">
+        <property name="text">
+         <string>Build OBBs for List</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0">
        <widget class="QPushButton" name="buildRGForListButton">
         <property name="text">
          <string>Build RGs for List</string>
         </property>
        </widget>
       </item>
-      <item row="10" column="1">
-       <widget class="QPushButton" name="buildPairRelationButton">
-        <property name="text">
-         <string>Build Pair Relations</string>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="0" colspan="2">
-       <widget class="Line" name="line">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="0">
-       <widget class="QPushButton" name="computeBBAlignMatForListButton">
-        <property name="text">
-         <string>BB AlignMat for List</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QPushButton" name="buildRelationGraphButton">
-        <property name="text">
-         <string>Build Relation Graph</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
+      <item row="5" column="1">
        <widget class="QPushButton" name="buildSSGForListButton">
         <property name="text">
          <string>Build SSGs for List</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
-       <widget class="QPushButton" name="buildSemGraphButton">
-        <property name="text">
-         <string>Build Semantic Graph</string>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="1">
-       <widget class="QPushButton" name="extractRelPosForList">
-        <property name="text">
-         <string>Extract RelPos for List</string>
-        </property>
-       </widget>
-      </item>
-      <item row="10" column="0">
-       <widget class="QPushButton" name="buildRelativeRelationButton">
-        <property name="text">
-         <string>Build Relative Relations</string>
-        </property>
-       </widget>
-      </item>
-      <item row="11" column="0">
-       <widget class="QPushButton" name="buildGroupRelationButton">
-        <property name="text">
-         <string>Build Group Relaions</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
+      <item row="2" column="1">
        <widget class="QPushButton" name="collectMetaInfoButton">
         <property name="text">
          <string>Collect MetaInfo for List</string>
         </property>
        </widget>
       </item>
-      <item row="11" column="1">
-       <widget class="QPushButton" name="extractSuppProbButton">
-        <property name="text">
-         <string>Extract SuppProb for List</string>
-        </property>
-       </widget>
-      </item>
-      <item row="9" column="0" colspan="2">
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_4">
+     <property name="title">
+      <string>Relation Learning</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_5">
+      <item row="1" column="0" colspan="2">
        <widget class="Line" name="line_2">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
        </widget>
       </item>
-      <item row="12" column="0" colspan="2">
+      <item row="2" column="1">
+       <widget class="QPushButton" name="buildPairRelationButton">
+        <property name="text">
+         <string>Build Pair Relations</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QPushButton" name="buildRelativeRelationButton">
+        <property name="text">
+         <string>Build Relative Relations</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QPushButton" name="buildGroupRelationButton">
+        <property name="text">
+         <string>Build Group Relaions</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QPushButton" name="extractSuppProbButton">
+        <property name="text">
+         <string>Extract SuppProb for List</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QPushButton" name="computeBBAlignMatForListButton">
+        <property name="text">
+         <string>BB AlignMat for List</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="extractRelPosForList">
+        <property name="text">
+         <string>Extract RelPos for List</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0" colspan="2">
        <widget class="QPushButton" name="batchBuildModelsButton">
         <property name="text">
          <string>Batch Build Models</string>
@@ -147,7 +149,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox_5">
      <property name="title">
-      <string>Model DB</string>
+      <string>Stanford Model DB</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
       <item row="0" column="0">

@@ -18,10 +18,10 @@ public:
 	CMesh(QString path, QString name); 
 	~CMesh();
 
-	bool readObjFile(const std::string &filename, const double metric = 1.0, QString sceneDbType = QString());
+	bool readObjFile(const std::string &filename, const double metric = 1.0);
 	void saveObjFile(const std::string &filename);
 
-	bool read3DSFile(const std::string &filename, const double metric = 1.0, QString sceneDbType = QString());
+	bool read3DSFile(const std::string &filename, const double metric = 1.0);
 
 	void draw(QColor c);
 	void draw(const std::vector<int> &faceIndicators);

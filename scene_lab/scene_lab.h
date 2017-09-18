@@ -24,12 +24,16 @@ public:
 	CScene *getScene() { return m_currScene; };
 
 	void loadParas();
+	void loadSceneFileNamesFromListFile(std::vector<QStringList> &loadedSceneFileNames);
+	void LoadSceneList(int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0);
 
 public slots:
 	void LoadScene();
-	void LoadSceneList(int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0);
 
 	void updateModelMetaInfoForScene(CScene *s);
+
+	// obb
+	void BuildOBBForSceneList();
 
 	// structure graph
 	void BuildRelationGraphForCurrentScene();

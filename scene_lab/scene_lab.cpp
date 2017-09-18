@@ -79,7 +79,7 @@ void scene_lab::LoadScene()
 	}
 	else if (sceneFormat == "th")
 	{
-		scene->loadTsinghuaScene(sceneFullName, 1);
+		scene->loadTsinghuaScene(sceneFullName, 0);
 		m_currScene = scene;
 
 	}
@@ -94,12 +94,6 @@ void scene_lab::LoadScene()
 
 void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
 {
-	if (m_modelDB == NULL)
-	{
-		m_modelDB = new ModelDatabase();
-		m_modelDB->loadShapeNetSemTxt();
-	}
-
 	if (m_relationExtractor == NULL)
 	{
 		m_relationExtractor = new RelationExtractor(m_angleTh);
@@ -119,36 +113,102 @@ void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
 	m_sceneList.clear();
 
 	// load scene list file
-	QString currPath = QDir::currentPath();
-	QString sceneListFileName = currPath + QString("/scene_list_%1.txt").arg(m_sceneDBType);
-	QString sceneFolder = m_localSceneDBPath + "/StanfordSceneDB/scenes";
+	//QString currPath = QDir::currentPath();
+	//QString sceneListFileName = currPath + QString("/scene_list_%1.txt").arg(m_sceneDBType);
+	
+	//QStringList sceneFolder;
+	//sceneFolder.push_back(m_localSceneDBPath + "/StanfordSceneDB/scenes");
+	//sceneFolder.push_back(m_localSceneDBPath + "/TsinghuaSceneDB/scenes");
 
-	QFile inFile(sceneListFileName);
-	QTextStream ifs(&inFile);
+	//QFile inFile(sceneListFileName);
+	//QTextStream ifs(&inFile);
 
-	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
+	//if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
+	//{
+	//	std::cout << "SceneLab: cannot open scene list file.\n";
+	//	return;
+	//}
+
+	//if (m_sceneDBType != "tsinghua")
+	//{
+	//	if (m_modelDB == NULL)
+	//	{
+	//		m_modelDB = new ModelDatabase();
+	//		m_modelDB->loadShapeNetSemTxt();
+	//	}
+	//}
+
+	//QString currLine = ifs.readLine();
+
+	//if (currLine.contains("SceneNum"))
+	//{
+	//	std::vector<int> sceneNum = StringToIntegerList(currLine.toStdString(), "SceneNum ");
+
+	//	if (sceneNum.size()!=2)
+	//	{
+	//		std::cout << "Wrong file format for scene list: need two scene numbers";
+	//		return;
+	//	}
+
+	//	// load stanford or scenenn scenes
+	//	for (int i = 0; i < sceneNum[0]; i++)
+	//	{
+	//		QString sceneName = ifs.readLine();
+
+	//		CScene *scene = new CScene();
+	//		QString filename = sceneFolder[0] + "/" + sceneName + ".txt";
+	//		scene->loadStanfordScene(filename, metaDataOnly, obbOnly, meshAndOBB);
+	//		
+	//		updateModelMetaInfoForScene(scene);
+	//		m_sceneList.push_back(scene);
+	//	}
+
+	//	// load tsinghua scenes
+	//	for (int i = 0; i < sceneNum[1]; i++)
+	//	{
+	//		QString sceneName = ifs.readLine();
+
+	//		CScene *scene = new CScene();
+	//		QString filename = sceneFolder[1] + "/" + sceneName + ".txt";
+	//		scene->loadTsinghuaScene(filename, 0);
+
+	//		m_sceneList.push_back(scene);
+	//	}
+	//}
+
+	//QStringList sceneFolder;
+	//sceneFolder.push_back(m_localSceneDBPath + "/StanfordSceneDB/scenes");
+	//sceneFolder.push_back(m_localSceneDBPath + "/TsinghuaSceneDB/scenes");
+
+	std::vector<QStringList> loadedSceneFileNames;
+	loadSceneFileNamesFromListFile(loadedSceneFileNames);
+
+	if (m_sceneDBType != "tsinghua")
 	{
-		std::cout << "SceneLab: cannot open scene list file.\n";
-		return;
+		if (m_modelDB == NULL)
+		{
+			m_modelDB = new ModelDatabase();
+			m_modelDB->loadShapeNetSemTxt();
+		}
+	}
+	
+	// load stanford or scenenn scenes
+	for (int i = 0; i < loadedSceneFileNames[0].size(); i++)
+	{
+		CScene *scene = new CScene();
+		scene->loadStanfordScene(loadedSceneFileNames[0][i], metaDataOnly, obbOnly, meshAndOBB);
+
+		updateModelMetaInfoForScene(scene);
+		m_sceneList.push_back(scene);
 	}
 
-	QString currLine = ifs.readLine();
-
-	if (currLine.contains("SceneNum"))
+	// load tsinghua scenes
+	for (int i = 0; i < loadedSceneFileNames[1].size(); i++)
 	{
-		int sceneNum = StringToIntegerList(currLine.toStdString(), "SceneNum ")[0];
+		CScene *scene = new CScene();
+		scene->loadTsinghuaScene(loadedSceneFileNames[0][i], 0);
 
-		for (int i = 0; i < sceneNum; i++)
-		{
-			QString sceneName = ifs.readLine();
-
-			CScene *scene = new CScene();
-			QString filename = sceneFolder + "/" + sceneName + ".txt";
-			scene->loadStanfordScene(filename, metaDataOnly, obbOnly, meshAndOBB);
-			
-			updateModelMetaInfoForScene(scene);
-			m_sceneList.push_back(scene);
-		}
+		m_sceneList.push_back(scene);
 	}
 }
 
@@ -177,6 +237,31 @@ void scene_lab::updateModelMetaInfoForScene(CScene *s)
 			{
 				s->updateModelCat(i, "room");
 			}
+		}
+	}
+}
+
+void scene_lab::BuildOBBForSceneList()
+{
+	std::vector<QStringList> loadedSceneFileNames;
+	loadSceneFileNamesFromListFile(loadedSceneFileNames);
+
+	// load stanford or scenenn scenes
+	for (int i = 0; i < loadedSceneFileNames[0].size(); i++)
+	{
+		CScene *scene = new CScene();
+		scene->loadStanfordScene(loadedSceneFileNames[0][i], 0, 0, 0);
+	}
+
+	// load tsinghua scenes
+	for (int i = 0; i < loadedSceneFileNames[1].size(); i++)
+	{
+		CScene *scene = new CScene();
+		scene->loadTsinghuaScene(loadedSceneFileNames[1][i], 0);
+
+		if (scene!=NULL)
+		{
+			delete scene;
 		}
 	}
 }
@@ -216,6 +301,62 @@ void scene_lab::loadParas()
 				continue;
 			}
 		}
+	}
+}
+
+void scene_lab::loadSceneFileNamesFromListFile(std::vector<QStringList> &loadedSceneFileNames)
+{
+	// load scene list file
+	QString currPath = QDir::currentPath();
+	QString sceneListFileName = currPath + QString("/scene_list_%1.txt").arg(m_sceneDBType);
+
+
+	QFile inFile(sceneListFileName);
+	QTextStream ifs(&inFile);
+
+	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
+	{
+		std::cout << "SceneLab: cannot open scene list file.\n";
+		return;
+	}
+
+	QStringList sceneFolder;
+	sceneFolder.push_back(m_localSceneDBPath + "/StanfordSceneDB/scenes");
+	sceneFolder.push_back(m_localSceneDBPath + "/TsinghuaSceneDB/scenes");
+
+	QString currLine = ifs.readLine();
+
+	if (currLine.contains("SceneNum"))
+	{
+		std::vector<int> sceneNum = StringToIntegerList(currLine.toStdString(), "SceneNum ");
+
+		if (sceneNum.size() != 2)
+		{
+			std::cout << "Wrong file format for scene list: need two scene numbers";
+			return;
+		}
+
+		QStringList currSceneNames;
+		// load stanford or scenenn scene names
+		for (int i = 0; i < sceneNum[0]; i++)
+		{
+			QString sceneName = ifs.readLine();
+			QString filename = sceneFolder[0] + "/" + sceneName + ".txt";
+			currSceneNames.push_back(filename);
+		}
+
+		loadedSceneFileNames.push_back(currSceneNames);
+
+		// load tsinghua scenes
+		currSceneNames.clear();
+		for (int i = 0; i < sceneNum[1]; i++)
+		{
+			QString sceneName = ifs.readLine();
+			QString filename = sceneFolder[1] + "/" + sceneName + ".th";
+			currSceneNames.push_back(filename);
+		}
+
+		loadedSceneFileNames.push_back(currSceneNames);
 	}
 }
 

@@ -16,7 +16,7 @@ CMesh::~CMesh()
 	m_faceNormals.clear();
 }
 
-bool CMesh::readObjFile(const std::string &filename, const double metric /*= 1.0*/, QString sceneDbType)
+bool CMesh::readObjFile(const std::string &filename, const double metric /*= 1.0*/)
 {	
 	MathLib::Vector3 currMetric(metric, metric, metric);
 
@@ -148,7 +148,7 @@ bool CMesh::readObjFile(const std::string &filename, const double metric /*= 1.0
 	return true;
 }
 
-bool CMesh::read3DSFile(const std::string &filename, const double metric /*= 1.0*/, QString sceneDbType /*= QString()*/)
+bool CMesh::read3DSFile(const std::string &filename, const double metric /*= 1.0*/)
 {
 	CIO_3DS* io_3DS = new CIO_3DS(this);
 

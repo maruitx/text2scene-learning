@@ -43,7 +43,7 @@ void SceneSemGraph::generateGraph()
 	{
 		QString modelNameStr = m_scene->getModelNameString(i);
 
-		if (m_modelDB->isModelInDB(modelNameStr))
+		if (m_modelDB != NULL && m_modelDB->isModelInDB(modelNameStr))
 		{
 			DBMetaModel *metaModel = m_modelDB->getMetaModelByNameString(modelNameStr);
 			CModel *m = m_scene->getModel(i);
@@ -60,6 +60,7 @@ void SceneSemGraph::generateGraph()
 			newMetaModelInstance->parentId = m_scene->getSuppParentId(i);
 			newMetaModelInstance->onSuppPlaneUV = m_scene->getUVonBBTopPlaneForModel(i);
 			newMetaModelInstance->positionToSuppPlaneDist = m_scene->getHightToBBTopPlaneForModel(i);
+
 			if (m->m_bbTopPlane != NULL)
 			{
 				newMetaModelInstance->suppPlaneCorners = m_scene->getCurrModelBBTopPlaneCornersWithSceneMetric(i);
@@ -72,12 +73,13 @@ void SceneSemGraph::generateGraph()
 		}
 		else
 		{
-			std::cout << "SceneSemGraph: cannot find model: " << modelNameStr.toStdString() << " in ShapeNetDB-"<<m_modelDB->getMetaFileType().toStdString()<<"\n";
+			//std::cout << "SceneSemGraph: cannot find model: " << modelNameStr.toStdString() << " in ShapeNetDB-"<<m_modelDB->getMetaFileType().toStdString()<<"\n";
 
 			// add model to DB
 			DBMetaModel *newMetaModel = new DBMetaModel();
 			CModel *m = m_scene->getModel(i);
-			QString modelCatName = "unknown";
+			//QString modelCatName = "unknown";
+			QString modelCatName = m->getCatName();
 
 			if (m->getNameStr().contains("room"))
 			{
@@ -104,7 +106,8 @@ void SceneSemGraph::generateGraph()
 				newMetaModel->suppPlaneCorners = m_scene->getCurrModelBBTopPlaneCornersWithSceneMetric(i);
 			}
 
-			newMetaModel->dbID = m_modelDB->dbMetaModels.size();
+			//// add current instance to DB
+			//newMetaModel->dbID = m_modelDB->dbMetaModels.size();
 			//m_modelDB->dbMetaModels[modelNameStr] = newMetaModel;
 
 			m_metaModelList.push_back(newMetaModel);			
@@ -148,7 +151,7 @@ void SceneSemGraph::addRelationsFromRelationGraph()
 	if (m_relGraph == NULL)
 	{
 		std::cout << "SceneSemGraph: relation graph is not generated.\n";
-		return;
+		return;	
 	}
 
 	for (int i = 0; i < m_relGraph->ESize(); i++)

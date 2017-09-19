@@ -72,9 +72,9 @@
        </widget>
       </item>
       <item row="2" column="1">
-       <widget class="QPushButton" name="collectMetaInfoButton">
+       <widget class="QPushButton" name="extractMetaFileButton">
         <property name="text">
-         <string>Collect MetaInfo for List</string>
+         <string>Extract MetaFile for List</string>
         </property>
        </widget>
       </item>

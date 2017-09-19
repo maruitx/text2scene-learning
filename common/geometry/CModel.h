@@ -19,6 +19,9 @@ public:
 
 	bool loadModel(QString filename, double metric = 1.0, int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0, QString sceneDbType = QString());
 	void saveModel(QString filename);
+
+	bool loadMeshData(QString filename, QString modelFormat, double metric = 1.0);
+
 	QString getModelFileName() { return m_fileName; };
 	QString getModelFilePath() { return m_filePath; };
 	QString getNameStr() { return m_nameStr; };

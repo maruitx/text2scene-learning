@@ -205,18 +205,7 @@ void CScene::loadStanfordScene(const QString &filename, int metaDataOnly, int ob
 
 	std::cout << "\n";
 
-	m_relationGraph = new RelationGraph(this);
-
-	QString graphFilename = m_sceneFilePath + "/" + m_sceneFileName + ".sg";
-
-	if (m_relationGraph->readGraph(graphFilename) != -1)
-	{
-		m_hasRelGraph = true;
-
-		buildSupportHierarchy();
-		
-		std::cout << "\tstructure graph loaded\n";
-	}
+	initRelationGraph();
 
 	if (metaDataOnly)
 	{
@@ -244,6 +233,7 @@ void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/)
 	int cutPos = sceneFileInfo.absolutePath().lastIndexOf("/");
 	m_sceneDBPath = sceneFileInfo.absolutePath().left(cutPos);
 
+	m_sceneFormat = "TsinghuaSceneDatabase";
 	m_metric = 0.0254;
 	m_uprightVec = MathLib::Vector3(0, 0, 1);
 
@@ -251,30 +241,52 @@ void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/)
 
 	while (!ifs.atEnd())
 		//for (int i = 0; i < 8; i++)
+	{
 		{
+			QString modelName;
+			ifs >> modelName;
+			if (!modelName.isEmpty())
 			{
-				QString modelName;
-				ifs >> modelName;
-				if (!modelName.isEmpty())
-				{
-					QString modelFullName = m_sceneDBPath + "/" + m_sceneFileName + "/" + modelName;
+				QString modelFullName = m_sceneDBPath + "/" + m_sceneFileName + "/" + modelName;
 
-					CModel *newModel = new CModel();
-					newModel->setSceneMetric(m_metric);
-					newModel->setSceneUpRightVec(m_uprightVec);
+				CModel *newModel = new CModel();
+				newModel->setSceneMetric(m_metric);
+				newModel->setSceneUpRightVec(m_uprightVec);
 
-					newModel->loadModel(modelFullName, m_metric, 0, obbOnly, 1);
-					newModel->setID(currModelID++);
+				newModel->loadModel(modelFullName, m_metric, 0, obbOnly, 1);
+				newModel->setID(currModelID++);
 
-					m_modelList.push_back(newModel);
-				}
+				MathLib::Matrix4d transMat = MathLib::Matrix4d::Identity_Matrix;
+				newModel->setInitTransMat(transMat);
+
+				m_modelList.push_back(newModel);
+				m_modelCatNameList.push_back(newModel->getCatName());
 			}
 		}
+	}
+
+	initRelationGraph();
 
 	computeAABB();
 	buildModelDislayList();
 
 	std::cout << "Scene " << m_sceneFileName.toStdString() << " loaded\n";
+}
+
+void CScene::initRelationGraph()
+{
+	m_relationGraph = new RelationGraph(this);
+
+	QString graphFilename = m_sceneFilePath + "/" + m_sceneFileName + ".sg";
+
+	if (m_relationGraph->readGraph(graphFilename) != -1)
+	{
+		m_hasRelGraph = true;
+
+		buildSupportHierarchy();
+
+		std::cout << "\tstructure graph loaded\n";
+	}
 }
 
 void CScene::buildRelationGraph()
@@ -657,14 +669,21 @@ int CScene::getRoomID()
 		return m_roomID;
 	}
 
+	bool findRoom = false;
 	// set room ID
 	for (int i = 0; i < m_modelList.size(); i++)
 	{
 		if (m_modelCatNameList[i].contains("room"))
 		{
 			m_roomID = i;
+			findRoom = true;
 			break;
 		}
+	}
+
+	if (!findRoom)
+	{
+		m_roomID = -1;
 	}
 
 	return m_roomID;
@@ -672,15 +691,15 @@ int CScene::getRoomID()
 
 MathLib::Vector3 CScene::getRoomFront()
 {
-	if (m_roomID != -1)
-	{
-		return m_modelList[m_roomID]->getFrontDir();;
-	}
+	int id = getRoomID();
 
+	if (id != -1)
+	{
+		return m_modelList[id]->getFrontDir();
+	}
 	else
 	{
-		int id = getRoomID();
-		return m_modelList[id]->getFrontDir();
+		return MathLib::Vector3(0,1,0);
 	}
 }
 

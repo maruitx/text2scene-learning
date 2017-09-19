@@ -24,8 +24,13 @@ public:
 	CScene *getScene() { return m_currScene; };
 
 	void loadParas();
+
+	// load scene list
 	void loadSceneFileNamesFromListFile(std::vector<QStringList> &loadedSceneFileNames);
 	void LoadSceneList(int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0);
+
+	// categories
+	void extractModelCatsFromSceneList();
 
 public slots:
 	void LoadScene();
@@ -40,7 +45,7 @@ public slots:
 	void BuildRelationGraphForSceneList();
 
 	// ssg
-	void BuildSemGraphForCurrentScene(int batchLoading = 0);
+	void BuildSemGraphForCurrentScene();
 	void BuildSemGraphForSceneList();
 
 	// relational model
@@ -54,7 +59,7 @@ public slots:
 
 	void BatchBuildModelsForList();
 
-	void CollectModelInfoForSceneList();
+	void ExtractMetaFileForSceneList();
 
 	void updateSceneRenderingOptions();
 

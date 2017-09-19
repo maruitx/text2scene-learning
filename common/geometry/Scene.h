@@ -80,7 +80,7 @@ public:
 	std::vector<MathLib::Vector3> getCurrModelSuppPlaneCornersWithSceneMetric(int modelId);
 	std::vector<MathLib::Vector3> getCurrModelBBTopPlaneCornersWithSceneMetric(int modelId);
 
-
+	void initRelationGraph();
 	void buildRelationGraph();
 	RelationGraph* getSceneGraph() { return m_relationGraph; };
 	void updateRelationGraph(int modelID);

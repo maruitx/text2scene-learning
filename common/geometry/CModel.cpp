@@ -79,8 +79,7 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 	QString modelFormat = m_fileName.right(m_fileName.length() - cutPos);
 
 	m_fileName = m_fileName.left(cutPos); // get rid of .obj
-
-	m_nameStr = m_fileName;;
+	m_nameStr = m_fileName;
 
 
 	if (m_fileName.contains("_"))
@@ -109,6 +108,11 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 			m_hasSuppPlane = true;
 		}
 	}
+
+	if (modelFormat == ".3ds")
+	{
+		load3dsInfo();
+	}
  	
 	if (metaDataOnly)
 	{
@@ -131,18 +135,7 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 		// load mesh data first
 		std::cout << "\t \t loading mesh for " << m_nameStr.toStdString() << "\n";
 
-		bool isLoaded;
-
-		if (modelFormat == ".obj")
-		{
-			isLoaded = m_mesh->readObjFile(qPrintable(filename), metric);
-		}
-		else if (modelFormat == ".3ds")
-		{
-			isLoaded = m_mesh->read3DSFile(filename.toStdString(), metric);
-
-			load3dsInfo();
-		}
+		bool isLoaded = loadMeshData(filename, modelFormat, metric);
 
 		if (!isLoaded)
 		{
@@ -187,6 +180,22 @@ void CModel::saveModel(QString filename)
 	m_mesh->saveObjFile(filename.toStdString());
 }
 
+bool CModel::loadMeshData(QString filename, QString modelFormat, double metric /*= 1.0*/)
+{
+	bool isLoaded;
+
+	if (modelFormat == ".obj")
+	{
+		isLoaded = m_mesh->readObjFile(qPrintable(filename), metric);
+	}
+	else if (modelFormat == ".3ds")
+	{
+		isLoaded = m_mesh->read3DSFile(filename.toStdString(), metric);
+	}
+
+	return isLoaded;
+}
+
 void CModel::load3dsInfo()
 {
 	QString infoFilename = m_filePath + "/" + m_nameStr + ".3ds.info";
@@ -217,8 +226,6 @@ void CModel::load3dsInfo()
 		m_currFrontDir = m_initFrontDir;
 	}
 }
-
-
 
 void CModel::computeAABB()
 { 

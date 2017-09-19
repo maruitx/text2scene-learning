@@ -112,74 +112,6 @@ void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
 
 	m_sceneList.clear();
 
-	// load scene list file
-	//QString currPath = QDir::currentPath();
-	//QString sceneListFileName = currPath + QString("/scene_list_%1.txt").arg(m_sceneDBType);
-	
-	//QStringList sceneFolder;
-	//sceneFolder.push_back(m_localSceneDBPath + "/StanfordSceneDB/scenes");
-	//sceneFolder.push_back(m_localSceneDBPath + "/TsinghuaSceneDB/scenes");
-
-	//QFile inFile(sceneListFileName);
-	//QTextStream ifs(&inFile);
-
-	//if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
-	//{
-	//	std::cout << "SceneLab: cannot open scene list file.\n";
-	//	return;
-	//}
-
-	//if (m_sceneDBType != "tsinghua")
-	//{
-	//	if (m_modelDB == NULL)
-	//	{
-	//		m_modelDB = new ModelDatabase();
-	//		m_modelDB->loadShapeNetSemTxt();
-	//	}
-	//}
-
-	//QString currLine = ifs.readLine();
-
-	//if (currLine.contains("SceneNum"))
-	//{
-	//	std::vector<int> sceneNum = StringToIntegerList(currLine.toStdString(), "SceneNum ");
-
-	//	if (sceneNum.size()!=2)
-	//	{
-	//		std::cout << "Wrong file format for scene list: need two scene numbers";
-	//		return;
-	//	}
-
-	//	// load stanford or scenenn scenes
-	//	for (int i = 0; i < sceneNum[0]; i++)
-	//	{
-	//		QString sceneName = ifs.readLine();
-
-	//		CScene *scene = new CScene();
-	//		QString filename = sceneFolder[0] + "/" + sceneName + ".txt";
-	//		scene->loadStanfordScene(filename, metaDataOnly, obbOnly, meshAndOBB);
-	//		
-	//		updateModelMetaInfoForScene(scene);
-	//		m_sceneList.push_back(scene);
-	//	}
-
-	//	// load tsinghua scenes
-	//	for (int i = 0; i < sceneNum[1]; i++)
-	//	{
-	//		QString sceneName = ifs.readLine();
-
-	//		CScene *scene = new CScene();
-	//		QString filename = sceneFolder[1] + "/" + sceneName + ".txt";
-	//		scene->loadTsinghuaScene(filename, 0);
-
-	//		m_sceneList.push_back(scene);
-	//	}
-	//}
-
-	//QStringList sceneFolder;
-	//sceneFolder.push_back(m_localSceneDBPath + "/StanfordSceneDB/scenes");
-	//sceneFolder.push_back(m_localSceneDBPath + "/TsinghuaSceneDB/scenes");
-
 	std::vector<QStringList> loadedSceneFileNames;
 	loadSceneFileNamesFromListFile(loadedSceneFileNames);
 
@@ -206,10 +138,50 @@ void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
 	for (int i = 0; i < loadedSceneFileNames[1].size(); i++)
 	{
 		CScene *scene = new CScene();
-		scene->loadTsinghuaScene(loadedSceneFileNames[0][i], 0);
+		scene->loadTsinghuaScene(loadedSceneFileNames[1][i], obbOnly);
 
 		m_sceneList.push_back(scene);
 	}
+}
+
+void scene_lab::extractModelCatsFromSceneList()
+{
+	std::set<QString> allModelNameStrings;
+
+	for (int i = 0; i < m_sceneList.size(); i++)
+	{
+		for (int i = 0; i <  m_sceneList[i]->getModelNum(); i++)
+		{
+			allModelNameStrings.insert(m_sceneList[i]->getModelNameString(i));
+		}
+	}
+
+	// collect corrected model cateogry
+	QString currPath = QDir::currentPath();
+	QString correctedModelCatFileName = currPath + "/model_category_corrected.txt";
+
+	QFile outFile(correctedModelCatFileName);
+	QTextStream ofs(&outFile);
+
+	if (!outFile.open(QIODevice::ReadWrite | QIODevice::Truncate | QIODevice::Text))
+	{
+		std::cout << "SceneLab: cannot open model category file.\n";
+		return;
+	}
+
+	for (auto it = allModelNameStrings.begin(); it != allModelNameStrings.end(); it++)
+	{
+		if (m_modelDB!=NULL && m_modelDB->dbMetaModels.count(*it))
+		{
+			auto metaIt = m_modelDB->dbMetaModels.find(*it);
+			DBMetaModel *m = metaIt->second;
+			ofs << m->getIdStr() << "," << m->getProcessedCatName() << "\n";
+		}
+	}
+
+	outFile.close();
+
+	std::cout << "\nSceneLab: model category saved.\n";
 }
 
 // update cat name, front dir, up dir for model
@@ -246,14 +218,14 @@ void scene_lab::BuildOBBForSceneList()
 	std::vector<QStringList> loadedSceneFileNames;
 	loadSceneFileNamesFromListFile(loadedSceneFileNames);
 
-	// load stanford or scenenn scenes
+	// load stanford or scenenn scenes and build the obb
 	for (int i = 0; i < loadedSceneFileNames[0].size(); i++)
 	{
 		CScene *scene = new CScene();
 		scene->loadStanfordScene(loadedSceneFileNames[0][i], 0, 0, 0);
 	}
 
-	// load tsinghua scenes
+	// load tsinghua scenes and build the obb
 	for (int i = 0; i < loadedSceneFileNames[1].size(); i++)
 	{
 		CScene *scene = new CScene();
@@ -448,7 +420,7 @@ void scene_lab::testMatlab()
 	engClose(matlabEngine);
 }
 
-void scene_lab::BuildSemGraphForCurrentScene(int batchLoading)
+void scene_lab::BuildSemGraphForCurrentScene()
 {
 	if (m_currScene == NULL)
 	{
@@ -465,60 +437,21 @@ void scene_lab::BuildSemGraphForCurrentScene(int batchLoading)
 	m_currSceneSemGraph->generateGraph();
 	m_currSceneSemGraph->saveGraph();
 
-	if (batchLoading == 0)
-	{
-		//QString currPath = QDir::currentPath();
-		//QString mapFilename = currPath + "./SSGNodeLabelMap.txt";
-		//QString gmtAttriFilename = currPath + "./.gm_default_attributes";
-
-		//m_currSceneSemGraph->saveNodeStringToLabelIDMap(mapFilename);
-		//m_currSceneSemGraph->saveGMTNodeAttributeFile(gmtAttriFilename);
-	}
 }
 
 void scene_lab::BuildSemGraphForSceneList()
 {
 	loadParas();
-	LoadSceneList(1);
 
-	std::set<QString> allModelNameStrings;
+	// only load meta data (stanford and scenenn) and obb (tsinghua)
+	LoadSceneList(1,1,0);
+
 	for (int i = 0; i < m_sceneList.size(); i++)
 	{
 		m_currScene = m_sceneList[i];
-		BuildSemGraphForCurrentScene(1);
-
-		for (int i = 0; i < m_currScene->getModelNum(); i++)
-		{
-			allModelNameStrings.insert(m_currScene->getModelNameString(i));
-		}
+		BuildSemGraphForCurrentScene();
 	}
 
-	// collect corrected model cateogry
-	QString currPath = QDir::currentPath();
-	QString correctedModelCatFileName = currPath + "/model_category_corrected.txt";
-
-	QFile outFile(correctedModelCatFileName);
-	QTextStream ofs(&outFile);
-
-	if (!outFile.open(QIODevice::ReadWrite | QIODevice::Truncate | QIODevice::Text))
-	{
-		std::cout << "SceneLab: cannot open model category file.\n";
-		return;
-	}
-
-	for (auto it = allModelNameStrings.begin(); it != allModelNameStrings.end(); it++)
-	{
-		if (m_modelDB->dbMetaModels.count(*it))
-		{
-			auto metaIt = m_modelDB->dbMetaModels.find(*it);
-			DBMetaModel *m = metaIt->second;
-			ofs << m->getIdStr()<<"," << m->getProcessedCatName() << "\n";
-		}
-	}
-
-	outFile.close();
-
-	std::cout << "\nSceneLab: model category saved.\n";
 	std::cout << "\nSceneLab: all scene semantic graph generated.\n";
 }
 
@@ -556,7 +489,7 @@ void scene_lab::BuildRelationGraphForSceneList()
 	std::cout << "\nSceneLab: all scene relation graph generated.\n";
 }
 
-void scene_lab::CollectModelInfoForSceneList()
+void scene_lab::ExtractMetaFileForSceneList()
 {
 	// collect model meta info for current scene list. (subset of the whole shapenetsem meta file)
 

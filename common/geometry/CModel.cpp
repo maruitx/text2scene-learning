@@ -76,7 +76,7 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 
 	cutPos = m_fileName.lastIndexOf(".");
 
-	QString modelFormat = m_fileName.right(m_fileName.length() - cutPos);
+	m_modelFormat = m_fileName.right(m_fileName.length() - cutPos -1);
 
 	m_fileName = m_fileName.left(cutPos); // get rid of .obj
 	m_nameStr = m_fileName;
@@ -109,7 +109,7 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 		}
 	}
 
-	if (modelFormat == ".3ds")
+	if (m_modelFormat == "3ds")
 	{
 		load3dsInfo();
 	}
@@ -135,7 +135,7 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 		// load mesh data first
 		std::cout << "\t \t loading mesh for " << m_nameStr.toStdString() << "\n";
 
-		bool isLoaded = loadMeshData(filename, modelFormat, metric);
+		bool isLoaded = loadMeshData(filename, metric);
 
 		if (!isLoaded)
 		{
@@ -180,15 +180,15 @@ void CModel::saveModel(QString filename)
 	m_mesh->saveObjFile(filename.toStdString());
 }
 
-bool CModel::loadMeshData(QString filename, QString modelFormat, double metric /*= 1.0*/)
+bool CModel::loadMeshData(QString filename, double metric /*= 1.0*/)
 {
 	bool isLoaded;
 
-	if (modelFormat == ".obj")
+	if (m_modelFormat == "obj")
 	{
 		isLoaded = m_mesh->readObjFile(qPrintable(filename), metric);
 	}
-	else if (modelFormat == ".3ds")
+	else if (m_modelFormat == "3ds")
 	{
 		isLoaded = m_mesh->read3DSFile(filename.toStdString(), metric);
 	}
@@ -815,6 +815,81 @@ double CModel::getOBBDiagLength()
 	return m_OBB.GetDiagLength();
 }
 
+int CModel::getOBBAlongDirId()
+{
+	MathLib::Vector3 frontDir = getFrontDir();
+	int alongAxisId = 0;
+
+	for (int i = 0; i < 3; i++)
+	{
+		// if the front dir is opposite to the corresponding axis
+		if (std::abs(m_OBB.axis[i].dot(frontDir)) < 0.1 && m_OBB.axis[i].cross(frontDir).dot(MathLib::Vector3(0, 0, 1)) < -0.9)
+		{
+			alongAxisId = i;
+		}
+		else if (std::abs(m_OBB.axis[i].dot(frontDir)) < 0.1 && m_OBB.axis[i].cross(frontDir).dot(MathLib::Vector3(0, 0, 1)) > 0.9)
+		{
+			alongAxisId = i;
+		}
+	}
+
+	return alongAxisId;
+}
+
+int CModel::getOBBFrontDirId()
+{
+	// get idx of axis corresponds to front dir
+	MathLib::Vector3 frontDir = getFrontDir();
+	int frontAxisId = 0;
+
+	for (int i = 0; i < 3; i++)
+	{
+		if (std::abs(m_OBB.axis[i].dot(frontDir)) > 0.9)
+		{
+			frontAxisId = i;		
+		}
+	}
+
+	return frontAxisId;
+}
+
+double CModel::getOBBAlongDirSzie()
+{
+	int alongAxisId = getOBBAlongDirId();
+	return m_OBB.size[alongAxisId];
+}
+
+double CModel::getOBBFrontDirSize()
+{
+	int frontAxisId = getOBBFrontDirId();
+	return m_OBB.size[frontAxisId];
+}
+
+MathLib::Vector3 CModel::getAlongDirOBBAxis()
+{
+	MathLib::Vector3 frontDir = getFrontDir();
+	MathLib::Vector3 alongAxis;
+
+	// along axis is to the right of the front dir, e.g., the right of the desk
+	for (int i = 0; i < 3; i++)
+	{
+		// if the front dir is opposite to the corresponding axis
+		if (std::abs(m_OBB.axis[i].dot(frontDir)) < 0.1 && m_OBB.axis[i].cross(frontDir).dot(MathLib::Vector3(0, 0, 1)) < -0.9)
+		{
+			alongAxis = m_OBB.axis[i];
+			return alongAxis;
+		}
+		else if (std::abs(m_OBB.axis[i].dot(frontDir)) < 0.1 && m_OBB.axis[i].cross(frontDir).dot(MathLib::Vector3(0, 0, 1)) > 0.9)
+		{
+			alongAxis = -m_OBB.axis[i];
+			return alongAxis;
+		}
+	}
+
+	return alongAxis;
+}
+
+
 MathLib::Vector3 CModel::getFaceCenter(int fid)
 {
 	return m_mesh->getFaceCenter(fid);
@@ -985,29 +1060,6 @@ double CModel::getHorizonLongRange()
 	return rangeVal;
 }
 
-MathLib::Vector3 CModel::getAlongDirOBBAxis()
-{
-	MathLib::Vector3 frontDir = getFrontDir();
-	MathLib::Vector3 alongAxis;
-
-	for (int i = 0; i < 3; i++)
-	{
-		if (std::abs(m_OBB.axis[i].dot(frontDir)) < 0.1 && m_OBB.axis[i].cross(frontDir).dot(MathLib::Vector3(0, 0, 1)) < -0.9)
-		{
-			alongAxis = m_OBB.axis[i];
-			return alongAxis;
-		}
-
-		else if (std::abs(m_OBB.axis[i].dot(frontDir)) < 0.1 && m_OBB.axis[i].cross(frontDir).dot(MathLib::Vector3(0, 0, 1)) > 0.9)
-		{
-			alongAxis = - m_OBB.axis[i];
-			return alongAxis;
-		}
-	}
-
-	return alongAxis;
-}
-
 bool CModel::isSupportChild(int id)
 {
 	if (std::find(suppChindrenList.begin(), suppChindrenList.end(), id) != suppChindrenList.end())
@@ -1158,34 +1210,63 @@ bool CModel::loadBBTopPlane()
 
 void CModel::computeBBAlignMat()
 {
-	MathLib::Vector3 transVec = -m_initAABB.cent;
-
-	MathLib::Vector3 maxVert = m_initAABB.GetMaxV();
-	MathLib::Vector3 minVert = m_initAABB.GetMinV();
-
-	double scaleX = maxVert.x - minVert.x;
-	double scaleY = maxVert.y - minVert.y;
-	double scaleZ = maxVert.z - minVert.z;
-	double sizeTh = 1e-3 / m_sceneMetric;
-
-	// for thin objects, e.g., paper, make sure the scale size is not zero
-	if (scaleX < sizeTh) scaleX += sizeTh;
-	if (scaleY < sizeTh) scaleY += sizeTh;
-	if (scaleZ < sizeTh) scaleZ += sizeTh;
-
-
 	MathLib::Matrix4d translateMat;
 	MathLib::Matrix4d rotMat;
 	MathLib::Matrix4d scaleMat;
 
-	translateMat.settranslate(transVec);
-	scaleMat.setscale(1 / scaleX, 1 / scaleY, 1 / scaleZ);
+	MathLib::Vector3 transVec;
+	double scaleX, scaleY, scaleZ;
 
-	// rotate init front dir to word Y direction
-	rotMat = GetRotMat(m_initFrontDir, MathLib::Vector3(0,1,0));
+	// use the init AABB for stanford models since these models are already axis-aligned
+	if (m_modelFormat == "obj")
+	{
+		transVec = -m_initAABB.cent;
 
-	// first bring model back to init frame, then transform init frame to unit box
-	m_WorldBBToUnitBoxMat = rotMat*scaleMat*translateMat*m_initTransMat.invert();
+		MathLib::Vector3 maxVert = m_initAABB.GetMaxV();
+		MathLib::Vector3 minVert = m_initAABB.GetMinV();
+
+		scaleX = maxVert.x - minVert.x;
+		scaleY = maxVert.y - minVert.y;
+		scaleZ = maxVert.z - minVert.z;
+		double sizeTh = 1e-3 / m_sceneMetric;
+
+		// for thin objects, e.g., paper, make sure the scale size is not zero
+		if (scaleX < sizeTh) scaleX += sizeTh;
+		if (scaleY < sizeTh) scaleY += sizeTh;
+		if (scaleZ < sizeTh) scaleZ += sizeTh;
+
+		translateMat.settranslate(transVec);
+		scaleMat.setscale(1 / scaleX, 1 / scaleY, 1 / scaleZ);
+
+		// rotate init front dir to word Y direction
+		rotMat = GetRotMat(m_initFrontDir, MathLib::Vector3(0, 1, 0));
+
+		// first bring model back to init frame, then transform init frame to unit box
+		m_WorldBBToUnitBoxMat = rotMat*scaleMat*translateMat*m_initTransMat.invert();
+	}
+	// use OBB for tsinghua models
+	else if(m_modelFormat == "3ds")
+	{
+		if (!m_hasOBB)
+		{
+			std::cout << "For 3ds models, please compute OBB first before computing the model alignment matrix";
+			return;
+		}
+
+		transVec = -m_initOBBPos;
+		translateMat.settranslate(transVec);
+
+		scaleX = getOBBAlongDirSzie();
+		scaleY = getOBBFrontDirSize();
+		scaleZ = getOBBHeight();
+		scaleMat.setscale(1 / scaleX, 1 / scaleY, 1 / scaleZ);
+
+		// rotate init front dir to word Y direction
+		rotMat = GetRotMat(m_initFrontDir, MathLib::Vector3(0, 1, 0));
+	
+		// first translate to origin, then rotate to align front to (0,1,0), at last do scaling
+		m_WorldBBToUnitBoxMat = scaleMat*rotMat*translateMat*m_initTransMat.invert();
+	}
 }
 
 

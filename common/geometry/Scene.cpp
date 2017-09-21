@@ -265,6 +265,7 @@ void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/)
 		}
 	}
 
+	m_modelNum = m_modelList.size();
 	initRelationGraph();
 
 	computeAABB();

@@ -20,7 +20,7 @@ public:
 	bool loadModel(QString filename, double metric = 1.0, int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0, QString sceneDbType = QString());
 	void saveModel(QString filename);
 
-	bool loadMeshData(QString filename, QString modelFormat, double metric = 1.0);
+	bool loadMeshData(QString filename, double metric = 1.0);
 
 	QString getModelFileName() { return m_fileName; };
 	QString getModelFilePath() { return m_filePath; };
@@ -85,7 +85,6 @@ public:
 
 	MathLib::Vector3 getModelAlongDirOBBFaceCenter();
 	MathLib::Vector3 getModelNormalDirOBBFaceCenter();
-	MathLib::Vector3 getAlongDirOBBAxis();
 	double getOBBVolume() { return m_OBB.Vol(); };
 
 	void selectOBBFace(const MathLib::Vector3 &origin, const MathLib::Vector3 &dir);
@@ -98,6 +97,12 @@ public:
 
 	double getOBBDiagLength();  // for compute the scaling of model
 	MathLib::Vector3 getOBBInitPos() { return m_initOBBPos; };
+
+	int getOBBAlongDirId();
+	int getOBBFrontDirId();
+	MathLib::Vector3 getAlongDirOBBAxis();
+	double getOBBAlongDirSzie();
+	double getOBBFrontDirSize();
 
 	// action
 	void setStatus(int i);
@@ -168,6 +173,8 @@ private:
 	QString m_filePath;
 	QString m_nameStr;   // name string with out the cat at head
 	QString m_catName;
+
+	QString m_modelFormat;
 
 	int m_id;
 	double m_modelMetric;

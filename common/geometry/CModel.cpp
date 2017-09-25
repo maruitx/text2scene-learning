@@ -1253,7 +1253,7 @@ void CModel::computeBBAlignMat()
 			return;
 		}
 
-		transVec = -m_initOBBPos;
+		transVec = -m_OBB.cent;   // set OBB center as the origin
 		translateMat.settranslate(transVec);
 
 		scaleX = getOBBAlongDirSzie();

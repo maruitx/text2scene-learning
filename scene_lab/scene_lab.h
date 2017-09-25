@@ -29,8 +29,7 @@ public:
 	void loadSceneFileNamesFromListFile(std::vector<QStringList> &loadedSceneFileNames);
 	void LoadSceneList(int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0);
 
-	// categories
-	void extractModelCatsFromSceneList();
+
 
 public slots:
 	void LoadScene();
@@ -59,6 +58,8 @@ public slots:
 
 	void BatchBuildModelsForList();
 
+	// categories
+	void ExtractModelCatsFromSceneList();
 	void ExtractMetaFileForSceneList();
 
 	void updateSceneRenderingOptions();
@@ -76,6 +77,7 @@ private:
 	scene_lab_widget *m_widget;
 	
 	std::vector<CScene*> m_sceneList;
+	std::vector<QStringList> m_loadedSceneFileNames;
 	CScene *m_currScene;
 
 	SceneSemGraph *m_currSceneSemGraph;

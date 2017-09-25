@@ -112,8 +112,7 @@ void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
 
 	m_sceneList.clear();
 
-	std::vector<QStringList> loadedSceneFileNames;
-	loadSceneFileNamesFromListFile(loadedSceneFileNames);
+	loadSceneFileNamesFromListFile(m_loadedSceneFileNames);
 
 	if (m_sceneDBType != "tsinghua")
 	{
@@ -125,61 +124,124 @@ void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
 	}
 	
 	// load stanford or scenenn scenes
-	for (int i = 0; i < loadedSceneFileNames[0].size(); i++)
+	for (int i = 0; i < m_loadedSceneFileNames[0].size(); i++)
 	{
 		CScene *scene = new CScene();
-		scene->loadStanfordScene(loadedSceneFileNames[0][i], metaDataOnly, obbOnly, meshAndOBB);
+		scene->loadStanfordScene(m_loadedSceneFileNames[0][i], metaDataOnly, obbOnly, meshAndOBB);
 
 		updateModelMetaInfoForScene(scene);
 		m_sceneList.push_back(scene);
 	}
 
 	// load tsinghua scenes
-	for (int i = 0; i < loadedSceneFileNames[1].size(); i++)
+	for (int i = 0; i < m_loadedSceneFileNames[1].size(); i++)
 	{
 		CScene *scene = new CScene();
-		scene->loadTsinghuaScene(loadedSceneFileNames[1][i], obbOnly);
+		scene->loadTsinghuaScene(m_loadedSceneFileNames[1][i], obbOnly);
 
 		m_sceneList.push_back(scene);
 	}
 }
 
-void scene_lab::extractModelCatsFromSceneList()
+void scene_lab::ExtractModelCatsFromSceneList()
 {
+	loadParas();
+	LoadSceneList(1, 1, 0);
+
+	int stanfordSceneNum = m_loadedSceneFileNames[0].size();
+	int tsinghuaSceneNum = m_loadedSceneFileNames[1].size();
+
+	// collect model categories for stanford scenes
+
 	std::set<QString> allModelNameStrings;
 
-	for (int i = 0; i < m_sceneList.size(); i++)
+	//for (int i = 0; i < m_sceneList.size(); i++)
+	for (int i = 0; i < stanfordSceneNum; i++)
 	{
-		for (int i = 0; i <  m_sceneList[i]->getModelNum(); i++)
+		for (int j = 0; j <  m_sceneList[i]->getModelNum(); j++)
 		{
-			allModelNameStrings.insert(m_sceneList[i]->getModelNameString(i));
+			allModelNameStrings.insert(m_sceneList[i]->getModelNameString(j));
 		}
 	}
 
-	// collect corrected model cateogry
-	QString currPath = QDir::currentPath();
-	QString correctedModelCatFileName = currPath + "/model_category_corrected.txt";
-
-	QFile outFile(correctedModelCatFileName);
-	QTextStream ofs(&outFile);
-
-	if (!outFile.open(QIODevice::ReadWrite | QIODevice::Truncate | QIODevice::Text))
+	if (!allModelNameStrings.empty())
 	{
-		std::cout << "SceneLab: cannot open model category file.\n";
-		return;
+		// collect corrected model category
+		QString currPath = QDir::currentPath();
+		QString correctedModelCatFileName = currPath + "/stanford_NameCatMap_corrected.txt";
+
+		QFile outFile(correctedModelCatFileName);
+		QTextStream ofs(&outFile);
+
+		if (!outFile.open(QIODevice::ReadWrite | QIODevice::Truncate | QIODevice::Text))
+		{
+			std::cout << "SceneLab: cannot open model category name map file.\n";
+			return;
+		}
+
+		std::set<QString> allModelCats;
+		for (auto it = allModelNameStrings.begin(); it != allModelNameStrings.end(); it++)
+		{
+			if (m_modelDB != NULL && m_modelDB->dbMetaModels.count(*it))
+			{
+				auto metaIt = m_modelDB->dbMetaModels.find(*it);
+				DBMetaModel *m = metaIt->second;
+				QString modelCat = m->getProcessedCatName();
+				allModelCats.insert(modelCat);
+
+				ofs << m->getIdStr() << "," << modelCat << "\n";
+			}
+		}
+
+		outFile.close();
+
+		QString modelCatFileName = currPath + "/stanford_model_category_corrected.txt";
+		outFile.setFileName(modelCatFileName);
+
+		if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text))
+		{
+			std::cout << "SceneLab: cannot open model category file.\n"; 
+			return;
+		}
+
+		for (auto it = allModelCats.begin(); it != allModelCats.end(); it++)
+		{
+			ofs << *it << "\n";
+		}
+
+		outFile.close();
 	}
 
-	for (auto it = allModelNameStrings.begin(); it != allModelNameStrings.end(); it++)
+	// collect model categories for tsinghua scenes
+	std::set<QString> allModelCats;
+	for (int i = stanfordSceneNum; i < stanfordSceneNum + tsinghuaSceneNum; i++)
 	{
-		if (m_modelDB!=NULL && m_modelDB->dbMetaModels.count(*it))
+		for (int j = 0; j < m_sceneList[i]->getModelNum(); j++)
 		{
-			auto metaIt = m_modelDB->dbMetaModels.find(*it);
-			DBMetaModel *m = metaIt->second;
-			ofs << m->getIdStr() << "," << m->getProcessedCatName() << "\n";
+			allModelCats.insert(m_sceneList[i]->getModelCatName(j));  // directly get model category name for tsinghua scenes
 		}
 	}
 
-	outFile.close();
+	if (!allModelCats.empty())
+	{
+		QString currPath = QDir::currentPath();
+		QString modelCatFileName = currPath + "/tsinghua_model_category.txt";
+
+		QFile outFile(modelCatFileName);
+		QTextStream ofs(&outFile);
+
+		if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text))
+		{
+			std::cout << "\tCannot open file " << modelCatFileName.toStdString() << std::endl;
+		}
+
+		for (auto it = allModelCats.begin(); it != allModelCats.end(); it++)
+		{
+			ofs << *it << "\n";
+		}
+
+		outFile.close();
+	}
 
 	std::cout << "\nSceneLab: model category saved.\n";
 }
@@ -730,7 +792,7 @@ void scene_lab::ExtractRelPosForSceneList()
 	loadParas();
 
 	// load OBB only
-	LoadSceneList(0, 1);
+	LoadSceneList(0, 1, 0);
 
 	if (m_relationModelManager != NULL)
 	{

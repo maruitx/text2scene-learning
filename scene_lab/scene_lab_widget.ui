@@ -50,24 +50,24 @@
       <string>Scene List Processing</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
-      <item row="2" column="0">
+      <item row="6" column="0">
+       <widget class="QPushButton" name="buildSSGForListButton">
+        <property name="text">
+         <string>Build SSGs for List</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0">
        <widget class="QPushButton" name="buildOBBForListButton">
         <property name="text">
          <string>Build OBBs for List</string>
         </property>
        </widget>
       </item>
-      <item row="5" column="0">
+      <item row="5" column="1">
        <widget class="QPushButton" name="buildRGForListButton">
         <property name="text">
          <string>Build RGs for List</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="1">
-       <widget class="QPushButton" name="buildSSGForListButton">
-        <property name="text">
-         <string>Build SSGs for List</string>
         </property>
        </widget>
       </item>
@@ -75,6 +75,13 @@
        <widget class="QPushButton" name="extractMetaFileButton">
         <property name="text">
          <string>Extract MetaFile for List</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QPushButton" name="extractModelCatsButton">
+        <property name="text">
+         <string>Extract Model Cats for List</string>
         </property>
        </widget>
       </item>

@@ -39,6 +39,7 @@ void text2scene_mode::create()
 	connect(m_scenelab, SIGNAL(sceneRenderingUpdated()), this, SLOT(updateDecorateScene()));
 
 	m_scenelab->create_widget();
+	m_scenelab->setDrawArea(this->getDrawArea());
 }
 
 void text2scene_mode::destory()
@@ -56,7 +57,6 @@ void text2scene_mode::decorate()
 		m_decorateScene->draw();
 	}
 }
-
 
 void text2scene_mode::showSceneLab(bool isShow)
 {
@@ -103,7 +103,7 @@ void text2scene_mode::setSceneBounds()
 void text2scene_mode::updateDecorateScene()
 {
 	m_decorateScene = m_scenelab->getScene();
-	drawArea()->updateGL();
+	setSceneBounds();
 
 	std::cout << "Text2Scene: scene updated.\n";
 }
@@ -112,6 +112,8 @@ void text2scene_mode::resetDecorateScene()
 {
 	m_decorateScene = m_scenelab->getScene();
 
+	drawArea()->camera()->setPosition(qglviewer::Vec(0, -3, 2));
+	drawArea()->camera()->setOrientation(0, -MathLib::ML_PI_2);
 	drawArea()->camera()->setViewDirection(qglviewer::Vec(0, 1, 0));
 	setSceneBounds();
 

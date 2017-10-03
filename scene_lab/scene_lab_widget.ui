@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>321</width>
-    <height>537</height>
+    <height>718</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -207,6 +207,29 @@
        <widget class="QCheckBox" name="showSuppPlaneCheckBox">
         <property name="text">
          <string>Show Supp Plane</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_6">
+     <property name="title">
+      <string>Tools</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_6">
+      <item row="0" column="0">
+       <widget class="QPushButton" name="screenShotForCurrentButton">
+        <property name="text">
+         <string>ScreenShot For Current</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QPushButton" name="screenShotForListButton">
+        <property name="text">
+         <string>ScreenShots For List</string>
         </property>
        </widget>
       </item>

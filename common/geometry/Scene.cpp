@@ -237,10 +237,9 @@ void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/)
 	m_metric = 0.0254;
 	m_uprightVec = MathLib::Vector3(0, 0, 1);
 
+	// load models
 	int currModelID = 0;
-
 	while (!ifs.atEnd())
-		//for (int i = 0; i < 8; i++)
 	{
 		{
 			QString modelName;
@@ -265,6 +264,7 @@ void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/)
 		}
 	}
 
+	// post processing
 	m_modelNum = m_modelList.size();
 	initRelationGraph();
 
@@ -272,6 +272,98 @@ void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/)
 	buildModelDislayList();
 
 	std::cout << "Scene " << m_sceneFileName.toStdString() << " loaded\n";
+}
+
+void CScene::loadJsonScene(const QString &filename, const int obbOnly /*= 0*/)
+{
+	QFile inFile(filename);
+	QTextStream ifs(&inFile);
+
+	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text)) return;
+
+	QFileInfo sceneFileInfo(inFile.fileName());
+	m_sceneFileName = sceneFileInfo.baseName();   // Bedroom_0.th
+	m_sceneFilePath = sceneFileInfo.absolutePath();
+
+	int cutPos = sceneFileInfo.absolutePath().lastIndexOf("/");
+	m_sceneDBPath = sceneFileInfo.absolutePath().left(cutPos);  // SceneDB/suncg_data/house
+
+	cutPos = m_sceneDBPath.lastIndexOf("/");
+	m_sceneDBPath = sceneFileInfo.absolutePath().left(cutPos);  // SceneDB/suncg_data
+
+	// load models
+	QByteArray loadData = inFile.readAll();
+	QJsonDocument jsonDoc(QJsonDocument::fromJson(loadData));
+
+	QJsonObject sceneObject = jsonDoc.object();
+
+	if (sceneObject["version"].toString().contains("suncg"))
+	{
+		loadSunCGScene(sceneObject, obbOnly);
+	}
+
+	// post processing
+	m_modelNum = m_modelList.size();
+	initRelationGraph();
+
+	computeAABB();
+	buildModelDislayList();
+
+}
+
+void CScene::loadSunCGScene(const QJsonObject &sceneObject, const int obbOnly)
+{
+	m_sceneFormat = "SunCGDatabase";
+
+	m_metric = sceneObject["scaleToMeters"].toDouble();
+	QJsonArray upArray = sceneObject["up"].toArray();
+	m_uprightVec = MathLib::Vector3(upArray[0].toDouble(), upArray[1].toDouble(), upArray[2].toDouble());
+
+	m_modelDBPath = m_sceneDBPath + "/object";
+
+	int currModelID = 0;
+
+	QJsonArray levelArray = sceneObject["levels"].toArray();
+		
+	foreach(auto level, levelArray)
+	{
+		QJsonObject levelObject = level.toObject();
+		QJsonArray modelArray = levelObject["nodes"].toArray();
+
+		foreach(auto model, modelArray)
+		{
+			QJsonObject modelObject = model.toObject();
+			QString modelNameString = modelObject["modelId"].toString();
+
+			CModel *newModel = new CModel();
+			newModel->setSceneMetric(m_metric);
+			newModel->setSceneUpRightVec(m_uprightVec);
+
+			newModel->loadModel(m_modelDBPath + "/" + modelNameString + "/" + modelNameString + ".obj", 1.0, 0, 0, 0, m_sceneFormat);
+			newModel->setID(currModelID++);
+
+			QJsonArray transformArray = modelObject["transform"].toArray();
+			MathLib::Matrix4d transMat;
+			if (!transformArray.empty())
+			{
+				std::vector<std::vector<float>> transformVecList;
+
+				std::vector<float> transformVec(transformArray.size());
+				for (int i = 0; i < transformVec.size(); i++)
+				{
+					//transformVec[i] = transformArray[i].toDouble();
+					transMat.M[i] = transformArray[i].toDouble();
+				}
+			}
+			else
+			{
+				transMat = MathLib::Matrix4d::Identity_Matrix;
+			}
+			 
+			newModel->transformModel(transMat);
+			m_modelList.push_back(newModel);
+		}
+	}
 }
 
 void CScene::initRelationGraph()
@@ -345,6 +437,8 @@ void CScene::draw()
 
 void CScene::computeAABB()
 {
+	if (m_modelList.empty()) return;	
+
 	// init aabb
 	m_AABB = m_modelList[0]->getAABB();
 

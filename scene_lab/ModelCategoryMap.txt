@@ -1,0 +1,51 @@
+airplane_model,airplane
+artware,art
+bathtub___,bathtub
+book____,book
+book_self,bookcase
+cabinet___,cabinet
+car_model,car
+chair_____,chair
+closestool,stool
+clothes_hanger,hanger
+coffee_machine,coffee maker
+compact_disc,compact disk
+cup______,cup
+desk_fan,fan
+desk_lamp,desklamp
+electronic_clock,tableclock
+floor_lamp,floorlamp
+folder,file folder
+garbage_bin,trashbin
+goblet,wineglass
+goblet____,wineglass
+goods_shelf,shelf
+host_computer,computer
+keybord___,keybord___
+man_model,toyfigure
+man_model_,toyfigure
+micro_oven,microwave
+papers,paper
+pencil_vase,holder
+photo,frame
+piano,pianokeyboard
+plants,plant
+plants____,plant
+remote_control,remote control
+ruler,rule
+scratchpad,notepad
+sofa,couch
+sofa______,couch
+soundbox,speaker
+table_____,table
+teakettle,teapot
+telephone_,telephone
+television,tv
+toilet_paper,toiletpaper
+washbasin,basin
+washing_ma,washer
+washing_machine,washer
+water_dispenser,soap dispenser
+water_tank,tank
+water_tap,watertap
+water_tap_,watertap

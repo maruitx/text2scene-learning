@@ -36,6 +36,8 @@ scene_lab_widget::scene_lab_widget(scene_lab *s_lab, QWidget *parent/*=0*/)
 
 	connect(ui->batchBuildModelsButton, SIGNAL(clicked()), m_scene_lab, SLOT(BatchBuildModelsForList()));
 	
+	// model DB
+	connect(ui->openModelDBViewerButton, SIGNAL(clicked()), m_scene_lab, SLOT(create_modelDBViewer_widget()));
 	
 	// rendering
 	connect(ui->showOBBCheckBox, SIGNAL(stateChanged(int)), m_scene_lab, SLOT(updateSceneRenderingOptions()));
@@ -43,10 +45,9 @@ scene_lab_widget::scene_lab_widget(scene_lab *s_lab, QWidget *parent/*=0*/)
 	connect(ui->showFrontDirCheckBox, SIGNAL(stateChanged(int)), m_scene_lab, SLOT(updateSceneRenderingOptions()));
 	connect(ui->showSuppPlaneCheckBox, SIGNAL(stateChanged(int)), m_scene_lab, SLOT(updateSceneRenderingOptions()));
 
-	// model DB
-	connect(ui->openModelDBViewerButton, SIGNAL(clicked()), m_scene_lab, SLOT(create_modelDBViewer_widget()));
-
-
+	// screen shot
+	connect(ui->screenShotForCurrentButton, SIGNAL(clicked()), m_scene_lab, SLOT(ScreenShotForCurrScene()));
+	connect(ui->screenShotForListButton, SIGNAL(clicked()), m_scene_lab, SLOT(ScreenShotForSceneList()));
 
 }
 
@@ -70,7 +71,7 @@ QString scene_lab_widget::loadSceneName()
 
 	QString filename = QFileDialog::getOpenFileName(0, tr("Load scene"),
 		m_lastUsedDirectory,
-		tr("Scene File (*.txt *.th)"));
+		tr("Scene File (*.txt *.th *.json)"));
 
 	if (filename.isEmpty()) return "";
 

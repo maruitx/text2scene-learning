@@ -125,13 +125,31 @@ bool CMesh::readObjFile(const std::string &filename, const double metric /*= 1.0
 				}
 			}
 
-			int v0 = vertices[0];
-			int v1 = vertices[1];
-			int v2 = vertices[2];
+			if (vertices.size() == 3)
+			{
+				int v0 = vertices[0];
+				int v1 = vertices[1];
+				int v2 = vertices[2];
 
-			if (!(v0 == v1 | v1 == v2 | v0 == v2))
-				//this->add_face(vertices);
-				m_faces.push_back(vertices);
+				if (!(v0 == v1 | v1 == v2 | v0 == v2))
+					//this->add_face(vertices);
+					m_faces.push_back(vertices);
+			}
+			else if(vertices.size() == 4)
+			{
+				std::vector<int> firstTri(3), secondTri(3);
+				firstTri[0] = vertices[0];
+				firstTri[1] = vertices[1];
+				firstTri[2] = vertices[2];
+
+				secondTri[0] = vertices[2];
+				secondTri[1] = vertices[3];
+				secondTri[2] = vertices[0];
+
+				m_faces.push_back(firstTri);
+				m_faces.push_back(secondTri);
+			}
+
 		}
 
 

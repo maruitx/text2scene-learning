@@ -378,6 +378,23 @@ static QString GetTransformationString(const Eigen::MatrixXd &transMat)
 	return outString;
 }
 
+static MathLib::Matrix4d GetTransMatFromString(const QString &transformString)
+{
+	std::vector<std::vector<float>> transformVecList;
+	QStringList transValStrs = transformString.split(",");
+
+	std::vector<float> transformVec(transValStrs.size());
+	for (int i = 0; i < transformVec.size(); i++)
+	{
+		transformVec[i] = transValStrs[i].toFloat();
+	}
+
+	transformVecList.push_back(transformVec);
+
+	MathLib::Matrix4d transMat(transformVec);
+	return transMat;
+}
+
 static QString GetIntString(const std::vector<int> &intVector, const QString &separator)
 {
 	if (intVector.empty())

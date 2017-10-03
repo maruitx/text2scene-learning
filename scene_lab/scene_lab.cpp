@@ -82,6 +82,17 @@ void scene_lab::LoadScene()
 		scene->loadTsinghuaScene(sceneFullName, 0);
 		m_currScene = scene;
 
+		if (m_modelCatMap.empty())
+		{
+			loadModelCatsMap();
+		}
+
+		updateModelCatForScene(m_currScene);
+	}
+	else if (sceneFormat == "json")
+	{
+		scene->loadJsonScene(sceneFullName, 0);
+		m_currScene = scene;
 	}
 
 	if (m_relationExtractor == NULL)
@@ -92,7 +103,7 @@ void scene_lab::LoadScene()
 	emit sceneLoaded();
 }
 
-void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
+void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB, int updateModelCat)
 {
 	if (m_relationExtractor == NULL)
 	{
@@ -122,6 +133,13 @@ void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
 			m_modelDB->loadShapeNetSemTxt();
 		}
 	}
+	else
+	{
+		if (m_modelCatMap.empty())
+		{
+			loadModelCatsMap();
+		}
+	}
 	
 	// load stanford or scenenn scenes
 	for (int i = 0; i < m_loadedSceneFileNames[0].size(); i++)
@@ -139,14 +157,61 @@ void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB)
 		CScene *scene = new CScene();
 		scene->loadTsinghuaScene(m_loadedSceneFileNames[1][i], obbOnly);
 
+		if (updateModelCat)
+		{
+			updateModelCatForScene(scene);
+		}
+
 		m_sceneList.push_back(scene);
+	}
+}
+
+void scene_lab::loadModelCatsMap()
+{
+	QString currPath = QDir::currentPath();
+	QString modelCatFileName = currPath + "/ModelCategoryMap.txt";
+	QFile modelCatFile(modelCatFileName);
+
+	if (!modelCatFile.open(QIODevice::ReadOnly | QIODevice::Text))
+	{
+		std::cout << "Cannot open model category map file\n";
+	}
+
+	QTextStream ifs(&modelCatFile);
+
+	while (!ifs.atEnd())
+	{
+		QString currLine = ifs.readLine();
+		QStringList catNames = currLine.split(",");
+	
+		// save category if it does not exist in the map
+		if (m_modelCatMap.find(catNames[0]) == m_modelCatMap.end())
+		{
+			m_modelCatMap[catNames[0]] = catNames[1];
+		}
+	}
+
+	modelCatFile.close();
+}
+
+void scene_lab::updateModelCatForScene(CScene *s)
+{
+	for (int i=0; i < s->getModelNum(); i++)
+	{
+		CModel *currModel = s->getModel(i);
+		QString currModelCat = currModel->getCatName();
+
+		if (m_modelCatMap.count(currModelCat))
+		{
+			currModel->setCatName(m_modelCatMap[currModelCat]);
+		}
 	}
 }
 
 void scene_lab::ExtractModelCatsFromSceneList()
 {
 	loadParas();
-	LoadSceneList(1, 1, 0);
+	LoadSceneList(1, 1, 0, 0);  // load scenes without updating model cats
 
 	int stanfordSceneNum = m_loadedSceneFileNames[0].size();
 	int tsinghuaSceneNum = m_loadedSceneFileNames[1].size();
@@ -306,6 +371,11 @@ void scene_lab::destroy_widget()
 	{
 		delete m_widget;
 	}
+}
+
+void scene_lab::setDrawArea(Starlab::DrawArea *drawArea)
+{
+	m_drawArea = drawArea;
 }
 
 void scene_lab::loadParas()
@@ -480,6 +550,40 @@ void scene_lab::testMatlab()
 
 	// 3. Close MATLAB engine
 	engClose(matlabEngine);
+}
+
+void scene_lab::ScreenShotForCurrScene()
+{
+	if (m_currScene != NULL)
+	{
+		// reset camera
+		m_drawArea->camera()->setOrientation(0, -MathLib::ML_PI_2);
+		m_drawArea->camera()->setViewDirection(qglviewer::Vec(-1, 1, -1));
+		m_drawArea->camera()->showEntireScene();
+		m_drawArea->updateGL();
+
+		QString sceneFilePath = m_currScene->getFilePath();
+		QString sceneName = m_currScene->getSceneName();
+		m_drawArea->saveSnapshot(sceneFilePath + "/" + sceneName + ".png");
+		std::cout << "Screenshot for " << sceneName.toStdString() << " saved\n";
+
+	}
+}
+
+void scene_lab::ScreenShotForSceneList()
+{
+	loadParas();
+	LoadSceneList(0,0,1);
+
+	for (int i = 0; i < m_sceneList.size(); i++)
+	{
+		m_currScene = m_sceneList[i];
+
+		//emit sceneRenderingUpdated();
+		emit sceneLoaded();
+
+		ScreenShotForCurrScene();
+	}
 }
 
 void scene_lab::BuildSemGraphForCurrentScene()

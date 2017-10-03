@@ -7,6 +7,10 @@
 #include "CModel.h"
 #include "../scene_lab/RelationModel.h"
 
+#include <QJsonDocument>
+#include <QJsonArray>
+
+
 class RelationGraph;
 class SceneSemGraph;
 
@@ -20,6 +24,8 @@ public:
 	void loadStanfordScene(const QString &filename, int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0);  // default load mesh only
 	void loadTsinghuaScene(const QString &filename, const int obbOnly = 0);
 
+	void loadJsonScene(const QString &filename, const int obbOnly = 0);
+	void loadSunCGScene(const QJsonObject &sceneObject, const int obbOnly = 0);
 
 	void computeAABB();
 	void updateSeneAABB(CAABB addedBox) { m_AABB.Merge(addedBox); };

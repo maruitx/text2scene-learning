@@ -11,6 +11,7 @@ ModelDatabase::ModelDatabase()
 	// load model DB path from file
 	QString currPath = QDir::currentPath();
 	std::string dbPathFileName = currPath.toStdString() + "/ModelDBPath.txt";
+
 	auto lines = GetFileLines(dbPathFileName, 0);
 
 	for (int i = 0; i < lines.size();i++)
@@ -27,9 +28,30 @@ ModelDatabase::ModelDatabase()
 	m_modelNum = 0;
 }
 
-ModelDatabase::ModelDatabase(const QString &dbPath)
+
+ModelDatabase::ModelDatabase(const QString &dbType)
 {
-	m_dbPath = dbPath;
+	if (dbType == "sunCGDB")
+	{
+
+	}
+}
+
+ModelDatabase::ModelDatabase(const QString &projectPath, const QString &dbType)
+{
+	std::string dbPathFileName = projectPath.toStdString() + "/meta_data/ShapeNetModelDBPath.txt";
+
+	auto lines = GetFileLines(dbPathFileName, 0);
+
+	for (int i = 0; i < lines.size(); i++)
+	{
+		if (QString(lines[i][0]) != "%")
+		{
+			m_dbPath = QString(lines[i].c_str());
+			m_dbMetaFileType = QString(lines[i + 1].c_str());
+			break;
+		}
+	}
 
 	m_parentCatNum = 0;
 	m_modelNum = 0;

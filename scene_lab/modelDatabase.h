@@ -62,7 +62,9 @@ private:
 class ModelDatabase{
 public:
 	ModelDatabase();
-	ModelDatabase(const QString &dbPath);
+	ModelDatabase(const QString &dbType);
+
+	ModelDatabase(const QString &projectPath, const QString &dbType);
 	~ModelDatabase();
 
 	QString getDBPath() { return m_dbPath; };
@@ -80,6 +82,8 @@ public:
 	void loadShapeNetSemTxt();
 	bool isModelInDB(const QString &s);
 	DBMetaModel* getMetaModelByNameString(const QString &s);
+
+
 	QString getMetaFileType() { return m_dbMetaFileType; };
 
 	CModel* getModelById(QString idStr);

@@ -1,0 +1,4 @@
+ProjectPath=C:/Ruim/Graphics/T2S_MPC/text2scene-learning
+SceneDBType=tsinghua
+LocalSceneDBPath=C:/Ruim/Graphics/T2S_MPC/SceneDB
+AngleThreshold=30

@@ -2,6 +2,7 @@ include($$[STARLAB])
 include( ../common.pri )
 include( ../scene_lab.pri )
 
+
 StarlabTemplate(plugin)
 
 

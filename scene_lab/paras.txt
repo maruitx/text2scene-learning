@@ -1,2 +1,0 @@
-SceneDBType=test
-LocalSceneDBPath=C:/Ruim/Graphics/T2S_MPC/SceneDB

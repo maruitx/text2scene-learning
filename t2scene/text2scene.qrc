@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>t2s_icon.png</file>
+        <file alias="paras.txt">../paras/paras.txt</file>
     </qresource>
 </RCC>

@@ -359,7 +359,14 @@ void CScene::loadSunCGScene(const QJsonObject &sceneObject, const int obbOnly)
 			{
 				transMat = MathLib::Matrix4d::Identity_Matrix;
 			}
-			 
+			
+			if (m_uprightVec.dot(MathLib::Vector3(0,0,1)) < 1e-6)
+			{
+				MathLib::Matrix4d rotMat = GetRotMat(m_uprightVec, MathLib::Vector3(0, 0, 1));
+				transMat = rotMat*transMat;
+			}
+
+			newModel->setInitTransMat(transMat);
 			newModel->transformModel(transMat);
 			m_modelList.push_back(newModel);
 		}

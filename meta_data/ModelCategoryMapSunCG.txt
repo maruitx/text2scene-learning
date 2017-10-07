@@ -1,0 +1,84 @@
+ATM,atm
+air_conditioner,air conditioner
+armchair,chair
+baby_bed,bed
+basketball_hoop,basketball hoop
+bench_chair,bench
+bookshelf,shelf
+bunker_bed,bed
+ceiling_fan,ceilingfan
+chair_set,chair set
+coffee_kettle,kettle
+coffee_machine,coffee maker
+coffee_table,table
+cutting_board,cutting board
+dining_table,table
+double_bed,bed
+dressing_table,table
+fish_tank,fish tank
+floor_lamp,floorlamp
+food_processor,food processor
+food_tray,food tray
+fruit_bowl,bowl
+game_table,gametable
+garage_door,garage door
+goal_post,goal post
+gym_equipment,gym equipment
+hair_dryer,dryer
+hanging_kitchen_cabinet,kitchen cabinet
+headphones_on_stand,headphones
+household_appliance,household appliance
+indoor_lamp,indoor lamp
+ironing_board,ironing board
+kitchen_appliance,kitchen appliance
+kitchen_cabinet,kitchen cabinet
+kitchen_set,kitchen set
+knife_rack,knife rack
+lawn_mower,lawn mower
+loudspeaker,speaker
+magazines,magazine
+mortar_and_pestle,mortar and pestle
+office_chair,chair
+outdoor_cover,outdoor cover
+outdoor_lamp,outdoor lamp
+outdoor_seating,outdoor seating
+outdoor_spring,outdoor spring
+pedestal_fan,fan
+picture_frame,frame
+place_setting,place setting
+plates,plate
+poker_chips,poker chips
+range_hood,range hood
+range_hood_with_cabinet,range hood
+range_oven,oven
+range_oven_with_hood,oven
+rifle_on_wall,rifle
+shelving,shelf
+shoes_cabinet,cabinet
+single_bed,bed
+slot_machine,slot machine
+slot_machine_and_chair,slot machine
+soap_dish,soap dispenser
+soap_dispenser,soap dispenser
+sofa,couch
+stationary_container,container
+stereo_set,stereo set
+storage_bench,bench
+surveillance_camera,surveillance camera
+table_and_chair,table
+table_lamp,desklamp
+television,tv
+toilet_paper,toilet paper
+toilet_plunger,toilet plunger
+towel_hanger,towel ring
+towel_rack,towel ring
+trash_can,trashbin
+tv_stand,tvstand
+utensil_holder,holder
+vacuum_cleaner,vacuum
+wall_lamp,walllamp
+wardrobe_cabinet,cabinet
+water_dispenser,water dispenser
+weight_scale,weight scale
+wood_board,board
+xbox,xbox360

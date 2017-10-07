@@ -8,53 +8,55 @@
 
 ModelDatabase::ModelDatabase()
 {
-	// load model DB path from file
-	QString currPath = QDir::currentPath();
-	std::string dbPathFileName = currPath.toStdString() + "/ModelDBPath.txt";
+	//// load model DB path from file
+	//QString currPath = QDir::currentPath();
+	//std::string dbPathFileName = currPath.toStdString() + "/ModelDBPath.txt";
 
-	auto lines = GetFileLines(dbPathFileName, 0);
+	//auto lines = GetFileLines(dbPathFileName, 0);
 
-	for (int i = 0; i < lines.size();i++)
-	{
-		if (QString(lines[i][0]) != "%")
-		{
-			m_dbPath = QString(lines[i].c_str());
-			m_dbMetaFileType = QString(lines[i+1].c_str());
-			break;
-		}
-	}
+	//for (int i = 0; i < lines.size();i++)
+	//{
+	//	if (QString(lines[i][0]) != "%")
+	//	{
+	//		m_dbPath = QString(lines[i].c_str());
+	//		m_dbMetaFileType = QString(lines[i+1].c_str());
+	//		break;
+	//	}
+	//}
 
-	m_parentCatNum = 0;
-	m_modelNum = 0;
+	//m_parentCatNum = 0;
+	//m_modelNum = 0;
 }
 
 
-ModelDatabase::ModelDatabase(const QString &dbType)
+ModelDatabase::ModelDatabase(const QString &projectPath, int dBType)
 {
-	if (dbType == "sunCGDB")
+	m_projectPath = projectPath;
+
+	if (dBType == ModelDBType::ShapeNetDB)
 	{
+		std::string dbPathFileName = m_projectPath.toStdString() + "/paras/ShapeNetModelDBPath.txt";
 
-	}
-}
+		auto lines = GetFileLines(dbPathFileName, 0);
 
-ModelDatabase::ModelDatabase(const QString &projectPath, const QString &dbType)
-{
-	std::string dbPathFileName = projectPath.toStdString() + "/meta_data/ShapeNetModelDBPath.txt";
-
-	auto lines = GetFileLines(dbPathFileName, 0);
-
-	for (int i = 0; i < lines.size(); i++)
-	{
-		if (QString(lines[i][0]) != "%")
+		for (int i = 0; i < lines.size(); i++)
 		{
-			m_dbPath = QString(lines[i].c_str());
-			m_dbMetaFileType = QString(lines[i + 1].c_str());
-			break;
+			if (QString(lines[i][0]) != "%")
+			{
+				m_dbPath = QString(lines[i].c_str());
+				m_dbMetaFileType = QString(lines[i + 1].c_str());
+				break;
+			}
 		}
+
+		m_parentCatNum = 0;
+		m_modelNum = 0;
 	}
 
-	m_parentCatNum = 0;
-	m_modelNum = 0;
+	if (dBType == ModelDBType::SunCGDB)
+	{
+
+	}
 }
 
 ModelDatabase::~ModelDatabase()
@@ -463,11 +465,12 @@ QString ModelDatabase::getModelCat(const QString &idStr)
 
 void ModelDatabase::loadShapeNetSemTxt()
 {
-	std::cout << "\t Loading model annotation ...\n";
+	std::cout << "\t Loading ShapeNet model annotation ...\n";
 	std::cout << "\t \t shapeNet meta file: " << m_dbMetaFileType.toStdString() <<"\n";
 	std::cout << "\t \t local model folder: " << m_dbPath.toStdString()<<"\n";
 
-	QString shapeNetSemTxtFileName = m_dbPath + "/" + m_dbMetaFileType + ".txt";
+	//QString shapeNetSemTxtFileName = m_dbPath + "/" + m_dbMetaFileType + ".txt";
+	QString shapeNetSemTxtFileName = m_projectPath + "/meta_data/" + m_dbMetaFileType + ".txt";
 
 	auto lines = GetFileLines(shapeNetSemTxtFileName.toStdString(), 3);
 	modelMetaInfoStrings = std::vector<std::string>(lines.begin()+1, lines.end());
@@ -532,7 +535,7 @@ void ModelDatabase::loadShapeNetSemTxt()
 			for (int c = 0; c < catNameList.size(); c++)
 			{
 				QString currCatName = QString(catNameList[c].c_str());
-				candiModel->addShapeNetCatName(currCatName); // model could have multiple category names
+				candiModel->addCandidateCatName(currCatName); // model could have multiple category names
 
 				if (dbCategories.count(currCatName) == 0)
 				{
@@ -553,7 +556,7 @@ void ModelDatabase::loadShapeNetSemTxt()
 			}
 
 			// extract attributes from shape net cat names
-			candiModel->extractAttributeFromShapeNetCatNames();
+			candiModel->extractAttributeFromCandidateCatNames();
 
 			// set sub-category
 			for (int c = 1; c < catNameList.size(); c++)
@@ -589,6 +592,160 @@ void ModelDatabase::loadShapeNetSemTxt()
 DBMetaModel* ModelDatabase::getMetaModelByNameString(const QString &s)
 {
 	return dbMetaModels[s]; 
+}
+
+void ModelDatabase::loadSunCGMetaData()
+{
+	std::cout << "\t Loading SunCG meta data ...\n";
+
+	QString sunCGMetaDataFileName = m_projectPath + "/meta_data/modelsSunCG.csv";
+
+	auto lines = GetFileLines(sunCGMetaDataFileName.toStdString(), 3);
+	modelMetaInfoStrings = std::vector<std::string>(lines.begin() + 1, lines.end());
+
+	// parsing from second line
+	for (int i = 1; i < lines.size(); i++)
+	{
+		auto parts = PartitionString(lines[i], ",", "\"");
+
+		QString modelIdStr = QString(parts[0].c_str());
+
+		DBMetaModel *candiModel = new DBMetaModel(modelIdStr);
+		candiModel->dbID = i - 1;
+
+		// front dir
+		if (parts[1] == "")
+		{
+			candiModel->frontDir = MathLib::Vector3(0, 0, 1); // default front dir
+		}
+		else
+		{
+			std::vector<int> dirElementList = StringToIntegerList(parts[1], "", "\,");
+			candiModel->frontDir = MathLib::Vector3(dirElementList[0], dirElementList[1], dirElementList[2]);
+		}
+
+		dbMetaModels[modelIdStr] = candiModel;
+		m_modelNum++;
+	}
+
+	std::cout << "Model annotation loading done.\n";
+}
+
+void ModelDatabase::loadSunCGModelCatMap()
+{
+	QString sunCGCatMapFileName = m_projectPath + "/meta_data/ModelCategoryMapSunCG.txt";
+
+	QFile modelCatFile(sunCGCatMapFileName);
+
+	if (!modelCatFile.open(QIODevice::ReadOnly | QIODevice::Text))
+	{
+		std::cout << "Cannot open model category map file\n";
+	}
+
+	QTextStream ifs(&modelCatFile);
+
+	while (!ifs.atEnd())
+	{
+		QString currLine = ifs.readLine();
+		QStringList catNames = currLine.split(",");
+
+		// save category if it does not exist in the map
+		if (m_modelCatMapSunCG.find(catNames[0]) == m_modelCatMapSunCG.end())
+		{
+			m_modelCatMapSunCG[catNames[0]] = catNames[1];
+		}
+	}
+
+	modelCatFile.close();
+}
+
+void ModelDatabase::loadSunCGModelCat()
+{
+	std::cout << "\t Loading SunCG model category...\n";
+
+	QString sunCGMetaDataFileName = m_projectPath + "/meta_data/ModelCategoryAnnoSunCG.csv";
+
+	auto lines = GetFileLines(sunCGMetaDataFileName.toStdString(), 3);
+	modelMetaInfoStrings = std::vector<std::string>(lines.begin() + 1, lines.end());
+
+	// parsing from second line
+	for (int i = 1; i < lines.size(); i++)
+	{
+		auto parts = PartitionString(lines[i], ",", "\"");
+
+		QString modelIdStr = QString(parts[1].c_str());
+
+		if (!isModelInDB(modelIdStr)) continue;
+
+		DBMetaModel *candiModel = dbMetaModels[modelIdStr];
+
+		// category
+		QStringList catNameList;
+		QString cateName = QString(parts[3].c_str());  // use the coarse category name as the parent/base category name
+
+		if (m_modelCatMapSunCG[cateName].count() >0)
+		{
+			cateName = m_modelCatMapSunCG[cateName];
+		}
+
+		catNameList.push_back(cateName);
+		catNameList.push_back(QString(parts[2].c_str()));
+		
+		for (int c = 0; c < catNameList.size(); c++)
+		{
+			QString currCatName = QString(catNameList[c]);
+			candiModel->addCandidateCatName(currCatName); // model could have multiple category names
+
+			if (dbCategories.count(currCatName) == 0)
+			{
+				Category *cat = new Category(currCatName);
+				cat->setCatgoryLevel(c);
+				dbCategories[currCatName] = cat;
+				dbCategories[currCatName]->addInstance(candiModel);
+
+				if (c == 0)
+				{
+					m_parentCatNum++;
+				}
+			}
+			else
+			{
+				dbCategories[currCatName]->addInstance(candiModel);
+			}
+		}
+
+		// extract attributes from shape net cat names
+		candiModel->extractAttributeFromCandidateCatNames();
+
+		// set sub-category
+		for (int c = 1; c < catNameList.size(); c++)
+		{
+			dbCategories[catNameList[0]]->addSubCatNames(QString(catNameList[c]));
+		}
+	}
+
+
+	// save category names if not done before
+	QString modelCatFileName = m_projectPath + "/meta_data/suncg_model_category.txt";
+
+	QFile outFile(modelCatFileName);
+	QTextStream ofs(&outFile);
+
+	if (!outFile.exists())
+	{
+		if (!outFile.open(QIODevice::WriteOnly | QIODevice::Text))
+		{
+			std::cout << "\tCannot open file " << modelCatFileName.toStdString() << std::endl;
+		}
+
+		for (auto it = dbCategories.begin(); it != dbCategories.end(); it++)
+		{
+			QString catName = it->first;
+			ofs << catName << "\n";
+		}
+	}
+
+	std::cout << "Model annotation loading done.\n";
 }
 
 bool ModelDatabase::isModelInDB(const QString &s)
@@ -674,7 +831,7 @@ QString DBMetaModel::getProcessedCatName()
 
 	m_processedCatName = "";
 
-	if (m_shapeNetCategoryNames.empty() && m_wordNetLemmas.empty())
+	if (m_CandidateCategoryNames.empty() && m_wordNetLemmas.empty())
 	{
 		m_isCatNameProcessed = true;
 		return m_processedCatName;
@@ -686,12 +843,12 @@ QString DBMetaModel::getProcessedCatName()
 
 	for (int i = 0; i < badCatNum; i++)
 	{
-		auto it = std::find(m_shapeNetCategoryNames.begin(), m_shapeNetCategoryNames.end(), badCatNames[i]);
-		if (it != m_shapeNetCategoryNames.end())
-			m_shapeNetCategoryNames.erase(it);
+		auto it = std::find(m_CandidateCategoryNames.begin(), m_CandidateCategoryNames.end(), badCatNames[i]);
+		if (it != m_CandidateCategoryNames.end())
+			m_CandidateCategoryNames.erase(it);
 	}
 
-	if (m_shapeNetCategoryNames.empty())
+	if (m_CandidateCategoryNames.empty())
 	{
 		if (!m_wordNetLemmas.empty())
 		{
@@ -706,28 +863,28 @@ QString DBMetaModel::getProcessedCatName()
 		return m_processedCatName;
 	}
 
-	m_processedCatName = m_shapeNetCategoryNames[0];
+	m_processedCatName = m_CandidateCategoryNames[0];
 
-	if (m_shapeNetCategoryNames[0] == "chestofdrawers")
+	if (m_CandidateCategoryNames[0] == "chestofdrawers")
 	{
-		if (m_shapeNetCategoryNames.size()>1)
+		if (m_CandidateCategoryNames.size()>1)
 		{
-			m_processedCatName = m_shapeNetCategoryNames[1];
+			m_processedCatName = m_CandidateCategoryNames[1];
 		}
 	}
 
 	
-	if (m_shapeNetCategoryNames[0] == "lamp")
+	if (m_CandidateCategoryNames[0] == "lamp")
 	{
-		for (int i = 1; i < m_shapeNetCategoryNames.size(); i++)
+		for (int i = 1; i < m_CandidateCategoryNames.size(); i++)
 		{
-			if (m_shapeNetCategoryNames[i] == "desklamp")
+			if (m_CandidateCategoryNames[i] == "desklamp")
 			{
 				m_processedCatName = "desklamp";
 				break;
 			}
 
-			if (m_shapeNetCategoryNames[i] == "floorlamp")
+			if (m_CandidateCategoryNames[i] == "floorlamp")
 			{
 				m_processedCatName = "floorlamp";
 				break;
@@ -736,17 +893,17 @@ QString DBMetaModel::getProcessedCatName()
 	}
 
 	// book
-	if (m_shapeNetCategoryNames[0] == "book")
+	if (m_CandidateCategoryNames[0] == "book")
 	{
-		for (int i = 1; i < m_shapeNetCategoryNames.size(); i++)
+		for (int i = 1; i < m_CandidateCategoryNames.size(); i++)
 		{
-			if (m_shapeNetCategoryNames[i] == "openbook")
+			if (m_CandidateCategoryNames[i] == "openbook")
 			{
 				m_processedCatName = "openbook";
 				break;
 			}
 
-			if (m_shapeNetCategoryNames[i] == "standbook")
+			if (m_CandidateCategoryNames[i] == "standbook")
 			{
 				m_processedCatName = "standbook";
 				break;
@@ -755,17 +912,17 @@ QString DBMetaModel::getProcessedCatName()
 	}
 
 	// books
-	if (m_shapeNetCategoryNames[0] == "books")
+	if (m_CandidateCategoryNames[0] == "books")
 	{
-		for (int i = 1; i < m_shapeNetCategoryNames.size(); i++)
+		for (int i = 1; i < m_CandidateCategoryNames.size(); i++)
 		{
-			if (m_shapeNetCategoryNames[i] == "standbooks")
+			if (m_CandidateCategoryNames[i] == "standbooks")
 			{
 				m_processedCatName = "standbooks";
 				break;
 			}
 
-			if (m_shapeNetCategoryNames[i] == "stackbooks")
+			if (m_CandidateCategoryNames[i] == "stackbooks")
 			{
 				m_processedCatName = "stackbooks";
 				break;
@@ -773,11 +930,11 @@ QString DBMetaModel::getProcessedCatName()
 		}
 	}
 
-	if (m_shapeNetCategoryNames[0] == "computer")
+	if (m_CandidateCategoryNames[0] == "computer")
 	{
-		for (int i = 1; i < m_shapeNetCategoryNames.size(); i++)
+		for (int i = 1; i < m_CandidateCategoryNames.size(); i++)
 		{
-			if (m_shapeNetCategoryNames[i] == "laptop")
+			if (m_CandidateCategoryNames[i] == "laptop")
 			{
 				m_processedCatName = "laptop";
 				break;
@@ -799,16 +956,16 @@ DBMetaModel::~DBMetaModel()
 
 }
 
-void DBMetaModel::extractAttributeFromShapeNetCatNames()
+void DBMetaModel::extractAttributeFromCandidateCatNames()
 {
-	for (int i = 0; i < m_shapeNetCategoryNames.size(); i++)
+	for (int i = 0; i < m_CandidateCategoryNames.size(); i++)
 	{
-		if (m_shapeNetCategoryNames[i].contains("office"))
+		if (m_CandidateCategoryNames[i].contains("office"))
 		{
 			m_attributes.push_back("office");
 		}
 
-		if (m_shapeNetCategoryNames[i].contains("coffee"))
+		if (m_CandidateCategoryNames[i].contains("coffee"))
 		{
 			m_attributes.push_back("coffee");
 		}
@@ -818,38 +975,38 @@ void DBMetaModel::extractAttributeFromShapeNetCatNames()
 		//	m_attributes.push_back("file");
 		//}
 
-		if (m_shapeNetCategoryNames[i].contains("queen"))
+		if (m_CandidateCategoryNames[i].contains("queen"))
 		{
 			m_attributes.push_back("queen");
 		}
 
-		if (m_shapeNetCategoryNames[i].contains("dining"))
+		if (m_CandidateCategoryNames[i].contains("dining"))
 		{
 			m_attributes.push_back("dining");
 		}
 
-		if (m_shapeNetCategoryNames[i].contains("round"))
+		if (m_CandidateCategoryNames[i].contains("round"))
 		{
 			m_attributes.push_back("round");
 		}
 
-		if (m_shapeNetCategoryNames[i].contains("sauce"))
+		if (m_CandidateCategoryNames[i].contains("sauce"))
 		{
 			m_attributes.push_back("sauce");
-			m_shapeNetCategoryNames[i] = "bottle";
+			m_CandidateCategoryNames[i] = "bottle";
 		}
 
-		if (m_shapeNetCategoryNames[i].contains("recliner") || m_shapeNetCategoryNames[i].contains("accentchair")
-			|| m_shapeNetCategoryNames[i].contains("beanbag")) // sofa chair
+		if (m_CandidateCategoryNames[i].contains("recliner") || m_CandidateCategoryNames[i].contains("accentchair")
+			|| m_CandidateCategoryNames[i].contains("beanbag")) // sofa chair
 		{
 			m_attributes.push_back("sofa");  
 		}
 	}
 
 	// for table, if it is not round, then it is rectangular
-	for (int i = 0; i < m_shapeNetCategoryNames.size(); i++)
+	for (int i = 0; i < m_CandidateCategoryNames.size(); i++)
 	{
-		if (m_shapeNetCategoryNames[i].contains("table")
+		if (m_CandidateCategoryNames[i].contains("table")
 			&& std::find(m_attributes.begin(), m_attributes.end(), QString("dining")) != m_attributes.end()
 			&& std::find(m_attributes.begin(), m_attributes.end(), QString("round")) == m_attributes.end()
 			&& std::find(m_attributes.begin(), m_attributes.end(), QString("rectangular")) == m_attributes.end())

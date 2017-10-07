@@ -34,6 +34,12 @@ public:
 	void loadSceneFileNamesFromListFile(std::vector<QStringList> &loadedSceneFileNames);
 	void LoadSceneList(int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0, int updateModelCat = 1);
 
+	void InitModelDBs();
+	void initShapeNetDB();
+	void initTsinghuaDB();
+	void initSunCGDB();
+
+
 	void loadModelCatsMapTsinghua();
 	void updateModelCatForTsinghuaScene(CScene *s);  // update model category for tsinghua scenes
 
@@ -102,10 +108,10 @@ private:
 	ModelDatabase *m_sunCGModelDB;
 
 	std::map<QString, QString> m_modelCatMapTsinghua; // model category mapping from tsinghua to stanford
-	std::map<QString, QString> m_modelCatMapSunCG;
 
 	QString m_projectPath;
 	QString m_sceneDBType;
+	QString m_sceneListFileName;
 	QString m_localSceneDBPath;
 	double m_angleTh;
 };

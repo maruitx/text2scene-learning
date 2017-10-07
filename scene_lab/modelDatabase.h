@@ -4,6 +4,12 @@
 class CModel;
 class Category;
 
+enum ModelDBType
+{
+	ShapeNetDB = 0,
+	SunCGDB
+};
+
 class DBMetaModel
 {
 public:
@@ -15,11 +21,11 @@ public:
 	void setCatName(const QString &s) { m_categoryName = s; };
 	QString getCatName() { return m_categoryName; };
 
-	void addShapeNetCatName(const QString &s) { m_shapeNetCategoryNames.push_back(s); };
+	void addCandidateCatName(const QString &s) { m_CandidateCategoryNames.push_back(s); };
 	void addWordNetLemmas(const QString &s) { m_wordNetLemmas.push_back(s); };
 	QString getProcessedCatName();
 
-	void extractAttributeFromShapeNetCatNames();
+	void extractAttributeFromCandidateCatNames();
 
 	void setScale(double s) { m_scale = s; };
 	double getScale() { return m_scale; };
@@ -51,7 +57,7 @@ private:
 	QString m_idStr;
 	QString m_categoryName;
 
-	std::vector<QString> m_shapeNetCategoryNames;
+	std::vector<QString> m_CandidateCategoryNames;
 	std::vector<QString> m_wordNetLemmas;
 	std::vector<QString> m_tags;
 
@@ -61,14 +67,15 @@ private:
 
 class ModelDatabase{
 public:
-	ModelDatabase();
-	ModelDatabase(const QString &dbType);
 
-	ModelDatabase(const QString &projectPath, const QString &dbType);
+	ModelDatabase();
+
+	ModelDatabase(const QString &projectPath, int dBType);
 	~ModelDatabase();
 
 	QString getDBPath() { return m_dbPath; };
 
+	// for ActSynth
 	void loadModelTsv(const QString &modelsTsvFile);
 	void readModelScaleFile(const QString &filename);
 
@@ -83,6 +90,10 @@ public:
 	bool isModelInDB(const QString &s);
 	DBMetaModel* getMetaModelByNameString(const QString &s);
 
+	// SunCG
+	void loadSunCGMetaData();
+	void loadSunCGModelCatMap();
+	void loadSunCGModelCat();
 
 	QString getMetaFileType() { return m_dbMetaFileType; };
 
@@ -105,7 +116,12 @@ public:
 private:
 	QString m_dbPath;
 	QString m_dbMetaFileType;
+	QString m_projectPath;
+
+	int m_dbType;
 
 	int m_modelNum;
 	int m_parentCatNum;
+
+	std::map<QString, QString> m_modelCatMapSunCG;
 };

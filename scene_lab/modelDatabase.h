@@ -92,8 +92,14 @@ public:
 
 	// SunCG
 	void loadSunCGMetaData();
-	void loadSunCGModelCatMap();
 	void loadSunCGModelCat();
+	void loadSunCGModelCatMap(); // map SunCG category to shapenet cats
+
+	QString getUpdatedModelCat(const QString &catName, const QString &modelIdStr="");
+
+	// annotation for specified models
+	void loadSpecifiedCatMap();
+
 
 	QString getMetaFileType() { return m_dbMetaFileType; };
 
@@ -124,4 +130,5 @@ private:
 	int m_parentCatNum;
 
 	std::map<QString, QString> m_modelCatMapSunCG;
+	std::map<QString, QString> m_specifiedModelCatMap;  // other manual annotation for specified models
 };

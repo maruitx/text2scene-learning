@@ -66,7 +66,7 @@ CModel::~CModel()
 	}
 }
 
-bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int obbOnly, int meshAndOBB, QString sceneDbType)
+bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int obbOnly, int meshAndOBB)
 {
 	m_modelMetric = metric;
 

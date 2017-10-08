@@ -17,7 +17,7 @@ public:
 	CModel();
 	~CModel();
 
-	bool loadModel(QString filename, double metric = 1.0, int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0, QString sceneDbType = QString());
+	bool loadModel(QString filename, double metric = 1.0, int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0);
 	void saveModel(QString filename);
 
 	bool loadMeshData(QString filename, double metric = 1.0);

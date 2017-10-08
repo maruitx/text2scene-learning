@@ -100,16 +100,9 @@ void scene_lab::loadParas()
 	}
 }
 
-void scene_lab::LoadScene()
+void scene_lab::loadSceneWithName(const QString &sceneFullName)
 {
-	if (m_currScene != NULL)
-	{
-		delete m_currScene;
-	}
-
 	CScene *scene = new CScene();
-
-	QString sceneFullName = m_widget->loadSceneName();
 
 	QFile sceneFile(sceneFullName);
 	QFileInfo sceneFileInfo(sceneFile.fileName());
@@ -150,6 +143,8 @@ void scene_lab::LoadScene()
 		{
 			initSunCGDB();
 		}
+
+		updateModelMetaInfoForScene(m_currScene);
 	}
 
 	if (m_relationExtractor == NULL)
@@ -158,6 +153,17 @@ void scene_lab::LoadScene()
 	}
 
 	emit sceneLoaded();
+}
+
+void scene_lab::LoadScene()
+{
+	if (m_currScene != NULL)
+	{
+		delete m_currScene;
+	}
+
+	QString sceneFullName = m_widget->loadSceneName();
+	loadSceneWithName(sceneFullName);
 }
 
 void scene_lab::loadSceneFileNamesFromListFile(std::vector<QStringList> &loadedSceneFileNames)
@@ -216,7 +222,7 @@ void scene_lab::loadSceneFileNamesFromListFile(std::vector<QStringList> &loadedS
 }
 
 // load the whole scene list into memory
-void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB, int updateModelCat)
+void scene_lab::LoadWholeSceneList(int metaDataOnly, int obbOnly, int meshAndOBB, int updateModelCat)
 {
 	if (m_relationExtractor == NULL)
 	{
@@ -266,6 +272,8 @@ void scene_lab::LoadSceneList(int metaDataOnly, int obbOnly, int meshAndOBB, int
 
 void scene_lab::InitModelDBs()
 {
+	m_sunCGModelDB->loadSpecifiedCatMap();
+
 	if (m_sceneDBType == "stanford" || m_sceneDBType == "scenenn")
 	{
 		if (m_shapeNetModelDB == NULL)
@@ -309,6 +317,7 @@ void scene_lab::initSunCGDB()
 	m_sunCGModelDB = new ModelDatabase(m_projectPath, ModelDBType::SunCGDB);
 
 	m_sunCGModelDB->loadSunCGMetaData();
+	m_sunCGModelDB->loadSunCGModelCatMap();
 	m_sunCGModelDB->loadSunCGModelCat();
 }
 
@@ -360,7 +369,7 @@ void scene_lab::updateModelCatForTsinghuaScene(CScene *s)
 void scene_lab::ExtractModelCatsFromSceneList()
 {
 	loadParas();
-	LoadSceneList(1, 1, 0, 0);  // load scenes without updating model cats
+	LoadWholeSceneList(1, 1, 0, 0);  // load scenes without updating model cats
 
 	int stanfordSceneNum = m_loadedSceneFileNames[0].size();
 	int tsinghuaSceneNum = m_loadedSceneFileNames[1].size();
@@ -468,7 +477,10 @@ void scene_lab::ExtractModelCatsFromSceneList()
 // update cat name, front dir, up dir for model
 void scene_lab::updateModelMetaInfoForScene(CScene *s)
 {
-	if (s!= NULL)
+	if (s == NULL) return;
+
+	QString sceneFormat = s->getSceneFormat();
+	if (sceneFormat == SceneFormat[DBTypeID::Stanford] || sceneFormat == SceneFormat[DBTypeID::SceneNN])
 	{
 		for (int i = 0; i < s->getModelNum(); i++)
 		{
@@ -480,7 +492,7 @@ void scene_lab::updateModelMetaInfoForScene(CScene *s)
 				s->updateModelFrontDir(i, frontDir);
 
 				MathLib::Vector3 upDir = m_shapeNetModelDB->dbMetaModels[modelNameString]->upDir;
-				s->updateModelUpDir(i, upDir);
+				s->updateModelUpDir(i, upDir); // actually, no need to update up dir as it is already be rotated to (0,0,1) ?
 
 				QString catName = m_shapeNetModelDB->dbMetaModels[modelNameString]->getProcessedCatName();
 				s->updateModelCat(i, catName);
@@ -489,6 +501,25 @@ void scene_lab::updateModelMetaInfoForScene(CScene *s)
 			if (modelNameString.contains("room"))
 			{
 				s->updateModelCat(i, "room");
+			}
+		}
+	}
+
+	if (sceneFormat == SceneFormat[DBTypeID::SunCG])
+	{
+		for (int i = 0; i < s->getModelNum(); i++)
+		{
+			QString modelNameString = s->getModelNameString(i);
+
+			if (m_sunCGModelDB->dbMetaModels.count(modelNameString))
+			{
+				// update front dir based on annotation
+				// no need to update up dir as it is already be rotated to (0,0,1)
+				MathLib::Vector3 frontDir = m_sunCGModelDB->dbMetaModels[modelNameString]->frontDir;
+				s->updateModelFrontDir(i, frontDir);  
+
+				QString catName = m_sunCGModelDB->dbMetaModels[modelNameString]->getCatName();
+				s->updateModelCat(i, catName);
 			}
 		}
 	}
@@ -639,7 +670,7 @@ void scene_lab::ScreenShotForCurrScene()
 void scene_lab::ScreenShotForSceneList()
 {
 	loadParas();
-	LoadSceneList(0,0,1);
+	LoadWholeSceneList(0,0,1);
 
 	for (int i = 0; i < m_sceneList.size(); i++)
 	{
@@ -674,7 +705,7 @@ void scene_lab::BuildSemGraphForSceneList()
 	loadParas();
 
 	// only load meta data (stanford and scenenn) and obb (tsinghua)
-	LoadSceneList(1,1,0);
+	LoadWholeSceneList(1,1,0);
 
 	for (int i = 0; i < m_sceneList.size(); i++)
 	{
@@ -702,11 +733,11 @@ void scene_lab::BuildRelationGraphForSceneList()
 
 	if (m_sceneDBType == "stanford")
 	{
-		LoadSceneList(0, 1);
+		LoadWholeSceneList(0, 1);
 	}
 	else
 	{
-		LoadSceneList(0, 0, 1);
+		LoadWholeSceneList(0, 0, 1);
 	}
 
 	for (int i = 0; i < m_sceneList.size(); i++)
@@ -808,7 +839,7 @@ void scene_lab::BuildRelativeRelationModels()
 
 	loadParas();
 	// load metadata
-	LoadSceneList(1);
+	LoadWholeSceneList(1);
 
 	if (m_relationModelManager!=NULL)
 	{
@@ -831,7 +862,7 @@ void scene_lab::BuildRelativeRelationModels()
 void scene_lab::BuildPairwiseRelationModels()
 {
 	loadParas();
-	LoadSceneList(1);
+	LoadWholeSceneList(1);
 
 	if (m_relationModelManager != NULL)
 	{
@@ -860,7 +891,7 @@ void scene_lab::BuildPairwiseRelationModels()
 void scene_lab::BuildGroupRelationModels()
 {
 	loadParas();
-	LoadSceneList(1);
+	LoadWholeSceneList(1);
 
 	if (m_relationModelManager != NULL)
 	{
@@ -894,7 +925,7 @@ void scene_lab::BatchBuildModelsForList()
 
 	loadParas();
 	// load metadata
-	LoadSceneList(1);
+	LoadWholeSceneList(1);
 
 	if (m_relationModelManager != NULL)
 	{
@@ -947,7 +978,7 @@ void scene_lab::ComputeBBAlignMatForSceneList()
 	loadParas();
 
 	// load mesh without OBB
-	LoadSceneList(0, 0, 0);
+	LoadWholeSceneList(0, 0, 0);
 
 	for (int i = 0; i < m_sceneList.size(); i++)
 	{
@@ -964,7 +995,7 @@ void scene_lab::ExtractRelPosForSceneList()
 	loadParas();
 
 	// load OBB only
-	LoadSceneList(0, 1, 0);
+	LoadWholeSceneList(0, 1, 0);
 
 	if (m_relationModelManager != NULL)
 	{
@@ -987,7 +1018,7 @@ void scene_lab::ExtractRelPosForSceneList()
 void scene_lab::ExtractSuppProbForSceneList()
 {
 	loadParas();
-	LoadSceneList(1);
+	LoadWholeSceneList(1);
 
 	if (m_relationModelManager != NULL)
 	{

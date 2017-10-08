@@ -106,11 +106,11 @@ void CScene::loadStanfordScene(const QString &filename, int metaDataOnly, int ob
 		std::cout << "\tloading objects with obb only...\n";
 	}
 
-	if (m_sceneFormat == QString("StanfordSceneDatabase") || m_sceneFormat == QString("SceneNNConversionOutput"))
+	if (m_sceneFormat == SceneFormat[DBTypeID::Stanford] || m_sceneFormat == SceneFormat[DBTypeID::SceneNN])
 	{
 		m_metric = InchToMeterFactor; // convert from 1 inch to 1 meter
 
-		if (m_sceneFormat == QString("SceneNNConversionOutput"))
+		if (m_sceneFormat == SceneFormat[DBTypeID::SceneNN])
 		{
 			m_metric = 1.0;
 		}
@@ -138,7 +138,7 @@ void CScene::loadStanfordScene(const QString &filename, int metaDataOnly, int ob
 				newModel->setSceneUpRightVec(m_uprightVec);
 
 				QString modelNameString = parts[2].c_str();
-				newModel->loadModel(m_modelDBPath + "/" + modelNameString + ".obj", 1.0, metaDataOnly, obbOnly, meshAndOBB, m_sceneFormat);
+				newModel->loadModel(m_modelDBPath + "/" + modelNameString + ".obj", 1.0, metaDataOnly, obbOnly, meshAndOBB);
 				
 				currModelID += 1;
 				newModel->setID(currModelID);
@@ -152,7 +152,7 @@ void CScene::loadStanfordScene(const QString &filename, int metaDataOnly, int ob
 				}
 			}
 
-			if (m_sceneFormat == QString("StanfordSceneDatabase"))
+			if (m_sceneFormat == SceneFormat[DBTypeID::Stanford])
 			{
 				if (currLine.contains("parentIndex "))
 				{
@@ -233,7 +233,7 @@ void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/)
 	int cutPos = sceneFileInfo.absolutePath().lastIndexOf("/");
 	m_sceneDBPath = sceneFileInfo.absolutePath().left(cutPos);
 
-	m_sceneFormat = "TsinghuaSceneDatabase";
+	m_sceneFormat = SceneFormat[DBTypeID::Tsinghua];
 	m_metric = 0.0254;
 	m_uprightVec = MathLib::Vector3(0, 0, 1);
 
@@ -313,7 +313,7 @@ void CScene::loadJsonScene(const QString &filename, const int obbOnly /*= 0*/)
 
 void CScene::loadSunCGScene(const QJsonObject &sceneObject, const int obbOnly)
 {
-	m_sceneFormat = "SunCGDatabase";
+	m_sceneFormat = SceneFormat[DBTypeID::SunCG];
 
 	m_metric = sceneObject["scaleToMeters"].toDouble();
 	QJsonArray upArray = sceneObject["up"].toArray();
@@ -339,7 +339,7 @@ void CScene::loadSunCGScene(const QJsonObject &sceneObject, const int obbOnly)
 			newModel->setSceneMetric(m_metric);
 			newModel->setSceneUpRightVec(m_uprightVec);
 
-			newModel->loadModel(m_modelDBPath + "/" + modelNameString + "/" + modelNameString + ".obj", 1.0, 0, 0, 0, m_sceneFormat);
+			newModel->loadModel(m_modelDBPath + "/" + modelNameString + "/" + modelNameString + ".obj", 1.0, 0, 0, 0);
 			newModel->setID(currModelID++);
 
 			QJsonArray transformArray = modelObject["transform"].toArray();
@@ -371,6 +371,9 @@ void CScene::loadSunCGScene(const QJsonObject &sceneObject, const int obbOnly)
 			m_modelList.push_back(newModel);
 		}
 	}
+
+	// init model category list
+	m_modelCatNameList.resize(m_modelList.size());
 }
 
 void CScene::initRelationGraph()
@@ -608,7 +611,7 @@ std::vector<int> CScene::getModelIdWithCatName(QString s, bool usingSynset)
 //TO DO: fix support relationship after insert model
 void CScene::buildSupportHierarchy()
 {
-	if (m_sceneFormat != "StanfordSceneDatabase")
+	if (m_sceneFormat != SceneFormat[DBTypeID::Stanford])
 	{
 		if (m_relationGraph->IsEmpty()) return;
 

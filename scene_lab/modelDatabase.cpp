@@ -48,15 +48,15 @@ ModelDatabase::ModelDatabase(const QString &projectPath, int dBType)
 				break;
 			}
 		}
-
-		m_parentCatNum = 0;
-		m_modelNum = 0;
 	}
 
 	if (dBType == ModelDBType::SunCGDB)
 	{
 
 	}
+
+	m_parentCatNum = 0;
+	m_modelNum = 0;
 }
 
 ModelDatabase::~ModelDatabase()
@@ -209,7 +209,7 @@ CModel* ModelDatabase::getModelById(QString idStr)
 	}
 	//m->loadModel(m_dbPath + "/wss.models/models/" + idStr +".obj", candiModel->getScale());
 
-	m->loadModel(m_dbPath + "/" + idStr + ".obj", 1.0, 0, 0, 1, "SimpleSceneFormat");  // load model and cat name in .anno file
+	m->loadModel(m_dbPath + "/" + idStr + ".obj", 1.0, 0, 0, 1);  // load model and cat name in .anno file
 
 	//QString catName = getModelCat("wss." + idStr);
 	//m->setCatName(catName);   // set cat name in DB csv file
@@ -463,6 +463,50 @@ QString ModelDatabase::getModelCat(const QString &idStr)
 	return cm->getCatName();
 }
 
+QString ModelDatabase::getUpdatedModelCat(const QString &catName, const QString &modelIdStr)
+{
+	if (!modelIdStr.isEmpty() && m_specifiedModelCatMap.count(modelIdStr) > 0)
+	{
+		return m_specifiedModelCatMap[modelIdStr];
+	}
+
+	if (m_modelCatMapSunCG.count(catName) > 0)
+	{
+		return m_modelCatMapSunCG[catName];
+	}
+
+	return catName;
+}
+
+void ModelDatabase::loadSpecifiedCatMap()
+{
+	QString catMapFileName = m_projectPath + "/meta_data/SpecifiedModelCategory.txt";
+
+	QFile modelCatFile(catMapFileName);
+
+	if (!modelCatFile.open(QIODevice::ReadOnly | QIODevice::Text))
+	{
+		std::cout << "Cannot open model category map file" << catMapFileName.toStdString() << "\n";
+	}
+
+	QTextStream ifs(&modelCatFile);
+
+	while (!ifs.atEnd())
+	{
+		QString currLine = ifs.readLine();
+		QStringList catNames = currLine.split(",");
+
+		// save model string if it does not exist in the map
+		// catNames[0] is model id string actually
+		if (m_specifiedModelCatMap.find(catNames[0]) == m_specifiedModelCatMap.end())
+		{
+			m_specifiedModelCatMap[catNames[0]] = catNames[1];
+		}
+	}
+
+	modelCatFile.close();
+}
+
 void ModelDatabase::loadShapeNetSemTxt()
 {
 	std::cout << "\t Loading ShapeNet model annotation ...\n";
@@ -535,6 +579,8 @@ void ModelDatabase::loadShapeNetSemTxt()
 			for (int c = 0; c < catNameList.size(); c++)
 			{
 				QString currCatName = QString(catNameList[c].c_str());
+				currCatName = getUpdatedModelCat(currCatName, modelIdStr);
+
 				candiModel->addCandidateCatName(currCatName); // model could have multiple category names
 
 				if (dbCategories.count(currCatName) == 0)
@@ -639,7 +685,7 @@ void ModelDatabase::loadSunCGModelCatMap()
 
 	if (!modelCatFile.open(QIODevice::ReadOnly | QIODevice::Text))
 	{
-		std::cout << "Cannot open model category map file\n";
+		std::cout << "Cannot open model category map file "<< sunCGCatMapFileName.toStdString() <<"\n";
 	}
 
 	QTextStream ifs(&modelCatFile);
@@ -681,15 +727,16 @@ void ModelDatabase::loadSunCGModelCat()
 
 		// category
 		QStringList catNameList;
-		QString cateName = QString(parts[3].c_str());  // use the coarse category name as the parent/base category name
+		QString cateName = QString(parts[3].c_str());  
 
-		if (m_modelCatMapSunCG[cateName].count() >0)
-		{
-			cateName = m_modelCatMapSunCG[cateName];
-		}
+		cateName = getUpdatedModelCat(cateName, modelIdStr);
+		catNameList.push_back(cateName);   // use the coarse category name as the parent/base category name
 
-		catNameList.push_back(cateName);
-		catNameList.push_back(QString(parts[2].c_str()));
+
+
+		cateName = getUpdatedModelCat(QString(parts[2].c_str()), modelIdStr);
+		catNameList.push_back(cateName);  // the fine category is the sub-category
+		candiModel->setCatName(cateName); // use the fine category as the model category; also, fine category are already mapped to stanford catgories
 		
 		for (int c = 0; c < catNameList.size(); c++)
 		{
@@ -822,12 +869,12 @@ QString DBMetaModel::getProcessedCatName()
 		return m_processedCatName;
 	}
 
-	if (m_idStr == "416674f64be11975bc4f8438441dcb1d")
-	{
-		m_isCatNameProcessed = true;
-		m_processedCatName = "monitor";
-		return m_processedCatName;
-	}
+	//if (m_idStr == "416674f64be11975bc4f8438441dcb1d")
+	//{
+	//	m_isCatNameProcessed = true;
+	//	m_processedCatName = "monitor";
+	//	return m_processedCatName;
+	//}
 
 	m_processedCatName = "";
 

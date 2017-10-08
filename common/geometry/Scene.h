@@ -14,6 +14,21 @@
 class RelationGraph;
 class SceneSemGraph;
 
+enum DBTypeID {
+	Stanford=0,
+	SceneNN,
+	SunCG,
+	Tsinghua
+};
+
+static QString SceneFormat[] =
+{
+	"StanfordSceneDatabase",
+	"SceneNNConversionOutput",
+	"SunCGSceneDatabase",
+	"TsinghuaSceneDatabase"
+};
+
 class CScene
 {
 public:

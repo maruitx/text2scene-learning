@@ -30,9 +30,10 @@ public:
 
 	void loadParas();
 
-	// load scene list
+	void loadSceneWithName(const QString &sceneFullName);
 	void loadSceneFileNamesFromListFile(std::vector<QStringList> &loadedSceneFileNames);
-	void LoadSceneList(int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0, int updateModelCat = 1);
+
+	void LoadWholeSceneList(int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0, int updateModelCat = 1);
 
 	void InitModelDBs();
 	void initShapeNetDB();

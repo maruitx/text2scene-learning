@@ -308,7 +308,6 @@ void CScene::loadJsonScene(const QString &filename, const int obbOnly /*= 0*/)
 
 	computeAABB();
 	buildModelDislayList();
-
 }
 
 void CScene::loadSunCGScene(const QJsonObject &sceneObject, const int obbOnly)
@@ -339,7 +338,7 @@ void CScene::loadSunCGScene(const QJsonObject &sceneObject, const int obbOnly)
 			newModel->setSceneMetric(m_metric);
 			newModel->setSceneUpRightVec(m_uprightVec);
 
-			newModel->loadModel(m_modelDBPath + "/" + modelNameString + "/" + modelNameString + ".obj", 1.0, 0, 0, 0);
+			newModel->loadModel(m_modelDBPath + "/" + modelNameString + "/" + modelNameString + ".obj", 1.0, 0, obbOnly, 1);
 			newModel->setID(currModelID++);
 
 			QJsonArray transformArray = modelObject["transform"].toArray();
@@ -368,6 +367,8 @@ void CScene::loadSunCGScene(const QJsonObject &sceneObject, const int obbOnly)
 
 			newModel->setInitTransMat(transMat);
 			newModel->transformModel(transMat);
+
+
 			m_modelList.push_back(newModel);
 		}
 	}

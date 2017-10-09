@@ -156,15 +156,16 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 		{
 			if (!m_hasOBB && loadOBB() == -1)
 			{
-				if (m_sceneUpVec == MathLib::Vector3(0, 0, 1))
-				{
-					computeOBB(2); // fix Z
-				}
-				else if (m_sceneUpVec == MathLib::Vector3(0, 1, 0))
-				{
-					computeOBB(1); // fix Y
-				}
+				//if (m_sceneUpVec == MathLib::Vector3(0, 0, 1))
+				//{
+				//	computeOBB(2); // fix Z
+				//}
+				//else if (m_sceneUpVec == MathLib::Vector3(0, 1, 0))
+				//{
+				//	computeOBB(1); // fix Y
+				//}
 
+				computeOBB(2); // fix Z
 				m_hasOBB = true;
 
 				saveOBB();

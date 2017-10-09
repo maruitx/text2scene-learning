@@ -30,8 +30,10 @@ public:
 
 	void loadParas();
 
-	void loadSceneWithName(const QString &sceneFullName);
-	void loadSceneFileNamesFromListFile(std::vector<QStringList> &loadedSceneFileNames);
+	void loadSceneWithName(const QString &sceneFullName, int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0, int updateModelCat = 1);
+
+	void loadSceneDBList();
+	void loadSceneFileNamesFromListFile(std::map<QString, QStringList> &loadedSceneFileNames, const QString &sceneDBName, const QString &sceneListFileName);
 
 	void LoadWholeSceneList(int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0, int updateModelCat = 1);
 
@@ -95,7 +97,8 @@ private:
 	Starlab::DrawArea *m_drawArea;
 	
 	std::vector<CScene*> m_sceneList;
-	std::vector<QStringList> m_loadedSceneFileNames;
+	QStringList m_sceneDBList;
+	std::map<QString, QStringList> m_loadedSceneFileNames;
 	CScene *m_currScene;
 
 	SceneSemGraph *m_currSceneSemGraph;
@@ -112,7 +115,6 @@ private:
 
 	QString m_projectPath;
 	QString m_sceneDBType;
-	QString m_sceneListFileName;
 	QString m_localSceneDBPath;
 	double m_angleTh;
 };

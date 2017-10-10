@@ -66,7 +66,7 @@ CModel::~CModel()
 	}
 }
 
-bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int obbOnly, int meshAndOBB)
+bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int obbOnly, int reComputeOBB)
 {
 	m_modelMetric = metric;
 
@@ -152,9 +152,13 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 
 		buildDisplayList(1, 0);
 
-		if (meshAndOBB)  // load both obb and mesh, if obb not exist, compute obb
+		if (reComputeOBB)  // load both obb and mesh, if obb not exist, compute obb
 		{
-			if (!m_hasOBB && loadOBB() == -1)
+			computeOBB(2); // fix Z		
+		}
+		else
+		{
+			if (loadOBB() == -1)
 			{
 				//if (m_sceneUpVec == MathLib::Vector3(0, 0, 1))
 				//{
@@ -165,10 +169,7 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 				//	computeOBB(1); // fix Y
 				//}
 
-				computeOBB(2); // fix Z
-				m_hasOBB = true;
-
-				saveOBB();
+				computeOBB(2); // fix Z				
 			}
 		}
 	}
@@ -329,7 +330,7 @@ void CModel::buildDisplayList(int showDiffColor /*= 1*/, int showFaceCluster /*=
 	}
 }
 
-void CModel::transformModel(const MathLib::Matrix4d &transMat)
+void CModel::transformModel(const MathLib::Matrix4d &transMat, bool reOrientOBB)
 {
 	m_mesh->transformMesh(transMat);
 
@@ -350,6 +351,28 @@ void CModel::transformModel(const MathLib::Matrix4d &transMat)
 	{
 		m_OBB.Transform(transMat);
 		m_currOBBPos = transMat.transform(m_initOBBPos);
+
+		if (reOrientOBB)
+		{
+			// re-order the vertices of the OBB
+			// y--> z, z-->x, x-->y
+			std::vector<MathLib::Vector3> tempCorners = m_OBB.vp;
+
+			tempCorners[0] = m_OBB.vp[0];
+			tempCorners[1] = m_OBB.vp[4];
+			tempCorners[2] = m_OBB.vp[5];
+			tempCorners[3] = m_OBB.vp[1];
+
+			tempCorners[4] = m_OBB.vp[3];
+			tempCorners[5] = m_OBB.vp[7];
+			tempCorners[6] = m_OBB.vp[6];
+			tempCorners[7] = m_OBB.vp[2];
+
+			m_OBB = COBB(tempCorners);  
+
+			// reset the OBB position of model
+			m_currOBBPos = getModelPosOBB();
+		}
 	}
 
 	// transform front dir
@@ -585,6 +608,8 @@ void CModel::computeOBB(int fixAxis /*= -1*/)
 
 	m_initOBBDiagLen = m_OBB.GetDiagLength();
 	m_initOBBPos = getModelPosOBB();
+
+	saveOBB();
 }
 
 int CModel::loadOBB(const QString &sPathName /*= QString()*/)

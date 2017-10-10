@@ -57,7 +57,7 @@ CScene::~CScene()
 	m_showSuppPlane = false;
 }
 
-void CScene::loadStanfordScene(const QString &filename, int metaDataOnly, int obbOnly, int meshAndOBB)
+void CScene::loadStanfordScene(const QString &filename, int metaDataOnly, int obbOnly, int reComputeOBB)
 {
 
 	QFile inFile(filename);
@@ -91,7 +91,7 @@ void CScene::loadStanfordScene(const QString &filename, int metaDataOnly, int ob
 
 	if (!obbOnly)
 	{
-		if (meshAndOBB)
+		if (reComputeOBB)
 		{
 			std::cout << "\tloading objects with obb...\n";
 			
@@ -138,7 +138,7 @@ void CScene::loadStanfordScene(const QString &filename, int metaDataOnly, int ob
 				newModel->setSceneUpRightVec(m_uprightVec);
 
 				QString modelNameString = parts[2].c_str();
-				newModel->loadModel(m_modelDBPath + "/" + modelNameString + ".obj", 1.0, metaDataOnly, obbOnly, meshAndOBB);
+				newModel->loadModel(m_modelDBPath + "/" + modelNameString + ".obj", 1.0, metaDataOnly, obbOnly, reComputeOBB);
 				
 				currModelID += 1;
 				newModel->setID(currModelID);
@@ -219,7 +219,7 @@ void CScene::loadStanfordScene(const QString &filename, int metaDataOnly, int ob
 	std::cout << "Scene " << m_sceneFileName.toStdString() <<" loaded\n";
 }
 
-void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/)
+void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/, int reComputeOBB /*= 0*/)
 {
 	QFile inFile(filename);
 	QTextStream ifs(&inFile);
@@ -252,7 +252,7 @@ void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/)
 				newModel->setSceneMetric(m_metric);
 				newModel->setSceneUpRightVec(m_uprightVec);
 
-				newModel->loadModel(modelFullName, m_metric, 0, obbOnly, 1);
+				newModel->loadModel(modelFullName, m_metric, 0, obbOnly, reComputeOBB);
 				newModel->setID(currModelID++);
 
 				MathLib::Matrix4d transMat = MathLib::Matrix4d::Identity_Matrix;
@@ -274,7 +274,7 @@ void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/)
 	std::cout << "Scene " << m_sceneFileName.toStdString() << " loaded\n";
 }
 
-void CScene::loadJsonScene(const QString &filename, const int obbOnly /*= 0*/)
+void CScene::loadJsonScene(const QString &filename, const int obbOnly /*= 0*/, const int reComputeOBB /*= 0*/)
 {
 	QFile inFile(filename);
 	QTextStream ifs(&inFile);
@@ -299,7 +299,7 @@ void CScene::loadJsonScene(const QString &filename, const int obbOnly /*= 0*/)
 
 	if (sceneObject["version"].toString().contains("suncg"))
 	{
-		loadSunCGScene(sceneObject, obbOnly);
+		loadSunCGScene(sceneObject, obbOnly, reComputeOBB);
 	}
 
 	// post processing
@@ -310,7 +310,7 @@ void CScene::loadJsonScene(const QString &filename, const int obbOnly /*= 0*/)
 	buildModelDislayList();
 }
 
-void CScene::loadSunCGScene(const QJsonObject &sceneObject, const int obbOnly)
+void CScene::loadSunCGScene(const QJsonObject &sceneObject, const int obbOnly, int reComputeOBB /*= 0*/)
 {
 	m_sceneFormat = SceneFormat[DBTypeID::SunCG];
 
@@ -338,7 +338,9 @@ void CScene::loadSunCGScene(const QJsonObject &sceneObject, const int obbOnly)
 			newModel->setSceneMetric(m_metric);
 			newModel->setSceneUpRightVec(m_uprightVec);
 
-			newModel->loadModel(m_modelDBPath + "/" + modelNameString + "/" + modelNameString + ".obj", 1.0, 0, obbOnly, 1);
+			bool isModelLoaded = newModel->loadModel(m_modelDBPath + "/" + modelNameString + "/" + modelNameString + ".obj", 1.0, 0, obbOnly, reComputeOBB);
+			if (!isModelLoaded) continue;
+
 			newModel->setID(currModelID++);
 
 			QJsonArray transformArray = modelObject["transform"].toArray();
@@ -359,15 +361,19 @@ void CScene::loadSunCGScene(const QJsonObject &sceneObject, const int obbOnly)
 				transMat = MathLib::Matrix4d::Identity_Matrix;
 			}
 			
+			bool reOrientOBB = false;
 			if (m_uprightVec.dot(MathLib::Vector3(0,0,1)) < 1e-6)
 			{
 				MathLib::Matrix4d rotMat = GetRotMat(m_uprightVec, MathLib::Vector3(0, 0, 1));
 				transMat = rotMat*transMat;
+
+				// update new scene upright vector for model				
+				newModel->setSceneUpRightVec(MathLib::Vector3(0, 0, 1));
+				reOrientOBB = true;
 			}
 
 			newModel->setInitTransMat(transMat);
-			newModel->transformModel(transMat);
-
+			newModel->transformModel(transMat, reOrientOBB);
 
 			m_modelList.push_back(newModel);
 		}
@@ -375,6 +381,10 @@ void CScene::loadSunCGScene(const QJsonObject &sceneObject, const int obbOnly)
 
 	// init model category list
 	m_modelCatNameList.resize(m_modelList.size());
+
+	// update new scene upright vector
+	if (m_uprightVec.dot(MathLib::Vector3(0, 0, 1)) < 1e-6)
+		m_uprightVec = MathLib::Vector3(0, 0, 1);
 }
 
 void CScene::initRelationGraph()

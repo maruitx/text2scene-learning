@@ -3,7 +3,7 @@
 
 #include "../scene_lab/scene_lab.h"
 #include "../common/geometry/Scene.h"
-#include "SynScene.h"
+
 
 
 text2scene_mode::text2scene_mode()
@@ -103,8 +103,9 @@ void text2scene_mode::setSceneBounds()
 void text2scene_mode::updateDecorateScene()
 {
 	m_decorateScene = m_scenelab->getScene();
-	setSceneBounds();
+	//setSceneBounds();
 
+	drawArea()->updateGL();
 	std::cout << "Text2Scene: scene updated.\n";
 }
 

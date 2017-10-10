@@ -100,7 +100,7 @@ void scene_lab::loadParas()
 	}
 }
 
-void scene_lab::loadSceneWithName(const QString &sceneFullName, int metaDataOnly, int obbOnly, int meshAndOBB, int updateModelCat)
+void scene_lab::loadSceneWithName(const QString &sceneFullName, int metaDataOnly, int obbOnly, int reComputeOBB, int updateModelCat)
 {
 	CScene *scene = new CScene();
 
@@ -112,7 +112,7 @@ void scene_lab::loadSceneWithName(const QString &sceneFullName, int metaDataOnly
 	if (sceneFormat == "txt")
 	{
 		// only load scene mesh
-		scene->loadStanfordScene(sceneFullName, metaDataOnly, obbOnly, meshAndOBB);
+		scene->loadStanfordScene(sceneFullName, metaDataOnly, obbOnly, reComputeOBB);
 		m_currScene = scene;
 
 		if (m_shapeNetModelDB == NULL)
@@ -124,7 +124,7 @@ void scene_lab::loadSceneWithName(const QString &sceneFullName, int metaDataOnly
 	}
 	else if (sceneFormat == "th")
 	{
-		scene->loadTsinghuaScene(sceneFullName, obbOnly);
+		scene->loadTsinghuaScene(sceneFullName, obbOnly, reComputeOBB);
 		m_currScene = scene;
 
 		if (m_modelCatMapTsinghua.empty())
@@ -137,7 +137,7 @@ void scene_lab::loadSceneWithName(const QString &sceneFullName, int metaDataOnly
 	}
 	else if (sceneFormat == "json")
 	{
-		scene->loadJsonScene(sceneFullName, obbOnly);
+		scene->loadJsonScene(sceneFullName, obbOnly, reComputeOBB);
 		m_currScene = scene;
 
 		if (m_sunCGModelDB == NULL)
@@ -164,7 +164,7 @@ void scene_lab::LoadScene()
 	}
 
 	QString sceneFullName = m_widget->loadSceneName();
-	loadSceneWithName(sceneFullName, 0, 0, 1, 1);
+	loadSceneWithName(sceneFullName, 0, 0, 0, 1);
 }
 
 void scene_lab::loadSceneDBList()
@@ -254,7 +254,7 @@ void scene_lab::loadSceneFileNamesFromListFile(std::map<QString, QStringList> &l
 }
 
 // load the whole scene list into memory
-void scene_lab::LoadWholeSceneList(int metaDataOnly, int obbOnly, int meshAndOBB, int updateModelCat)
+void scene_lab::LoadWholeSceneList(int metaDataOnly, int obbOnly, int reComputeOBB, int updateModelCat)
 {
 	if (m_relationExtractor == NULL)
 	{
@@ -282,7 +282,7 @@ void scene_lab::LoadWholeSceneList(int metaDataOnly, int obbOnly, int meshAndOBB
 		QStringList& sceneFullNames = it->second;
 		foreach(QString sceneName, sceneFullNames)
 		{
-			loadSceneWithName(sceneName, metaDataOnly, obbOnly, meshAndOBB, updateModelCat);
+			loadSceneWithName(sceneName, metaDataOnly, obbOnly, reComputeOBB, updateModelCat);
 			m_sceneList.push_back(m_currScene);
 		}
 	}
@@ -590,25 +590,6 @@ void scene_lab::BuildOBBForSceneList()
 			loadSceneWithName(sceneName, 0, 0, 1, 0);
 		}
 	}
-
-	//// load stanford or scenenn scenes and build the obb
-	//for (int i = 0; i < m_loadedSceneFileNames[0].size(); i++)
-	//{
-	//	CScene *scene = new CScene();
-	//	scene->loadStanfordScene(m_loadedSceneFileNames[0][i], 0, 0, 0);
-	//}
-
-	//// load tsinghua scenes and build the obb
-	//for (int i = 0; i < m_loadedSceneFileNames[1].size(); i++)
-	//{
-	//	CScene *scene = new CScene();
-	//	scene->loadTsinghuaScene(m_loadedSceneFileNames[1][i], 0);
-
-	//	if (scene!=NULL)
-	//	{
-	//		delete scene;
-	//	}
-	//}
 }
 
 void scene_lab::destroy_widget()
@@ -731,7 +712,7 @@ void scene_lab::ScreenShotForCurrScene()
 void scene_lab::ScreenShotForSceneList()
 {
 	loadParas();
-	LoadWholeSceneList(0,0,1);
+	LoadWholeSceneList(0,0,0);
 
 	for (int i = 0; i < m_sceneList.size(); i++)
 	{
@@ -803,7 +784,7 @@ void scene_lab::BuildRelationGraphForSceneList()
 				delete m_currScene;
 			}
 
-			loadSceneWithName(sceneName, 0, 0, 1, 0);
+			loadSceneWithName(sceneName, 0, 0, 0, 0);
 			BuildRelationGraphForCurrentScene();
 		}
 	}

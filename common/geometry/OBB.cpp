@@ -25,6 +25,18 @@ COBB::COBB(const COBB& obb)
 	*this = obb;
 }
 
+   //        4-----------------0
+   //       /|                /|
+   //	   / |               / |
+   //     /  |              /  |
+   //    5-----------------1   |
+	  // |   7-------------|---3 
+	  // |  /              |  /
+	  // | /               | /
+	  // |/                |/
+	  // 6-----------------2
+
+
 COBB::COBB(const MathLib::Vector3 &c, const std::vector<MathLib::Vector3> &a, const MathLib::Vector3 &s)
 {
 	axis.resize(3);

@@ -17,7 +17,7 @@ public:
 	CModel();
 	~CModel();
 
-	bool loadModel(QString filename, double metric = 1.0, int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0);
+	bool loadModel(QString filename, double metric = 1.0, int metaDataOnly = 0, int obbOnly = 0, int reComputeOBB = 0);
 	void saveModel(QString filename);
 
 	bool loadMeshData(QString filename, double metric = 1.0);
@@ -126,7 +126,7 @@ public:
 	bool loadBBTopPlane();
 
 	// transformation
-	void transformModel(const MathLib::Matrix4d &transMat);
+	void transformModel(const MathLib::Matrix4d &transMat, bool reOrientOBB = false);
 	void transformModel(double tarOBBDiagLen, const MathLib::Vector3 &tarOBBPos, const MathLib::Vector3 &tarFrontDir);
 	void computeTransMat(double tarOBBDiagLen, const MathLib::Vector3 &tarOBBPos, const MathLib::Vector3 &tarFrontDir);
 	MathLib::Matrix4d& getLastTransMat() { return m_lastTransMat; };

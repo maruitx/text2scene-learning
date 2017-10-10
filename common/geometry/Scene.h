@@ -36,11 +36,11 @@ public:
 	CScene();
 	~CScene();
 
-	void loadStanfordScene(const QString &filename, int metaDataOnly = 0, int obbOnly = 0, int meshAndOBB = 0);  // default load mesh only
-	void loadTsinghuaScene(const QString &filename, const int obbOnly = 0);
+	void loadStanfordScene(const QString &filename, int metaDataOnly = 0, int obbOnly = 0, int reComputeOBB = 0);  // default load mesh only
+	void loadTsinghuaScene(const QString &filename, const int obbOnly = 0, int reComputeOBB = 0);
 
-	void loadJsonScene(const QString &filename, const int obbOnly = 0);
-	void loadSunCGScene(const QJsonObject &sceneObject, const int obbOnly = 0);
+	void loadJsonScene(const QString &filename, const int obbOnly = 0, const int reComputeOBB = 0);
+	void loadSunCGScene(const QJsonObject &sceneObject, const int obbOnly = 0, int reComputeOBB = 0);
 
 	void computeAABB();
 	void updateSeneAABB(CAABB addedBox) { m_AABB.Merge(addedBox); };

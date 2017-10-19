@@ -1691,4 +1691,18 @@ double COBB::GetHeight()
 	}
 }
 
+double COBB::GetBottomArea(const MathLib::Vector3 &upRight)
+{
+	double area = 1.0;
+
+	for (int i=0;  i < 3; i++)
+	{
+		if (MathLib::Abs(axis[i].dot(upRight)) < 1e-6)
+		{
+			area *= size[i];
+		}
+	}
+
+	return area;
+}
 

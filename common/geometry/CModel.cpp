@@ -43,7 +43,7 @@ CModel::CModel()
 
 	m_isBusy = false;
 
-
+	m_OBBSkewed = false;
 }
 
 CModel::~CModel()
@@ -154,22 +154,31 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 
 		if (reComputeOBB)  // load both obb and mesh, if obb not exist, compute obb
 		{
-			computeOBB(2); // fix Z		
+			if (m_sceneUpVec == MathLib::Vector3(0, 0, 1))
+			{
+				computeOBB(2); // fix Z
+			}
+			else if (m_sceneUpVec == MathLib::Vector3(0, 1, 0))
+			{
+				computeOBB(1); // fix Y
+			}
+
+			saveOBB();
 		}
 		else
 		{
 			if (loadOBB() == -1)
 			{
-				//if (m_sceneUpVec == MathLib::Vector3(0, 0, 1))
-				//{
-				//	computeOBB(2); // fix Z
-				//}
-				//else if (m_sceneUpVec == MathLib::Vector3(0, 1, 0))
-				//{
-				//	computeOBB(1); // fix Y
-				//}
+				if (m_sceneUpVec == MathLib::Vector3(0, 0, 1))
+				{
+					computeOBB(2); // fix Z
+				}
+				else if (m_sceneUpVec == MathLib::Vector3(0, 1, 0))
+				{
+					computeOBB(1); // fix Y
+				}
 
-				computeOBB(2); // fix Z				
+				saveOBB();
 			}
 		}
 	}
@@ -352,23 +361,36 @@ void CModel::transformModel(const MathLib::Matrix4d &transMat, bool reOrientOBB)
 		m_OBB.Transform(transMat);
 		m_currOBBPos = transMat.transform(m_initOBBPos);
 
+		reOrientOBB = true;
 		if (reOrientOBB)
 		{
 			// re-order the vertices of the OBB
-			// y--> z, z-->x, x-->y
-			std::vector<MathLib::Vector3> tempCorners = m_OBB.vp;
+			//std::vector<MathLib::Vector3> tempCorners = m_OBB.vp;
 
-			tempCorners[0] = m_OBB.vp[0];
-			tempCorners[1] = m_OBB.vp[4];
-			tempCorners[2] = m_OBB.vp[5];
-			tempCorners[3] = m_OBB.vp[1];
+			//// y--> z
+			//tempCorners[0] = m_OBB.vp[3];
+			//tempCorners[1] = m_OBB.vp[0];
+			//tempCorners[2] = m_OBB.vp[1];
+			//tempCorners[3] = m_OBB.vp[2];
 
-			tempCorners[4] = m_OBB.vp[3];
-			tempCorners[5] = m_OBB.vp[7];
-			tempCorners[6] = m_OBB.vp[6];
-			tempCorners[7] = m_OBB.vp[2];
+			//tempCorners[4] = m_OBB.vp[7];
+			//tempCorners[5] = m_OBB.vp[4];
+			//tempCorners[6] = m_OBB.vp[5];
+			//tempCorners[7] = m_OBB.vp[6];
 
-			m_OBB = COBB(tempCorners);  
+			//m_OBB = COBB(tempCorners);  
+
+
+			MathLib::Vector3 center = m_OBB.cent;
+
+			std::vector<MathLib::Vector3> axis;
+			axis.push_back(m_OBB.axis[0]);
+			axis.push_back(-m_OBB.axis[2]);
+			axis.push_back(m_OBB.axis[1]);
+
+			MathLib::Vector3 sides(m_OBB.size[0], m_OBB.size[2], m_OBB.size[1]);
+
+			m_OBB = COBB(center, axis, sides);
 
 			// reset the OBB position of model
 			m_currOBBPos = getModelPosOBB();
@@ -608,8 +630,6 @@ void CModel::computeOBB(int fixAxis /*= -1*/)
 
 	m_initOBBDiagLen = m_OBB.GetDiagLength();
 	m_initOBBPos = getModelPosOBB();
-
-	saveOBB();
 }
 
 int CModel::loadOBB(const QString &sPathName /*= QString()*/)
@@ -743,6 +763,11 @@ bool CModel::isOBBIntersectMesh(const COBB &testOBB)
 void CModel::updateForIntersect()
 {
 	m_mesh->updateOpcodeModel();
+}
+
+double CModel::getOBBBottomArea()
+{
+	return m_OBB.GetBottomArea(m_sceneUpVec);
 }
 
 void CModel::selectOBBFace(const MathLib::Vector3 &origin, const MathLib::Vector3 &dir)

@@ -588,6 +588,24 @@ void scene_lab::BuildOBBForSceneList()
 			}
 
 			loadSceneWithName(sceneName, 0, 0, 1, 0);
+
+			for (int i = 0; i < m_currScene->getModelNum(); i++)
+			{
+				CModel *m = m_currScene->getModel(i);
+
+				// re-compute model OBB if it is skewed when placing into current scene
+				if (m->m_OBBSkewed)
+				{
+					if (m_currScene->getUprightVec() == MathLib::Vector3(0,0,1))
+					{
+						m->computeOBB(2);
+					}
+					else
+					{
+						m->computeOBB(1);
+					}
+				}
+			}
 		}
 	}
 }

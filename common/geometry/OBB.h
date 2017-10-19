@@ -87,6 +87,7 @@ public:
 	MathLib::Vector3 GetFaceHorizonAxis(int f) const;
 
 	double GetHeight();
+	double GetBottomArea(const MathLib::Vector3 &upRight);
 
 	void Face(int ai, int d, std::vector<int> &fv);
 	COBB& operator=(const COBB& other);

@@ -364,6 +364,31 @@ void CScene::loadSunCGScene(const QJsonObject &sceneObject, const int obbOnly, i
 			bool reOrientOBB = false;
 			if (m_uprightVec.dot(MathLib::Vector3(0,0,1)) < 1e-6)
 			{
+				// test whether the model is skewed when placing into current scene
+				Eigen::Vector3d singularVals;
+				Eigen::Matrix3d leftVecs, rightVecs;
+				MathLib::Matrix3 tempTransMat = GetRotMat3(transMat);
+
+				SVD(convertToEigenMat(tempTransMat), singularVals, leftVecs, rightVecs);
+
+				double scaleRatio[3];
+				scaleRatio[0] = singularVals[0] / singularVals[1];
+				scaleRatio[1] = singularVals[1] / singularVals[2];
+				scaleRatio[2] = singularVals[2] / singularVals[0];
+
+				if (MathLib::Abs(scaleRatio[0] - 1) >0.1 ||
+					MathLib::Abs(scaleRatio[1] - 1) >0.1 ||
+					MathLib::Abs(scaleRatio[2] - 1) >0.1
+					)
+				{
+					newModel->m_OBBSkewed = true;
+				}
+				else
+				{
+					newModel->m_OBBSkewed = false;
+				}
+
+				// compute rotation matrix
 				MathLib::Matrix4d rotMat = GetRotMat(m_uprightVec, MathLib::Vector3(0, 0, 1));
 				transMat = rotMat*transMat;
 
@@ -415,6 +440,11 @@ void CScene::buildRelationGraph()
 		{
 			std::cout << "\t no OBB found, computing OBB first\n";
 			return;
+		}
+
+		if (m->m_OBBSkewed)
+		{
+			m->computeOBB(2);
 		}
 	}
 

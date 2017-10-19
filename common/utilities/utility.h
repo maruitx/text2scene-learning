@@ -630,6 +630,26 @@ static MathLib::Matrix4d GetRotMat(const MathLib::Vector3 &fromVec, const MathLi
 	return rotMat;
 }
 
+static MathLib::Matrix3 GetRotMat3(const MathLib::Matrix4d &transMat)
+{
+	MathLib::Matrix3 rotMat;
+
+	rotMat.M[0] = transMat.M[0];
+	rotMat.M[1] = transMat.M[1];
+	rotMat.M[2] = transMat.M[2];
+
+	rotMat.M[3] = transMat.M[4];
+	rotMat.M[4] = transMat.M[5];
+	rotMat.M[5] = transMat.M[6];
+
+	rotMat.M[6] = transMat.M[8];
+	rotMat.M[7] = transMat.M[9];
+	rotMat.M[8] = transMat.M[10];
+
+	return rotMat;
+}
+
+
 static double GetRotAngleR(MathLib::Vector3 beforeDir, MathLib::Vector3 afterDir, MathLib::Vector3 zDir)
 {
 	double angle = MathLib::AcosR(beforeDir.dot(afterDir));
@@ -652,6 +672,7 @@ static MathLib::Vector3 PermuteVectorInXY(MathLib::Vector3 inputVec, double perm
 	rotedVec = rotMat.transform(inputVec);
 	return rotedVec;
 }
+
 
 template <class Type>
 class CSymMat {
@@ -758,6 +779,18 @@ static Eigen::Matrix4d convertToEigenMat(const MathLib::Matrix4d &mat)
 	return eigenMat;
 }
 
+static Eigen::Matrix3d convertToEigenMat(const MathLib::Matrix3 &mat)
+{
+	Eigen::Matrix3d eigenMat;
+	eigenMat << mat.m[0][0], mat.m[0][1], mat.m[0][2],
+		mat.m[1][0], mat.m[1][1], mat.m[1][2],
+		mat.m[2][0], mat.m[2][1], mat.m[2][2];
+
+	eigenMat.transpose();
+
+	return eigenMat;
+}
+
 static MathLib::Matrix4d convertToMatrix4d(const Eigen::Matrix4d &eigenMat)
 {
 	MathLib::Matrix4d mat;
@@ -771,6 +804,25 @@ static MathLib::Matrix4d convertToMatrix4d(const Eigen::Matrix4d &eigenMat)
 		}
 	}
 	return mat;
+}
+
+
+static void SVD(const Eigen::Matrix4d &transMat, Eigen::Vector4d &eigenVal, Eigen::Matrix4d &leftSingVecs, Eigen::Matrix4d &rightSingVecs)
+{
+	Eigen::JacobiSVD<Eigen::Matrix4d> svd(transMat, Eigen::ComputeFullU | Eigen::ComputeFullV);
+
+	eigenVal = svd.singularValues();
+	leftSingVecs = svd.matrixU();
+	rightSingVecs = svd.matrixV();
+}
+
+static void SVD(const Eigen::Matrix3d &transMat, Eigen::Vector3d &eigenVal, Eigen::Matrix3d &leftSingVecs, Eigen::Matrix3d &rightSingVecs)
+{
+	Eigen::JacobiSVD<Eigen::Matrix3d> svd(transMat, Eigen::ComputeFullU | Eigen::ComputeFullV);
+
+	eigenVal = svd.singularValues();
+	leftSingVecs = svd.matrixU();
+	rightSingVecs = svd.matrixV();
 }
 
 static std::vector<int> topValueIDsFromPairs(std::vector<std::pair<double, int>> vpairs, int K, int sortMethod = 0)

@@ -7,7 +7,7 @@ RelationGraph::RelationGraph()
 }
 
 RelationGraph::RelationGraph(CScene *s):
-m_scene(s), m_SuppThresh(0.02)
+m_scene(s), m_SuppThresh(0.05)
 {
 	m_nodeNum = m_scene->getModelNum();
 	m_sceneMetric = m_scene->getSceneMetric();
@@ -53,16 +53,27 @@ void RelationGraph::correctSupportEdgeDir()
 				currEdge->v2 = tempId;
 			}
 			else if (heightDiff > -m_SuppThresh / m_sceneMetric && heightDiff < m_SuppThresh / m_sceneMetric) {
-				// treat the large size object as parent
-				double pM1Vol = pM1->getOBBVolume();
-				double pM2Vol = pM2->getOBBVolume();
+				// use the object with larger bottom area as parent
+				double pM1BottomArea = pM1->getOBBBottomArea();
+				double pM2BottomArea = pM2->getOBBBottomArea();
 
-				if (pM1Vol < pM2Vol)
+				if (pM1BottomArea < pM2BottomArea)
 				{
 					int tempId = currEdge->v1;
 					currEdge->v1 = currEdge->v2;
 					currEdge->v2 = tempId;
 				}
+
+				//// treat the large size object as parent
+				//double pM1Vol = pM1->getOBBVolume();
+				//double pM2Vol = pM2->getOBBVolume();
+
+				//if (pM1Vol < pM2Vol)
+				//{
+				//	int tempId = currEdge->v1;
+				//	currEdge->v1 = currEdge->v2;
+				//	currEdge->v2 = tempId;
+				//}
 			}
 		}
 	}

@@ -793,6 +793,65 @@ void computeBestFitOBB_FixZ(size_t vcount,const REAL *points,size_t pstride,REAL
 	}
 }
 
+void computeBestFitOBB_FixY(size_t vcount, const REAL *points, size_t pstride, REAL *sides, REAL matrix[16], FitStrategy strategy /*= FS_MEDIUM_FIT*/)
+{
+	fm_identity(matrix);
+	REAL bmin[3];
+	REAL bmax[3];
+	computeBestFitAABB(vcount, points, pstride, bmin, bmax);
+
+	matrix[12] = (bmin[0] + bmax[0])*0.5f;
+	matrix[13] = (bmin[1] + bmax[1])*0.5f;
+	matrix[14] = (bmin[2] + bmax[2])*0.5f;
+
+	sides[0] = bmax[0] - bmin[0];
+	sides[1] = bmax[1] - bmin[1];
+	sides[2] = bmax[2] - bmin[2];
+
+	REAL volume = sides[0] * sides[1] * sides[2];
+
+	REAL refmatrix[16];
+	memcpy(refmatrix, matrix, 16 * sizeof(REAL));
+
+	float stepSize = 5;
+	switch (strategy)
+	{
+	case FS_FAST_FIT:
+		stepSize = 13; // 15 degree increments
+		break;
+	case FS_MEDIUM_FIT:
+		stepSize = 7; // 10 degree increments
+		break;
+	case FS_SLOW_FIT:
+		stepSize = 3; // 5 degree increments
+		break;
+	}
+
+
+	for (REAL a = 0; a < 180; a += stepSize)
+	{
+		REAL quat[4];
+		//fm_eulerToQuat(0, 0, a*FM_DEG_TO_RAD, quat);		
+		fm_eulerToQuat(0, a*FM_DEG_TO_RAD ,0, quat);
+		
+		REAL temp[16];
+		REAL pmatrix[16];
+		fm_quatToMatrix(quat, temp);
+		fm_matrixMultiply(temp, refmatrix, pmatrix);
+		REAL psides[3];
+		computeOBB(vcount, points, pstride, psides, pmatrix);
+		REAL v = psides[0] * psides[1] * psides[2];
+		if (v < volume)
+		{
+			volume = v;
+			memcpy(matrix, pmatrix, sizeof(REAL) * 16);
+			sides[0] = psides[0];
+			sides[1] = psides[1];
+			sides[2] = psides[2];
+		}
+	}
+}
+
 void computeBestFitOBB(size_t vcount,const REAL *points,size_t pstride,REAL *sides,REAL *matrix,FitStrategy strategy)
 {
   fm_identity(matrix);

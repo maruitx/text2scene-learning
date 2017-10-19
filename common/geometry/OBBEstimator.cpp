@@ -201,8 +201,11 @@ int COBBEstimator::computeMinOBBByRot(int iFixAxis)
 
 	double sides[3], matrix[16];
 	switch (iFixAxis) {
-		case -1: case 0: case 1:
+		case -1: case 0:
 			BEST_FIT::computeBestFitOBB(m_ptsNum, points, 3 * sizeof(double), sides, matrix, BEST_FIT::FS_SLOW_FIT);
+			break;
+		case 1:
+			BEST_FIT::computeBestFitOBB_FixY(m_ptsNum, points, 3 * sizeof(double), sides, matrix, BEST_FIT::FS_SLOW_FIT);  // Rui
 			break;
 		case 2:
 			BEST_FIT::computeBestFitOBB_FixZ(m_ptsNum, points, 3 * sizeof(double), sides, matrix, BEST_FIT::FS_SLOW_FIT);

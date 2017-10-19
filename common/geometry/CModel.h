@@ -86,6 +86,7 @@ public:
 	MathLib::Vector3 getModelAlongDirOBBFaceCenter();
 	MathLib::Vector3 getModelNormalDirOBBFaceCenter();
 	double getOBBVolume() { return m_OBB.Vol(); };
+	double getOBBBottomArea();
 
 	void selectOBBFace(const MathLib::Vector3 &origin, const MathLib::Vector3 &dir);
 
@@ -152,6 +153,8 @@ public:
 	bool isBusy(){ return m_isBusy; };
 
 	bool isGroundObj();
+
+	bool m_OBBSkewed;  // mainly for SunCG objects, as they may be skewed when placing in different scenes
 
 public:
 	int suppParentID;

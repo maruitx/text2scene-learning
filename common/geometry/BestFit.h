@@ -65,6 +65,7 @@ void   computeBestFitOBB(size_t vcount,const REAL *points,size_t pstride,REAL *s
 void   computeBestFitOBB_FixZ(size_t vcount,const REAL *points,size_t pstride,REAL *sides,REAL matrix[16],FitStrategy strategy=FS_MEDIUM_FIT);
 void   computeBestFitCapsule(size_t vcount,const REAL *points,size_t pstride,REAL &radius,REAL &height,REAL matrix[16],FitStrategy strategy=FS_MEDIUM_FIT);
 
+void   computeBestFitOBB_FixY(size_t vcount, const REAL *points, size_t pstride, REAL *sides, REAL matrix[16], FitStrategy strategy = FS_MEDIUM_FIT);
 };
 
 #endif

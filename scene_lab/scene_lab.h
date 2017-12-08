@@ -33,7 +33,7 @@ public:
 	void loadSceneWithName(const QString &sceneFullName, int metaDataOnly = 0, int obbOnly = 0, int reComputeOBB = 0, int updateModelCat = 1);
 
 	void loadSceneDBList();
-	void loadSceneFileNamesFromListFile(std::map<QString, QStringList> &loadedSceneFileNames, const QString &sceneDBName, const QString &sceneListFileName);
+	void loadSceneFileNamesFromListFile(const QString &sceneDBName, const QString &sceneListFileName, std::map<QString, QStringList> &loadedSceneFileNames);
 
 	void LoadWholeSceneList(int metaDataOnly = 0, int obbOnly = 0, int reComputeOBB = 0, int updateModelCat = 1);
 

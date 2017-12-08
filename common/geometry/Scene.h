@@ -55,7 +55,7 @@ public:
 	//void insertModel(CModel *m);
 
 	void setSceneName(const QString &sceneName) { m_sceneFileName = sceneName; };
-	const QString& getSceneName() { return m_sceneFileName; };
+	const QString& getSceneName() { return m_sceneName; };
 	const QString& getFilePath() { return m_sceneFilePath; };
 	const QString& getSceneDbPath() { return m_sceneDBPath; };
 	const QString& getModelDBPath() { return m_modelDBPath; };
@@ -160,6 +160,8 @@ private:
 	bool m_hasRelGraph;
 
 	bool m_hasSupportHierarchy;
+
+	QString m_sceneName;
 
 	// File info
 	QString m_sceneFileName;

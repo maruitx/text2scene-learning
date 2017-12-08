@@ -68,6 +68,11 @@ CModel::~CModel()
 
 bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int obbOnly, int reComputeOBB)
 {
+	if (!FileExists(filename.toStdString()))
+	{
+		return false;
+	}
+
 	m_modelMetric = metric;
 
 	int cutPos = filename.lastIndexOf("/");

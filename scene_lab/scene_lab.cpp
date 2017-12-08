@@ -190,14 +190,14 @@ void scene_lab::loadSceneDBList()
 			QStringList parts = currLine.split(",");
 
 			QString sceneListName = parts[1].replace("\n", "");
-			loadSceneFileNamesFromListFile(m_loadedSceneFileNames, parts[0], sceneListName);
+			loadSceneFileNamesFromListFile(parts[0], sceneListName, m_loadedSceneFileNames);
 		}
 	}
 
 	inFile.close();
 }
 
-void scene_lab::loadSceneFileNamesFromListFile(std::map<QString, QStringList> &loadedSceneFileNames, const QString &sceneDBName, const QString &sceneListFileName)
+void scene_lab::loadSceneFileNamesFromListFile(const QString &sceneDBName, const QString &sceneListFileName, std::map<QString, QStringList> &loadedSceneFileNames)
 {
 	QString sceneListFileFullName = m_projectPath + QString("/paras/%1.txt").arg(sceneListFileName);
 

@@ -206,6 +206,7 @@ void RelationModelManager::buildPairwiseRelationModels()
 	qDebug() << "Pairwise relations extracted";
 }
 
+// collect the observed instances for pair-wise relations in current scene
 void RelationModelManager::collectPairwiseInstanceFromCurrScene()
 {
 	SceneSemGraph *currSSG = m_currScene->m_ssg;

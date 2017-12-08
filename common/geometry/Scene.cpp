@@ -67,7 +67,9 @@ void CScene::loadStanfordScene(const QString &filename, int metaDataOnly, int ob
 
 	QFileInfo sceneFileInfo(inFile.fileName());
 	m_sceneFileName = sceneFileInfo.baseName();   // scene_01.txt
-	m_sceneFilePath = sceneFileInfo.absolutePath();  
+	m_sceneFilePath = sceneFileInfo.absolutePath();
+
+	m_sceneName = m_sceneFileName;
 
 	int cutPos = sceneFileInfo.absolutePath().lastIndexOf("/");  
 	m_sceneDBPath = sceneFileInfo.absolutePath().left(cutPos);  
@@ -230,6 +232,8 @@ void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/, int
 	m_sceneFileName = sceneFileInfo.baseName();   // Bedroom_0.th
 	m_sceneFilePath = sceneFileInfo.absolutePath();
 
+	m_sceneName = m_sceneFileName;
+
 	int cutPos = sceneFileInfo.absolutePath().lastIndexOf("/");
 	m_sceneDBPath = sceneFileInfo.absolutePath().left(cutPos);
 
@@ -282,14 +286,16 @@ void CScene::loadJsonScene(const QString &filename, const int obbOnly /*= 0*/, c
 	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text)) return;
 
 	QFileInfo sceneFileInfo(inFile.fileName());
-	m_sceneFileName = sceneFileInfo.baseName();   // Bedroom_0.th
+	m_sceneFileName = sceneFileInfo.baseName();   // house.json
 	m_sceneFilePath = sceneFileInfo.absolutePath();
 
-	int cutPos = sceneFileInfo.absolutePath().lastIndexOf("/");
-	m_sceneDBPath = sceneFileInfo.absolutePath().left(cutPos);  // SceneDB/suncg_data/house
+	int cutPos = m_sceneFilePath.lastIndexOf("/");
+	m_sceneDBPath = m_sceneFilePath.left(cutPos);  // SceneDB/suncg_data/house
+
+	m_sceneName = m_sceneFilePath.right(m_sceneFilePath.length() -cutPos-1);
 
 	cutPos = m_sceneDBPath.lastIndexOf("/");
-	m_sceneDBPath = sceneFileInfo.absolutePath().left(cutPos);  // SceneDB/suncg_data
+	m_sceneDBPath = m_sceneFilePath.left(cutPos);  // SceneDB/suncg_data
 
 	// load models
 	QByteArray loadData = inFile.readAll();
@@ -1046,6 +1052,7 @@ void CScene::saveModelBBAlignMat()
 		outFile.close();
 	}
 }
+
 
 void CScene::saveRelPositions()
 {

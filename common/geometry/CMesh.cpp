@@ -9,6 +9,18 @@ CMesh::CMesh(QString path, QString name)
 	m_name = name;
 }
 
+// make a deep copy of the input mesh
+CMesh::CMesh(CMesh &inputMesh)
+{
+	m_name = inputMesh.m_name;
+	m_vertices = inputMesh.getVertices();
+	m_faces = inputMesh.getFaces();
+	m_faceNormals = inputMesh.getfaceNormals();
+
+	m_minVert = inputMesh.getMinVert();
+	m_maxVert = inputMesh.getMaxVert();
+}
+
 CMesh::~CMesh()
 {
 	m_vertices.clear();

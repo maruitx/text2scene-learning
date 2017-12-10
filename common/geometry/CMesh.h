@@ -16,6 +16,8 @@ class CMesh
 public:
 	CMesh() {};
 	CMesh(QString path, QString name); 
+
+	CMesh(CMesh &inputMesh);
 	~CMesh();
 
 	bool readObjFile(const std::string &filename, const double metric = 1.0);
@@ -53,8 +55,9 @@ public:
 
 	friend CIO_3DS;
 
-private:
 	QString m_name;
+
+private:
 
 	std::vector<MathLib::Vector3> m_vertices;
 	std::vector<std::vector<int>> m_faces;

@@ -102,7 +102,7 @@ void scene_lab::loadParas()
 
 void scene_lab::loadSceneWithName(const QString &sceneFullName, int metaDataOnly, int obbOnly, int reComputeOBB, int updateModelCat)
 {
-	CScene *scene = new CScene();
+	CScene *scene = new CScene(m_meshDatabase);
 
 	QFile sceneFile(sceneFullName);
 	QFileInfo sceneFileInfo(sceneFile.fileName());

@@ -5,6 +5,7 @@
 #include "Model.h"  // starlab Model class
 
 #include "CModel.h"
+#include "CMesh.h"
 #include "../scene_lab/RelationModel.h"
 
 #include <QJsonDocument>
@@ -33,7 +34,7 @@ class CScene
 {
 public:
 
-	CScene();
+	CScene(std::map<QString, CMesh> &meshDB = std::map<QString, CMesh>());
 	~CScene();
 
 	void loadStanfordScene(const QString &filename, int metaDataOnly = 0, int obbOnly = 0, int reComputeOBB = 0);  // default load mesh only
@@ -54,7 +55,7 @@ public:
 	//void insertModel(QString modelFileName);
 	//void insertModel(CModel *m);
 
-	void setSceneName(const QString &sceneName) { m_sceneFileName = sceneName; };
+	void setSceneName(const QString &sceneName) { m_sceneName = sceneName; };
 	const QString& getSceneName() { return m_sceneName; };
 	const QString& getFilePath() { return m_sceneFilePath; };
 	const QString& getSceneDbPath() { return m_sceneDBPath; };
@@ -178,4 +179,6 @@ private:
 	bool m_showSceneGaph;
 	bool m_showModelFrontDir;
 	bool m_showSuppChildOBB;
+
+	std::map<QString, CMesh> &m_meshDatabase;
 };

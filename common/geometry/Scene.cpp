@@ -5,7 +5,7 @@
 #include "../utilities/utility.h"
 //#include "../utilities/rng.h"
 #include "../utilities/mathlib.h"
-#include "CMesh.h"
+
 //#include "ICP.h"
 
 #include "../t2scene/SceneSemGraph.h"
@@ -15,7 +15,8 @@
 
 const double InchToMeterFactor = 0.0254;
 
-CScene::CScene()
+CScene::CScene(std::map<QString, CMesh> &meshDB)
+	:m_meshDatabase(meshDB)
 {
 	m_modelNum = 0;
 	m_uprightVec = MathLib::Vector3(0, 0, 1.0);
@@ -76,11 +77,11 @@ void CScene::loadStanfordScene(const QString &filename, int metaDataOnly, int ob
 
 	if (metaDataOnly)
 	{
-		std::cout << "\nLoading scene meta data: " << m_sceneFileName.toStdString() << "...\n";
+		std::cout << "\nLoading scene meta data: " << m_sceneName.toStdString() << "...\n";
 	}
 	else
 	{
-		std::cout << "\nLoading scene: " << m_sceneFileName.toStdString() << "...\n";
+		std::cout << "\nLoading scene: " << m_sceneName.toStdString() << "...\n";
 	}
 	
 
@@ -135,7 +136,7 @@ void CScene::loadStanfordScene(const QString &filename, int metaDataOnly, int ob
 				std::vector<std::string> parts = PartitionString(currLine.toStdString(), " ");
 				int modelIndex = StringToInt(parts[1]);
 
-				CModel *newModel = new CModel();
+				CModel *newModel = new CModel(m_meshDatabase);
 				newModel->setSceneMetric(m_metric);
 				newModel->setSceneUpRightVec(m_uprightVec);
 
@@ -218,7 +219,7 @@ void CScene::loadStanfordScene(const QString &filename, int metaDataOnly, int ob
 	computeAABB();
 	buildModelDislayList();
 
-	std::cout << "Scene " << m_sceneFileName.toStdString() <<" loaded\n";
+	std::cout << "Scene " << m_sceneName.toStdString() <<" loaded\n";
 }
 
 void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/, int reComputeOBB /*= 0*/)
@@ -275,7 +276,7 @@ void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/, int
 	computeAABB();
 	buildModelDislayList();
 
-	std::cout << "Scene " << m_sceneFileName.toStdString() << " loaded\n";
+	std::cout << "Scene " << m_sceneName.toStdString() << " loaded\n";
 }
 
 void CScene::loadJsonScene(const QString &filename, const int obbOnly /*= 0*/, const int reComputeOBB /*= 0*/)
@@ -340,7 +341,7 @@ void CScene::loadSunCGScene(const QJsonObject &sceneObject, const int obbOnly, i
 			QJsonObject modelObject = model.toObject();
 			QString modelNameString = modelObject["modelId"].toString();
 
-			CModel *newModel = new CModel();
+			CModel *newModel = new CModel(m_meshDatabase);
 			newModel->setSceneMetric(m_metric);
 			newModel->setSceneUpRightVec(m_uprightVec);
 
@@ -422,7 +423,7 @@ void CScene::initRelationGraph()
 {
 	m_relationGraph = new RelationGraph(this);
 
-	QString graphFilename = m_sceneFilePath + "/" + m_sceneFileName + ".sg";
+	QString graphFilename = m_sceneFilePath + "/" + m_sceneName + ".sg";
 
 	if (m_relationGraph->readGraph(graphFilename) != -1)
 	{
@@ -436,7 +437,7 @@ void CScene::initRelationGraph()
 
 void CScene::buildRelationGraph()
 {
-	std::cout << "\tstart build relation graph for "<< m_sceneFileName.toStdString()<< "...";
+	std::cout << "\tstart build relation graph for "<< m_sceneName.toStdString()<< "...";
 
 	// build OBB if not exist
 	for (int i = 0; i < m_modelList.size(); i++)
@@ -454,7 +455,7 @@ void CScene::buildRelationGraph()
 		}
 	}
 
-	QString graphFilename = m_sceneFilePath + "/" + m_sceneFileName + ".sg";
+	QString graphFilename = m_sceneFilePath + "/" + m_sceneName + ".sg";
 
 	m_relationGraph->buildGraph();
 	m_relationGraph->saveGraph(graphFilename);
@@ -655,7 +656,7 @@ std::vector<int> CScene::getModelIdWithCatName(QString s, bool usingSynset)
 //	m_relationGraph->InsertNode(0);
 //}
 
-//TO DO: fix support relationship after insert model
+//TODO: fix support relationship after insert model
 void CScene::buildSupportHierarchy()
 {
 	if (m_sceneFormat != SceneFormat[DBTypeID::Stanford])
@@ -809,7 +810,7 @@ void CScene::loadSSG()
 		delete m_ssg;
 	}
 
-	QString ssgFileName = m_sceneFilePath + "/" + m_sceneFileName + ".ssg";
+	QString ssgFileName = m_sceneFilePath + "/" + m_sceneName + ".ssg";
 	m_ssg = new SceneSemGraph(ssgFileName);
 }
 
@@ -1005,7 +1006,7 @@ void CScene::computeModelBBAlignMat()
 
 bool CScene::loadModelBBAlignMat()
 {
-	QString filename = m_sceneFilePath + "/" + m_sceneFileName + ".alignMat";
+	QString filename = m_sceneFilePath + "/" + m_sceneName + ".alignMat";
 
 	QFile inFile(filename);
 	QTextStream ifs(&inFile);
@@ -1037,7 +1038,7 @@ bool CScene::loadModelBBAlignMat()
 
 void CScene::saveModelBBAlignMat()
 {
-	QString filename = m_sceneFilePath + "/" + m_sceneFileName + ".alignMat";
+	QString filename = m_sceneFilePath + "/" + m_sceneName + ".alignMat";
 
 	QFile outFile(filename);
 	QTextStream ofs(&outFile);
@@ -1056,7 +1057,7 @@ void CScene::saveModelBBAlignMat()
 
 void CScene::saveRelPositions()
 {
-	QString filename = m_sceneFilePath + "/" + m_sceneFileName + ".relPos";
+	QString filename = m_sceneFilePath + "/" + m_sceneName + ".relPos";
 
 	QFile outFile(filename);
 	QTextStream ofs(&outFile);

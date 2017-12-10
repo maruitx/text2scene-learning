@@ -3,6 +3,8 @@
 
 #include <QObject>
 #include "StarlabDrawArea.h"
+#include "../common/geometry/CMesh.h"
+
 
 
 class scene_lab_widget;
@@ -110,6 +112,8 @@ private:
 	ModelDBViewer_widget *m_modelDBViewer_widget;
 
 	ModelDatabase *m_sunCGModelDB;
+
+	std::map<QString, CMesh> m_meshDatabase;  // database for saving loaded meshes; to speed up mesh loading time
 
 	std::map<QString, QString> m_modelCatMapTsinghua; // model category mapping from tsinghua to stanford
 

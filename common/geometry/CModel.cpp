@@ -1,5 +1,4 @@
 #include "CModel.h"
-#include "CMesh.h"
 #include "OBBEstimator.h"
 #include "TriTriIntersect.h"
 #include "SuppPlaneManager.h"
@@ -8,7 +7,8 @@
 #include "qgl.h"
 #include <QFile>
 
-CModel::CModel()
+CModel::CModel(std::map<QString, CMesh> &meshDB)
+	:m_meshDatabase(meshDB)
 {
 	m_catName = QString("unknown");
 	m_mesh = NULL;
@@ -137,14 +137,25 @@ bool CModel::loadModel(QString filename, double metric, int metaDataOnly, int ob
 	}
 	else
 	{
-		// load mesh data first
-		std::cout << "\t \t loading mesh for " << m_nameStr.toStdString() << "\n";
-
-		bool isLoaded = loadMeshData(filename, metric);
-
-		if (!isLoaded)
+		// load or copy mesh data first
+		if (!m_meshDatabase.empty() && m_meshDatabase.count(m_nameStr))
 		{
-			return false;
+			m_mesh = new CMesh(m_meshDatabase[m_nameStr]);  // make a copy of mesh data in meshDB
+
+			std::cout << "\t \t mesh data copied from meshDB: " << m_nameStr.toStdString() << "\n";
+		}
+		else
+		{
+			bool isLoaded = loadMeshData(filename, metric);
+			std::cout << "\t \t loading mesh for " << m_nameStr.toStdString() << "\n";
+
+			m_meshDatabase[m_nameStr] = CMesh(*m_mesh);  // save copy of mesh data to meshDB
+
+			if (!isLoaded)
+			{
+				std::cout << "\t \t mesh not loaded: " << m_nameStr.toStdString() << "\n";
+				return false;
+			}
 		}
 
 		computeAABB();

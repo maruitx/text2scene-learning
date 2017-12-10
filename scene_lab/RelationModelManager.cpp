@@ -90,6 +90,15 @@ void RelationModelManager::collectRelativePosInCurrScene()
 void RelationModelManager::loadRelativePosFromCurrScene()
 {
 	QString filename = m_currScene->getFilePath() + "/" + m_currScene->getSceneName() + ".relPos";
+	/*	if (m_currScene->getSceneFormat() == "suncg")
+		{
+			filename = m_currScene->getFilePath() + "/" + m_currScene->getSceneName() + ".relPos";
+		}
+		else
+		{
+			filename = m_currScene->getFilePath() + "/" + m_currScene->getSceneName() + ".relPos";
+
+		}	*/
 
 	QFile inFile(filename);
 	QTextStream ifs(&inFile);

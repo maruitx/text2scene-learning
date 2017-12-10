@@ -6,7 +6,8 @@
 #include "Eigen/Dense"
 #include "../utilities/mathlib.h"
 
-class CMesh;
+#include "CMesh.h"
+
 class SuppPlaneManager;
 class SuppPlane;
 
@@ -14,7 +15,7 @@ class SuppPlane;
 class CModel
 {
 public:
-	CModel();
+	CModel(std::map<QString, CMesh> &meshDB = std::map<QString, CMesh>());
 	~CModel();
 
 	bool loadModel(QString filename, double metric = 1.0, int metaDataOnly = 0, int obbOnly = 0, int reComputeOBB = 0);
@@ -225,4 +226,6 @@ private:
 	bool m_isVisible;
 
 	bool m_isBusy;
+
+	std::map<QString, CMesh> &m_meshDatabase;
 };

@@ -1051,27 +1051,71 @@ void scene_lab::BatchBuildModelsForList()
 
 void scene_lab::ComputeBBAlignMatForSceneList()
 {
+	//loadParas();
+
+	//// load mesh without OBB
+	//LoadWholeSceneList(0, 0, 0);
+
+	//for (int i = 0; i < m_sceneList.size(); i++)
+	//{
+	//	// update front dir for alignment
+	//	m_currScene = m_sceneList[i];
+	//	m_currScene->computeModelBBAlignMat();
+
+	//	qDebug() << "SceneLab: bounding box alignment matrix saved for " << m_currScene->getSceneName();
+	//}
+
 	loadParas();
+	loadSceneDBList();
 
-	// load mesh without OBB
-	LoadWholeSceneList(0, 0, 0);
-
-	for (int i = 0; i < m_sceneList.size(); i++)
+	for (auto it = m_loadedSceneFileNames.begin(); it != m_loadedSceneFileNames.end(); it++)
 	{
-		// update front dir for alignment
-		m_currScene = m_sceneList[i];
-		m_currScene->computeModelBBAlignMat();
+		QStringList& sceneFullNames = it->second;
+		foreach(QString sceneName, sceneFullNames)
+		{
+			if (m_currScene != NULL)
+			{
+				delete m_currScene;
+			}
 
-		qDebug() << "SceneLab: bounding box alignment matrix saved for " << m_currScene->getSceneName();
+			loadSceneWithName(sceneName, 0, 0, 0, 0);
+			m_currScene->computeModelBBAlignMat();
+			qDebug() << "SceneLab: bounding box alignment matrix saved for " << m_currScene->getSceneName();
+		}
 	}
 }
 
 void scene_lab::ExtractRelPosForSceneList()
 {
-	loadParas();
+	//loadParas();
 
-	// load OBB only
-	LoadWholeSceneList(0, 1, 0);
+	//// load OBB only
+	//LoadWholeSceneList(0, 1, 0);
+
+	//if (m_relationModelManager != NULL)
+	//{
+	//	delete m_relationModelManager;
+	//}
+
+	//m_relationModelManager = new RelationModelManager(m_relationExtractor);
+
+	//for (int i = 0; i < m_sceneList.size(); i++)
+	//{
+	//	m_currScene = m_sceneList[i];
+	//	m_relationModelManager->updateCurrScene(m_currScene);
+
+	//	m_relationModelManager->collectRelativePosInCurrScene();
+
+	//	qDebug() << "SceneLab: relative position saved for " << m_currScene->getSceneName();
+	//}
+
+	loadParas();
+	loadSceneDBList();
+
+	if (m_relationExtractor == NULL)
+	{
+		m_relationExtractor = new RelationExtractor(m_angleTh);
+	}
 
 	if (m_relationModelManager != NULL)
 	{
@@ -1080,14 +1124,21 @@ void scene_lab::ExtractRelPosForSceneList()
 
 	m_relationModelManager = new RelationModelManager(m_relationExtractor);
 
-	for (int i = 0; i < m_sceneList.size(); i++)
+	for (auto it = m_loadedSceneFileNames.begin(); it != m_loadedSceneFileNames.end(); it++)
 	{
-		m_currScene = m_sceneList[i];
-		m_relationModelManager->updateCurrScene(m_currScene);
+		QStringList& sceneFullNames = it->second;
+		foreach(QString sceneName, sceneFullNames)
+		{
+			if (m_currScene != NULL)
+			{
+				delete m_currScene;
+			}
 
-		m_relationModelManager->collectRelativePosInCurrScene();
-
-		qDebug() << "SceneLab: relative position saved for " << m_currScene->getSceneName();
+			loadSceneWithName(sceneName, 0, 1, 0, 0);
+			m_relationModelManager->updateCurrScene(m_currScene);
+			m_relationModelManager->collectRelativePosInCurrScene();
+			qDebug() << "SceneLab: relative position saved for " << m_currScene->getSceneName();
+		}
 	}
 }
 

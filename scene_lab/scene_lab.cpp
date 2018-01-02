@@ -137,7 +137,7 @@ void scene_lab::loadSceneWithName(const QString &sceneFullName, int metaDataOnly
 	}
 	else if (sceneFormat == "json")
 	{
-		scene->loadJsonScene(sceneFullName, obbOnly, reComputeOBB);
+		scene->loadJsonScene(sceneFullName, metaDataOnly, obbOnly, reComputeOBB);
 		m_currScene = scene;
 
 		if (m_sunCGModelDB == NULL)

@@ -279,7 +279,7 @@ void CScene::loadTsinghuaScene(const QString &filename, int obbOnly /*= 0*/, int
 	std::cout << "Scene " << m_sceneName.toStdString() << " loaded\n";
 }
 
-void CScene::loadJsonScene(const QString &filename, const int obbOnly /*= 0*/, const int reComputeOBB /*= 0*/)
+void CScene::loadJsonScene(const QString &filename, const int metaDataOnly, const int obbOnly /*= 0*/, const int reComputeOBB /*= 0*/)
 {
 	QFile inFile(filename);
 	QTextStream ifs(&inFile);
@@ -306,18 +306,24 @@ void CScene::loadJsonScene(const QString &filename, const int obbOnly /*= 0*/, c
 
 	if (sceneObject["version"].toString().contains("suncg"))
 	{
-		loadSunCGScene(sceneObject, obbOnly, reComputeOBB);
+		loadSunCGScene(sceneObject, metaDataOnly, obbOnly, reComputeOBB);
 	}
 
 	// post processing
 	m_modelNum = m_modelList.size();
+
 	initRelationGraph();
+
+	if (metaDataOnly)
+	{
+		return;
+	}
 
 	computeAABB();
 	buildModelDislayList();
 }
 
-void CScene::loadSunCGScene(const QJsonObject &sceneObject, const int obbOnly, int reComputeOBB /*= 0*/)
+void CScene::loadSunCGScene(const QJsonObject &sceneObject, const int metaDataOnly, const int obbOnly, int reComputeOBB /*= 0*/)
 {
 	m_sceneFormat = SceneFormat[DBTypeID::SunCG];
 
@@ -345,7 +351,7 @@ void CScene::loadSunCGScene(const QJsonObject &sceneObject, const int obbOnly, i
 			newModel->setSceneMetric(m_metric);
 			newModel->setSceneUpRightVec(m_uprightVec);
 
-			bool isModelLoaded = newModel->loadModel(m_modelDBPath + "/" + modelNameString + "/" + modelNameString + ".obj", 1.0, 0, obbOnly, reComputeOBB);
+			bool isModelLoaded = newModel->loadModel(m_modelDBPath + "/" + modelNameString + "/" + modelNameString + ".obj", 1.0, metaDataOnly, obbOnly, reComputeOBB);
 			if (!isModelLoaded) continue;
 
 			newModel->setID(currModelID++);

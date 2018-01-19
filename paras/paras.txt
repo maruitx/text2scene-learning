@@ -1,4 +1,4 @@
-ProjectPath=C:/Ruim/Graphics/T2S_MPC/text2scene-learning
+ProjectPath=D:/Graphics/T2S/text2scene-learning
 SceneDBType=suncg
-LocalSceneDBPath=C:/Ruim/Graphics/T2S_MPC/SceneDB
+LocalSceneDBPath=E:/SceneDB
 AngleThreshold=30

@@ -7,7 +7,9 @@ https://github.com/OpenGP/starlab
 
 1. Complile starlab_core.pro with Qt Creator or Qt Visual Studio Add-in. It will generate a folder StarlabPackage(or StarlabPackageRelease) on your desktop
 
-2. Complie text2scene.pro with Qt Creator or Qt Visual Studio Add-in. It will generate text2scene plug-in libraries for starlab
+2. Setup environment for Matlab by editing common.pri common.pro; add Matlab bin path to system path
+
+3. Complie text2scene.pro with Qt Creator or Qt Visual Studio Add-in. It will generate text2scene plug-in libraries for starlab
 
 ## Run
 

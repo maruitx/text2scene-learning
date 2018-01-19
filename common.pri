@@ -3,8 +3,8 @@ Debug: LIBS += -L$$PWD/common/lib/debug/ -lcommon
 Release: LIBS += -L$$PWD/common/lib/release/ -lcommon
 
 # Matlab
-INCLUDEPATH *= "C:/Program Files/MATLAB/R2016b/extern/include"
-LIBS += -L"C:/Program Files/MATLAB/R2016b/extern/lib/win64/microsoft" -llibmx -llibeng -llibmex
+INCLUDEPATH *= "C:/Program Files/MATLAB/R2017b/extern/include"
+LIBS += -L"C:/Program Files/MATLAB/R2017b/extern/lib/win64/microsoft" -llibmx -llibeng -llibmex
 
 # Opcode lib
 INCLUDEPATH *= $$PWD/common/third_party/opcode/include

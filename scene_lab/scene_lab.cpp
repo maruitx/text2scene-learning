@@ -66,7 +66,7 @@ void scene_lab::loadParas()
 	{
 		currLine = paraFile.readLine();
 
-		if (currLine[0] != "#")
+		if (currLine[0] != '#')
 		{
 			if ((pos = currLine.lastIndexOf("ProjectPath=")) != -1)
 			{
@@ -185,7 +185,7 @@ void scene_lab::loadSceneDBList()
 	while (!inFile.atEnd())
 	{
 		currLine = inFile.readLine();
-		if (currLine[0]!="%")
+		if (currLine[0]!='%')
 		{
 			QStringList parts = currLine.split(",");
 

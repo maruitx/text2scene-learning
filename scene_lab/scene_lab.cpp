@@ -80,12 +80,6 @@ void scene_lab::loadParas()
 				m_sceneDBType = currLine.replace("\n", "");
 			}
 
-			//if ((pos = currLine.lastIndexOf("SceneListFileName=")) != -1)
-			//{
-			//	m_sceneListFileName = currLine.replace("SceneListFileName=", "");
-			//	m_sceneListFileName = currLine.replace("\n", "");
-			//}
-
 			if ((pos = currLine.lastIndexOf("LocalSceneDBPath=")) != -1)
 			{
 				m_localSceneDBPath = currLine.replace("LocalSceneDBPath=", "");
@@ -167,7 +161,7 @@ void scene_lab::LoadScene()
 	loadSceneWithName(sceneFullName, 0, 0, 0, 1);
 }
 
-void scene_lab::loadSceneDBList()
+void scene_lab::loadSceneListNamesFromDBListFile()
 {
 	QString sceneDBListFileName = m_projectPath + "/paras/scene_db_list.txt";
 
@@ -190,21 +184,21 @@ void scene_lab::loadSceneDBList()
 			QStringList parts = currLine.split(",");
 
 			QString sceneListName = parts[1].replace("\n", "");
-			loadSceneFileNamesFromListFile(parts[0], sceneListName, m_loadedSceneFileNames);
+			loadSceneFileNamesFromSceneListFile(parts[0], sceneListName, m_loadedSceneFileNames);
 		}
 	}
 
 	inFile.close();
 }
 
-void scene_lab::loadSceneFileNamesFromListFile(const QString &sceneDBName, const QString &sceneListFileName, std::map<QString, QStringList> &loadedSceneFileNames)
+void scene_lab::loadSceneFileNamesFromSceneListFile(const QString &sceneDBName, const QString &sceneListFileName, std::map<QString, QStringList> &loadedSceneFileNames)
 {
 	QString sceneListFileFullName = m_projectPath + QString("/paras/%1.txt").arg(sceneListFileName);
 
 	QFile inFile(sceneListFileFullName);
 	QTextStream ifs(&inFile);
 
-	qDebug() << inFile.fileName();
+	//qDebug() << inFile.fileName();
 
 	if (!inFile.open(QIODevice::ReadOnly | QIODevice::Text))
 	{
@@ -219,10 +213,11 @@ void scene_lab::loadSceneFileNamesFromListFile(const QString &sceneDBName, const
 	sceneFolder[SceneFormat[DBTypeID::SunCG]] = m_localSceneDBPath + "/suncg_data/house/";
 
 	QString currLine = ifs.readLine();
+	int sceneNum = 0;
 
 	if (currLine.contains("SceneNum"))
 	{
-		int sceneNum = StringToIntegerList(currLine.toStdString(), "SceneNum ")[0];
+		sceneNum = StringToIntegerList(currLine.toStdString(), "SceneNum ")[0];
 
 		QStringList currSceneNames;
 
@@ -251,6 +246,8 @@ void scene_lab::loadSceneFileNamesFromListFile(const QString &sceneDBName, const
 
 		loadedSceneFileNames[sceneDBName] = currSceneNames;
 	}
+
+	std::cout << "Scene file names loaded, type: " << sceneDBName.toStdString() << ", num: " << sceneNum << std::endl;
 }
 
 // load the whole scene list into memory
@@ -275,7 +272,7 @@ void scene_lab::LoadWholeSceneList(int metaDataOnly, int obbOnly, int reComputeO
 	m_sceneList.clear();
 
 	InitModelDBs();
-	loadSceneDBList();
+	loadSceneListNamesFromDBListFile();
 
 	for (auto it = m_loadedSceneFileNames.begin(); it!= m_loadedSceneFileNames.end(); it++)
 	{
@@ -286,59 +283,49 @@ void scene_lab::LoadWholeSceneList(int metaDataOnly, int obbOnly, int reComputeO
 			m_sceneList.push_back(m_currScene);
 		}
 	}
-
-	//
-	//// load stanford or scenenn scenes
-	//for (int i = 0; i < m_loadedSceneFileNames[0].size(); i++)
-	//{
-	//	CScene *scene = new CScene();
-	//	scene->loadStanfordScene(m_loadedSceneFileNames[0][i], metaDataOnly, obbOnly, meshAndOBB);
-
-	//	updateModelMetaInfoForScene(scene);
-	//	m_sceneList.push_back(scene);
-	//}
-
-	//// load tsinghua scenes
-	//for (int i = 0; i < m_loadedSceneFileNames[1].size(); i++)
-	//{
-	//	CScene *scene = new CScene();
-	//	scene->loadTsinghuaScene(m_loadedSceneFileNames[1][i], obbOnly);
-
-	//	if (updateModelCat)
-	//	{
-	//		updateModelCatForTsinghuaScene(scene);
-	//	}
-
-	//	m_sceneList.push_back(scene);
-	//}
 }
 
 void scene_lab::InitModelDBs()
 {
-	if (m_sceneDBType == "stanford" || m_sceneDBType == "scenenn")
-	{
-		if (m_shapeNetModelDB == NULL)
-		{
-			initShapeNetDB();
-		}
-	}
-	else if (m_sceneDBType == "tsinghua")
-	{
-		if (m_modelCatMapTsinghua.empty())
-		{
-			initTsinghuaDB();
-		}
-	}
-	else if (m_sceneDBType == "suncg")
-	{
-		if (m_sunCGModelDB == NULL)
-		{
-			initSunCGDB();
-		}
-	}
-	else
-	{
+	//if (m_sceneDBType == "stanford" || m_sceneDBType == "scenenn")
+	//{
+	//	if (m_shapeNetModelDB == NULL)
+	//	{
+	//		initShapeNetDB();
+	//	}
+	//}
+	//else if (m_sceneDBType == "tsinghua")
+	//{
+	//	if (m_modelCatMapTsinghua.empty())
+	//	{
+	//		initTsinghuaDB();
+	//	}
+	//}
+	//else if (m_sceneDBType == "suncg")
+	//{
+	//	if (m_sunCGModelDB == NULL)
+	//	{
+	//		initSunCGDB();
+	//	}
+	//}
+	//else
+	//{
 
+	//}
+
+	if ((m_sceneDBType.contains("stanford") || m_sceneDBType.contains("scenenn") && m_shapeNetModelDB == NULL))
+	{
+		initShapeNetDB();
+	}
+
+	if (m_sceneDBType == "tsinghua" && m_modelCatMapTsinghua.empty())
+	{
+		initTsinghuaDB();
+	}
+
+	if (m_sceneDBType == "suncg" && m_sunCGModelDB == NULL)
+	{
+		initSunCGDB();
 	}
 }
 
@@ -575,7 +562,7 @@ void scene_lab::updateModelMetaInfoForScene(CScene *s)
 
 void scene_lab::BuildOBBForSceneList()
 {
-	loadSceneDBList();
+	loadSceneListNamesFromDBListFile();
 
 	for (auto it = m_loadedSceneFileNames.begin(); it != m_loadedSceneFileNames.end(); it++)
 	{
@@ -790,7 +777,7 @@ void scene_lab::BuildRelationGraphForCurrentScene()
 void scene_lab::BuildRelationGraphForSceneList()
 {
 	loadParas();
-	loadSceneDBList();
+	loadSceneListNamesFromDBListFile();
 
 	for (auto it = m_loadedSceneFileNames.begin(); it != m_loadedSceneFileNames.end(); it++)
 	{
@@ -1066,7 +1053,7 @@ void scene_lab::ComputeBBAlignMatForSceneList()
 	//}
 
 	loadParas();
-	loadSceneDBList();
+	loadSceneListNamesFromDBListFile();
 
 	for (auto it = m_loadedSceneFileNames.begin(); it != m_loadedSceneFileNames.end(); it++)
 	{
@@ -1110,7 +1097,7 @@ void scene_lab::ExtractRelPosForSceneList()
 	//}
 
 	loadParas();
-	loadSceneDBList();
+	loadSceneListNamesFromDBListFile();
 
 	if (m_relationExtractor == NULL)
 	{

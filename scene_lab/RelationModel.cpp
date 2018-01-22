@@ -91,7 +91,7 @@ void PairwiseRelationModel::fitGMM(int instanceTh)
 	engPutVariable(matlabEngine, "X", observationArray); // put into matlab
 	engPutVariable(matlabEngine, "alignMats", alignMatsArray); // put into matlab
 
-	engEvalString(matlabEngine, "cd \'C:\\Ruim\\Graphics\\T2S_MPC\\text2scene-learning\\scene_lab'");
+	engEvalString(matlabEngine, "cd \'D:\\Graphics\\T2S\\text2scene-learning\\scene_lab'");
 	engEvalString(matlabEngine, "[isFitSuccess, mus, sigmas, weights, numComp, pTh] = fitGMMWithAIC(X, 4, alignMats);");
 
 	printf("%s\n", buffer); // get error messages or prints (optional)

@@ -1,0 +1,3 @@
+StanfordSceneDatabase,scene_list_stanford
+SceneNNConversionOutput,scene_list_scenenn
+SunCGSceneDatabase,scene_list_suncg

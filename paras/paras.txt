@@ -1,4 +1,4 @@
 ProjectPath=D:/Graphics/T2S/text2scene-learning
-SceneDBType=suncg
+SceneDBType=stanford_scenenn_suncg
 LocalSceneDBPath=E:/SceneDB
 AngleThreshold=30

@@ -34,7 +34,7 @@ class SceneSemGraph : public SemanticGraph
 {
 public:
 	SceneSemGraph(const QString &s);
-	SceneSemGraph(CScene *s, ModelDatabase *db, RelationExtractor *relationExtractor);
+	SceneSemGraph(CScene *s, ModelDatabase *db, RelationExtractor *relationExtractor, const QString &groupAnnPath);
 	~SceneSemGraph();
 
 	void loadGraph(const QString &filename);
@@ -68,5 +68,7 @@ private:
 	std::map<QString, int> m_catStringToLabelIDMap;
 
 	QString m_fullFilename;
+
+	QString m_sceneANNPath;
 };
 

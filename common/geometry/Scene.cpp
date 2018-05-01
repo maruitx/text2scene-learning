@@ -109,7 +109,8 @@ void CScene::loadStanfordScene(const QString &filename, int metaDataOnly, int ob
 		std::cout << "\tloading objects with obb only...\n";
 	}
 
-	if (m_sceneFormat == SceneFormat[DBTypeID::Stanford] || m_sceneFormat == SceneFormat[DBTypeID::SceneNN])
+	if (m_sceneFormat == SceneFormat[DBTypeID::Stanford] || m_sceneFormat == SceneFormat[DBTypeID::SceneNN] 
+		|| m_sceneFormat == SceneFormat[DBTypeID::SunCG])
 	{
 		m_metric = InchToMeterFactor; // convert from 1 inch to 1 meter
 
@@ -120,7 +121,14 @@ void CScene::loadStanfordScene(const QString &filename, int metaDataOnly, int ob
 
 		int currModelID = -1;
 
-		m_modelDBPath = m_sceneDBPath + "/models";  
+		m_modelDBPath = m_sceneDBPath + "/models";
+
+		if (m_sceneFormat == SceneFormat[DBTypeID::SunCG])
+		{
+			cutPos = m_sceneDBPath.lastIndexOf("/");
+			m_sceneDBPath = m_sceneDBPath.left(cutPos);
+			m_modelDBPath = m_sceneDBPath + "/object";
+		}
 
 		while (!ifs.atEnd())
 		{
@@ -141,7 +149,15 @@ void CScene::loadStanfordScene(const QString &filename, int metaDataOnly, int ob
 				newModel->setSceneUpRightVec(m_uprightVec);
 
 				QString modelNameString = parts[2].c_str();
-				newModel->loadModel(m_modelDBPath + "/" + modelNameString + ".obj", 1.0, metaDataOnly, obbOnly, reComputeOBB);
+
+				if (m_sceneFormat == SceneFormat[DBTypeID::SunCG])
+				{
+					newModel->loadModel(m_modelDBPath + "/" + modelNameString + "/" + modelNameString + ".obj", 1.0, metaDataOnly, obbOnly, reComputeOBB);
+				}
+				else
+				{
+					newModel->loadModel(m_modelDBPath + "/" + modelNameString + ".obj", 1.0, metaDataOnly, obbOnly, reComputeOBB);
+				}
 				
 				currModelID += 1;
 				newModel->setID(currModelID);

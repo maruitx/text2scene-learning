@@ -8,8 +8,8 @@
 #include "../scene_lab/RelationExtractor.h"
 
 
-SceneSemGraph::SceneSemGraph(CScene *s, ModelDatabase *db, RelationExtractor *relationExtractor)
-	:m_scene(s), m_modelDB(db), m_relationExtractor(relationExtractor)
+SceneSemGraph::SceneSemGraph(CScene *s, ModelDatabase *db, RelationExtractor *relationExtractor, const QString &groupAnnPath)
+	:m_scene(s), m_modelDB(db), m_relationExtractor(relationExtractor), m_sceneANNPath(groupAnnPath)
 {
 	m_relationExtractor->updateCurrScene(s);
 	m_relationExtractor->updateCurrSceneSemGraph(this);
@@ -240,11 +240,9 @@ void SceneSemGraph::addSpatialSideRelForModelPair(int refModelId, int testModelI
 
 void SceneSemGraph::addGroupAttributeFromAnnotation()
 {
-	QString sceneANNPath = "C:/Ruim/Graphics/T2S_MPC/text2scene/t2s-evol/SceneDB/ANN/";
-
 	QString sceneName = m_scene->getSceneName();
 
-	QString annFileName = sceneANNPath + sceneName + ".snn";
+	QString annFileName = m_sceneANNPath + "/" + sceneName + ".snn";
 
 	QFile inFile(annFileName);
 	QTextStream ifs(&inFile);

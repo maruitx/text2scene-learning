@@ -121,6 +121,7 @@ private:
 	QString m_sceneDBType;
 	QString m_localSceneDBPath;
 	double m_angleTh;
+	QString m_sceneANNPath;
 };
 
 #endif // SCENE_LAB_H

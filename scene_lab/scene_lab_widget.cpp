@@ -71,7 +71,7 @@ QString scene_lab_widget::loadSceneName()
 
 	QString filename = QFileDialog::getOpenFileName(0, tr("Load scene"),
 		m_lastUsedDirectory,
-		tr("Scene File (*.txt *.th *.json)"));
+		tr("Scene File (*.txt *.th *.json *.ssg)"));
 
 	if (filename.isEmpty()) return "";
 

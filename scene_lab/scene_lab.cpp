@@ -90,6 +90,12 @@ void scene_lab::loadParas()
 			{
 				m_angleTh = currLine.replace("AngleThreshold=", "").toDouble();
 			}
+
+			if ((pos = currLine.lastIndexOf("GroupAnnotationPath=")) != -1)
+			{
+				m_sceneANNPath = currLine.replace("GroupAnnotationPath=", "");
+				m_sceneANNPath = currLine.replace("\n", "");
+			}
 		}
 	}
 }
@@ -103,7 +109,7 @@ void scene_lab::loadSceneWithName(const QString &sceneFullName, int metaDataOnly
 
 	QString sceneFormat = sceneFileInfo.suffix();
 
-	if (sceneFormat == "txt")
+	if (sceneFormat == "txt" || sceneFormat == "ssg")
 	{
 		// only load scene mesh
 		scene->loadStanfordScene(sceneFullName, metaDataOnly, obbOnly, reComputeOBB);
@@ -112,6 +118,11 @@ void scene_lab::loadSceneWithName(const QString &sceneFullName, int metaDataOnly
 		if (m_shapeNetModelDB == NULL)
 		{
 			initShapeNetDB();
+		}
+
+		if (m_sunCGModelDB == NULL)
+		{
+			initSunCGDB();
 		}
 		
 		updateModelMetaInfoForScene(m_currScene);
@@ -318,12 +329,12 @@ void scene_lab::InitModelDBs()
 		initShapeNetDB();
 	}
 
-	if (m_sceneDBType == "tsinghua" && m_modelCatMapTsinghua.empty())
+	if (m_sceneDBType.contains("tsinghua") && m_modelCatMapTsinghua.empty())
 	{
 		initTsinghuaDB();
 	}
 
-	if (m_sceneDBType == "suncg" && m_sunCGModelDB == NULL)
+	if (m_sceneDBType.contains("suncg") && m_sunCGModelDB == NULL)
 	{
 		initSunCGDB();
 	}
@@ -741,7 +752,7 @@ void scene_lab::BuildSemGraphForCurrentScene()
 		delete m_currSceneSemGraph;
 	}
 
-	m_currSceneSemGraph = new SceneSemGraph(m_currScene, m_shapeNetModelDB, m_relationExtractor);
+	m_currSceneSemGraph = new SceneSemGraph(m_currScene, m_shapeNetModelDB, m_relationExtractor, m_sceneANNPath);
 	m_currSceneSemGraph->generateGraph();
 	m_currSceneSemGraph->saveGraph();
 
